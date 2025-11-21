@@ -22,8 +22,9 @@ const Wallet: React.FC = () => {
   const wallet = user.wallet || { balance: 0, transactions: [] };
 
   const handleRecharge = async () => {
-    if (!amount || isNaN(Number(amount)) || Number(amount) < 1) {
-        alert("Monto inválido (Mínimo $1)");
+    const amountBs = Number(amount);
+    if (!amount || isNaN(amountBs) || amountBs <= 0) {
+        alert("Monto inválido");
         return;
     }
     if (!reference || reference.length < 4) {
@@ -33,9 +34,12 @@ const Wallet: React.FC = () => {
 
     setIsLoading(true);
     try {
+      // Convert Bs input to USD for internal storage
+      const amountUsd = amountBs / bcvRate;
+
       // Simulate Deposit
       await walletTransaction(
-        Number(amount),
+        amountUsd,
         'DEPOSIT',
         'Recarga Pago Móvil',
         reference
@@ -43,7 +47,7 @@ const Wallet: React.FC = () => {
       setShowRecharge(false);
       setAmount('');
       setReference('');
-      alert(`✅ Recarga de $${amount} exitosa.`);
+      alert(`✅ Recarga de Bs ${amountBs} ($${amountUsd.toFixed(2)}) exitosa.`);
     } catch (e) {
       alert("Error procesando recarga.");
     } finally {
@@ -164,22 +168,22 @@ const Wallet: React.FC = () => {
                <div className="p-6 space-y-4">
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-4 rounded-lg text-sm space-y-1 text-blue-800 dark:text-blue-200">
                      <p className="font-bold uppercase text-xs text-blue-500 mb-2">Datos para realizar el pago:</p>
-                     <p><b>Banco:</b> BNC (0191)</p>
-                     <p><b>Teléfono:</b> 0412-5555555</p>
-                     <p><b>Cédula:</b> J-123456789</p>
+                     <p><b>Banco:</b> Bancamiga (0272)</p>
+                     <p><b>Teléfono:</b> 0414-5274111</p>
+                     <p><b>RIF:</b> J-40724274-1</p>
                   </div>
 
                   <div>
                      <Input 
-                       label="Monto (USD)" 
+                       label="Monto a Recargar (Bs)" 
                        type="number" 
-                       placeholder="10.00" 
+                       placeholder="100.00" 
                        value={amount}
                        onChange={(e) => setAmount(e.target.value)}
-                       icon={<span className="text-gray-500 font-bold">$</span>}
+                       icon={<span className="text-gray-500 font-bold text-xs">Bs</span>}
                      />
                      <p className="text-xs text-right mt-1 text-gray-500">
-                        A pagar: <b>Bs {(Number(amount) * bcvRate).toFixed(2)}</b>
+                        Equivalente: <b>$ {(Number(amount) / bcvRate).toFixed(2)}</b>
                      </p>
                   </div>
 
