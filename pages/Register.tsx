@@ -11,7 +11,7 @@ import { UserRole } from '../types';
 
 // --- SCHEMAS (Zod Validation) ---
 // Updated to accept local 11-digit format (e.g. 0412...)
-const phoneSchema = z.string().regex(/^(04|02)\d{9}$/, "Debe ser un número válido (Ej: 0412...)");
+const phoneSchema = z.string().regex(/^0(4|2)\d{9}$/, "Número válido requerido (Ej: 04121234567)");
 const otpSchema = z.string().length(6, "El código debe tener 6 dígitos");
 const pinSchema = z.string().length(6, "El PIN debe tener 6 dígitos").regex(/^\d+$/, "Solo números");
 const profileSchema = z.object({
@@ -201,7 +201,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
             <Input 
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="0412 0000000"
+              placeholder="04121234567"
               icon={<Smartphone size={20}/>}
               className="text-lg tracking-wide font-mono"
               autoFocus

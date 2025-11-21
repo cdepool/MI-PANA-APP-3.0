@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef, useEffect } from 'react';
 import { MapPin, Navigation, Compass, ArrowRight, CornerUpRight, Map as MapIcon } from 'lucide-react';
 
@@ -124,7 +123,7 @@ const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full h-full bg-[#F1F3F4] overflow-hidden rounded-xl cursor-grab ${isDragging ? 'cursor-grabbing' : ''} ${className}`}
+      className={`relative w-full h-full bg-[#e8eaed] overflow-hidden rounded-xl cursor-grab ${isDragging ? 'cursor-grabbing' : ''} ${className}`}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -139,45 +138,45 @@ const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
         }}
       >
         {/* 1. Base de Tierra (Light Gray) */}
-        <div className="absolute inset-[-50%] w-[200%] h-[200%] bg-[#F1F3F4]"></div>
+        <div className="absolute inset-[-50%] w-[200%] h-[200%] bg-[#e8eaed]"></div>
 
         {/* 2. Calles Secundarias (White Lines grid) */}
         <div className="absolute inset-[-50%] w-[200%] h-[200%]"
           style={{
              backgroundImage: `
-               linear-gradient(#ffffff 8px, transparent 8px),
-               linear-gradient(90deg, #ffffff 8px, transparent 8px)
+               linear-gradient(#ffffff 10px, transparent 10px),
+               linear-gradient(90deg, #ffffff 10px, transparent 10px)
              `,
-             backgroundSize: '12% 12%',
+             backgroundSize: '15% 15%',
              backgroundPosition: 'center'
           }}
         ></div>
 
         {/* 3. Áreas Verdes (Parques - Google Green) */}
-        <div className="absolute top-[15%] left-[55%] w-[18%] h-[18%] bg-[#C6E6C6] rounded-lg opacity-100"></div>
-        <div className="absolute top-[65%] left-[12%] w-[15%] h-[12%] bg-[#C6E6C6] rounded-lg opacity-100"></div>
-        <div className="absolute top-[20%] left-[5%] w-[10%] h-[10%] bg-[#C6E6C6] rounded-lg opacity-100"></div>
+        <div className="absolute top-[15%] left-[55%] w-[18%] h-[18%] bg-[#c6e6c6] opacity-100"></div>
+        <div className="absolute top-[65%] left-[12%] w-[15%] h-[12%] bg-[#c6e6c6] opacity-100"></div>
+        <div className="absolute top-[20%] left-[5%] w-[10%] h-[10%] bg-[#c6e6c6] opacity-100"></div>
 
         {/* 4. Agua (Google Blue) */}
-        <div className="absolute top-[85%] left-[0%] w-[100%] h-[15%] bg-[#AADAFF]"></div>
+        <div className="absolute top-[85%] left-[0%] w-[100%] h-[15%] bg-[#aadaff]"></div>
 
         {/* 5. Avenidas Principales (Google Yellow/Orange) */}
         <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
            {/* Avenida Horizontal */}
-           <path d="M 0 30 L 100 30" stroke="#FCD679" strokeWidth="6" fill="none" strokeLinecap="square" />
-           <path d="M 0 30 L 100 30" stroke="#FCD679" strokeWidth="4" fill="none" /> 
+           <path d="M 0 30 L 100 30" stroke="#FCD679" strokeWidth="8" fill="none" strokeLinecap="square" />
+           <path d="M 0 30 L 100 30" stroke="#FCD679" strokeWidth="6" fill="none" /> 
            
            {/* Avenida Vertical */}
-           <path d="M 20 0 L 20 100" stroke="#FFFFFF" strokeWidth="6" fill="none" />
+           <path d="M 20 0 L 20 100" stroke="#FFFFFF" strokeWidth="8" fill="none" />
            
            {/* Avenida Diagonal */}
-           <path d="M 80 0 L 80 100" stroke="#FFFFFF" strokeWidth="6" fill="none" />
+           <path d="M 80 0 L 80 100" stroke="#FFFFFF" strokeWidth="8" fill="none" />
         </svg>
 
         {/* 6. Etiquetas de Calles (Google Style) */}
-        <div className="absolute top-[31%] left-[50%] text-[10px] font-medium text-[#5F6368] tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,1)]">Av. Libertador</div>
-        <div className="absolute top-[50%] left-[22%] -rotate-90 text-[10px] font-medium text-[#5F6368] tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,1)]">Calle 32</div>
-        <div className="absolute top-[50%] left-[82%] -rotate-90 text-[10px] font-medium text-[#5F6368] tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,1)]">Av. Las Lágrimas</div>
+        <div className="absolute top-[31%] left-[50%] text-[10px] font-medium text-[#5F6368] tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,1)] bg-white/50 px-1 rounded">Av. Libertador</div>
+        <div className="absolute top-[50%] left-[22%] -rotate-90 text-[10px] font-medium text-[#5F6368] tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,1)] bg-white/50 px-1 rounded">Calle 32</div>
+        <div className="absolute top-[50%] left-[82%] -rotate-90 text-[10px] font-medium text-[#5F6368] tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,1)] bg-white/50 px-1 rounded">Av. Las Lágrimas</div>
         <div className="absolute top-[18%] left-[60%] text-[9px] font-bold text-[#388E3C] tracking-wide opacity-80">Parque Musiu Carmelo</div>
       </div>
 
@@ -324,13 +323,13 @@ const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
       </div>
 
       {/* Google Logo Simulation */}
-      <div className="absolute bottom-1 left-1 opacity-70 pointer-events-none select-none flex items-center z-20">
-         <span className="text-[14px] font-bold text-[#4285F4] tracking-tight">G</span>
-         <span className="text-[14px] font-bold text-[#EA4335] tracking-tight">o</span>
-         <span className="text-[14px] font-bold text-[#FBBC05] tracking-tight">o</span>
-         <span className="text-[14px] font-bold text-[#4285F4] tracking-tight">g</span>
-         <span className="text-[14px] font-bold text-[#34A853] tracking-tight">l</span>
-         <span className="text-[14px] font-bold text-[#EA4335] tracking-tight mr-1">e</span>
+      <div className="absolute bottom-1 left-1 opacity-90 pointer-events-none select-none flex items-center z-20">
+         <span className="text-[16px] font-bold text-[#4285F4] tracking-tighter" style={{ fontFamily: 'Product Sans, sans-serif' }}>G</span>
+         <span className="text-[16px] font-bold text-[#EA4335] tracking-tighter" style={{ fontFamily: 'Product Sans, sans-serif' }}>o</span>
+         <span className="text-[16px] font-bold text-[#FBBC05] tracking-tighter" style={{ fontFamily: 'Product Sans, sans-serif' }}>o</span>
+         <span className="text-[16px] font-bold text-[#4285F4] tracking-tighter" style={{ fontFamily: 'Product Sans, sans-serif' }}>g</span>
+         <span className="text-[16px] font-bold text-[#34A853] tracking-tighter" style={{ fontFamily: 'Product Sans, sans-serif' }}>l</span>
+         <span className="text-[16px] font-bold text-[#EA4335] tracking-tighter mr-1" style={{ fontFamily: 'Product Sans, sans-serif' }}>e</span>
       </div>
     </div>
   );

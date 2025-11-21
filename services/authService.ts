@@ -1,5 +1,4 @@
 
-
 import { User, UserRole, RegistrationData, TransactionType, Transaction } from '../types';
 import { getTariffs } from './mockService';
 
@@ -134,7 +133,7 @@ export const authService = {
       createdAt: Date.now(),
       verified: true,
       savedPlaces: [],
-      favoriteDriverIds: [],
+      favoriteDriverIds: ['driver-99'], // Default mock driver for testing
       wallet: {
         balance: 0.00,
         transactions: []

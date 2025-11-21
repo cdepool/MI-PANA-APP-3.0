@@ -90,7 +90,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 
       <Input 
         label="Teléfono Móvil"
-        placeholder="0412 0000000"
+        placeholder="04121234567"
         icon={<Smartphone size={18}/>}
         value={phone}
         onChange={(e) => setPhone(e.target.value)}

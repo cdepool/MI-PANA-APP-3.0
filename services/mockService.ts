@@ -1,3 +1,4 @@
+
 import { Ride, Tariff, User, UserRole, VehicleType, MatchedDriver, ServiceConfig, ServiceId, LiquidationResult, SavedPlace, RecurringRide, GoogleProfile, ChatMessage } from '../types';
 
 // --- CONFIGURACIÓN TASA BCV ---
@@ -312,7 +313,7 @@ export const mockLoginUser = (role: UserRole): User => {
     email: `${role.toLowerCase()}@mipana.app`,
     avatarUrl: `https://ui-avatars.com/api/?name=${role}&background=0D8ABC&color=fff`,
     savedPlaces: role === UserRole.PASSENGER ? mockSavedPlaces : [],
-    phone: '+584120000000',
+    phone: '04120000000',
     documentId: 'V-12345678',
     favoriteDriverIds: role === UserRole.PASSENGER ? ['driver-99'] : [] // Mock favorite driver
   };

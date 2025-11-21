@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import MapPlaceholder from '../components/MapPlaceholder';
 import Button from '../components/Button';
@@ -40,9 +39,9 @@ const ServiceOption = ({ id, nombre, icono, price, isSelected, onClick }: { id: 
 // Favorite Driver Item Component
 const FavoriteDriverItem = ({ driver, onClick }: { driver: MatchedDriver, onClick: () => void }) => {
     return (
-        <div onClick={onClick} className="flex flex-col items-center mr-4 cursor-pointer min-w-[70px]">
-            <div className="relative w-14 h-14 mb-1">
-                <img src={driver.avatarUrl} alt={driver.name} className="w-full h-full rounded-full border-2 border-green-500 object-cover p-0.5 bg-white" />
+        <div onClick={onClick} className="flex flex-col items-center mr-4 cursor-pointer min-w-[70px] group">
+            <div className="relative w-14 h-14 mb-1 group-hover:scale-105 transition-transform">
+                <img src={driver.avatarUrl} alt={driver.name} className="w-full h-full rounded-full border-2 border-green-500 object-cover p-0.5 bg-white shadow-sm" />
                 <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
                     <div className="bg-green-500 text-white text-[8px] px-1 rounded-full font-bold flex items-center gap-0.5">
                         <Star size={8} fill="currentColor" /> {driver.rating}
@@ -328,7 +327,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                 {/* FAVORITE DRIVERS SECTION */}
                 {favoriteDriversList.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-gray-100">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Mis Panas de Confianza</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Mis Panas (Favoritos)</p>
                         <div className="flex overflow-x-auto pb-2 scrollbar-hide">
                             {favoriteDriversList.map(fd => (
                                 <FavoriteDriverItem 

@@ -166,8 +166,8 @@ const Wallet: React.FC = () => {
                </div>
                
                <div className="p-6 space-y-4">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-4 rounded-lg text-sm space-y-1 text-blue-800 dark:text-blue-200">
-                     <p className="font-bold uppercase text-xs text-blue-500 mb-2">Datos para realizar el pago:</p>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-4 rounded-lg text-sm space-y-2 text-blue-800 dark:text-blue-200">
+                     <p className="font-bold uppercase text-xs text-blue-500 mb-1">Datos para realizar el pago:</p>
                      <p><b>Banco:</b> Bancamiga (0272)</p>
                      <p><b>Teléfono:</b> 0414-5274111</p>
                      <p><b>RIF:</b> J-40724274-1</p>
