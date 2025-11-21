@@ -66,6 +66,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const toggleFavoriteDriver = async (driverId: string) => {
+    if (!user) return;
+    try {
+        const updatedUser = await authService.toggleFavoriteDriver(user.id, driverId);
+        setUser(updatedUser);
+    } catch (error) {
+        console.error("Failed to toggle favorite driver", error);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     authService.logout();
@@ -126,6 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loginPassenger,
       updateProfile,
       walletTransaction,
+      toggleFavoriteDriver,
       logout, 
       isAuthenticated: !!user,
       addSavedPlace,

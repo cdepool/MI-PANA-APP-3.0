@@ -93,6 +93,7 @@ export interface User {
   documentId?: string; // Cédula
   wallet?: Wallet; // Digital Wallet
   vehicle?: VehicleInfo; // Driver Vehicle Info
+  favoriteDriverIds?: string[]; // List of IDs of favorite drivers
 }
 
 export interface ServiceConfig {
@@ -212,6 +213,7 @@ export interface AuthContextType {
   loginPassenger: (phone: string, pin: string) => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   walletTransaction: (amount: number, type: TransactionType, description: string, reference?: string) => Promise<void>;
+  toggleFavoriteDriver: (driverId: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   addSavedPlace: (place: SavedPlace) => void;

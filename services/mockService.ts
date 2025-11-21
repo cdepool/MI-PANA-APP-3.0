@@ -163,21 +163,66 @@ export const calculatePrice = (distanceKm: number, serviceId: ServiceId = 'el_pa
   };
 };
 
-export const mockMatchDriver = (vehicleType: VehicleType): Promise<MatchedDriver> => {
+// --- MOCK DRIVER DATABASE ---
+export const MOCK_DRIVERS_POOL: MatchedDriver[] = [
+  {
+      id: 'driver-99',
+      name: 'Carlos El Pana',
+      vehicleModel: 'Bera SBR',
+      vehicleColor: 'Azul',
+      plate: 'AB123CD',
+      rating: 4.9,
+      phone: '+584121234567',
+      avatarUrl: 'https://ui-avatars.com/api/?name=Carlos+Pana&background=0D8ABC&color=fff',
+      timeAway: '3 min'
+  },
+  {
+      id: 'driver-88',
+      name: 'Luis Veloz',
+      vehicleModel: 'Toyota Corolla',
+      vehicleColor: 'Gris Plata',
+      plate: 'XX999YY',
+      rating: 4.8,
+      phone: '+584149999999',
+      avatarUrl: 'https://ui-avatars.com/api/?name=Luis+Veloz&background=F2620F&color=fff',
+      timeAway: '5 min'
+  },
+  {
+      id: 'driver-77',
+      name: 'Maria La Rapidita',
+      vehicleModel: 'Ford Ka',
+      vehicleColor: 'Rojo',
+      plate: 'AA111BB',
+      rating: 5.0,
+      phone: '+584240001122',
+      avatarUrl: 'https://ui-avatars.com/api/?name=Maria+R&background=10B981&color=fff',
+      timeAway: '7 min'
+  }
+];
+
+export const getDriverById = (id: string): MatchedDriver | undefined => {
+  return MOCK_DRIVERS_POOL.find(d => d.id === id);
+};
+
+export const mockMatchDriver = (vehicleType: VehicleType, specificDriverId?: string): Promise<MatchedDriver> => {
   return new Promise((resolve) => {
     setTimeout(() => {
+      if (specificDriverId) {
+        const specific = MOCK_DRIVERS_POOL.find(d => d.id === specificDriverId);
+        if (specific) {
+          resolve(specific);
+          return;
+        }
+      }
+      
+      // Fallback to finding a random driver with the right vehicle type logic (simplified here to just pick from pool)
+      const randomDriver = MOCK_DRIVERS_POOL[Math.floor(Math.random() * MOCK_DRIVERS_POOL.length)];
       resolve({
-        id: 'driver-99',
-        name: 'Carlos El Pana',
-        vehicleModel: vehicleType === 'MOTO' ? 'Bera SBR' : vehicleType === 'FREIGHT' ? 'Ford 350' : 'Toyota Corolla',
-        vehicleColor: vehicleType === 'MOTO' ? 'Azul' : vehicleType === 'FREIGHT' ? 'Blanco' : 'Gris Plata',
-        plate: 'AB123CD',
-        rating: 4.9,
-        phone: '+584121234567',
-        avatarUrl: 'https://ui-avatars.com/api/?name=Carlos+Pana&background=0D8ABC&color=fff',
-        timeAway: '3 min'
+        ...randomDriver,
+        // Adjust vehicle based on requested type if needed for consistency
+        vehicleModel: vehicleType === 'MOTO' ? 'Bera SBR' : randomDriver.vehicleModel 
       });
-    }, 3000); 
+    }, specificDriverId ? 500 : 3000); // Faster if specific driver
   });
 };
 
@@ -268,7 +313,8 @@ export const mockLoginUser = (role: UserRole): User => {
     avatarUrl: `https://ui-avatars.com/api/?name=${role}&background=0D8ABC&color=fff`,
     savedPlaces: role === UserRole.PASSENGER ? mockSavedPlaces : [],
     phone: '+584120000000',
-    documentId: 'V-12345678'
+    documentId: 'V-12345678',
+    favoriteDriverIds: role === UserRole.PASSENGER ? ['driver-99'] : [] // Mock favorite driver
   };
 
   switch (role) {

@@ -150,8 +150,16 @@ const ScheduleRides: React.FC = () => {
 
                <div className="flex flex-row md:flex-col justify-between items-end gap-2">
                   <div className="flex gap-2">
-                    {schedule.syncCalendar && <Calendar size={18} className="text-blue-500" title="Sync Calendar" />}
-                    {schedule.syncTasks && <CheckSquare size={18} className="text-green-500" title="Sync Tasks" />}
+                    {schedule.syncCalendar && (
+                      <div title="Sync Calendar">
+                        <Calendar size={18} className="text-blue-500" />
+                      </div>
+                    )}
+                    {schedule.syncTasks && (
+                      <div title="Sync Tasks">
+                        <CheckSquare size={18} className="text-green-500" />
+                      </div>
+                    )}
                   </div>
                   <button onClick={() => handleDelete(schedule.id)} className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-full transition-colors">
                     <Trash2 size={18} />

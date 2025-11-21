@@ -1,11 +1,12 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import MapPlaceholder from '../components/MapPlaceholder';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import ChatInterface from '../components/ChatInterface';
 import { MapPin, Star, Plus, Home, Briefcase, Clock, Heart, ArrowLeft, Search, User, Users, Smartphone, MessageCircle, Phone, MessageSquare, QrCode, RefreshCw } from 'lucide-react';
-import { calculatePrice, mockMatchDriver, SERVICE_CATALOG, simulateReverseGeocoding, startRideSimulation, sendChatMessage, cleanPhoneNumber, getTariffs } from '../services/mockService';
+import { calculatePrice, mockMatchDriver, SERVICE_CATALOG, simulateReverseGeocoding, startRideSimulation, sendChatMessage, cleanPhoneNumber, getTariffs, getDriverById } from '../services/mockService';
 import { MatchedDriver, ServiceId, SavedPlace, LocationPoint, RideBeneficiary, ChatMessage, UserRole } from '../types';
 import { useAuth } from '../context/AuthContext';
 
@@ -36,32 +37,34 @@ const ServiceOption = ({ id, nombre, icono, price, isSelected, onClick }: { id: 
   );
 };
 
-// Quick access pill component
-const QuickFavorite = ({ place, onClick }: { place: SavedPlace, onClick: () => void }) => {
-  const getIcon = () => {
-    if (place.type === 'HOME') return <Home size={14} className="text-blue-500" />;
-    if (place.type === 'WORK') return <Briefcase size={14} className="text-orange-500" />;
-    return <Heart size={14} className="text-red-500" />;
-  };
-
-  return (
-    <button 
-      onClick={onClick}
-      className="flex items-center space-x-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors min-w-fit"
-    >
-      {place.icon ? <span className="text-sm">{place.icon}</span> : getIcon()}
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{place.name}</span>
-    </button>
-  );
+// Favorite Driver Item Component
+const FavoriteDriverItem = ({ driver, onClick }: { driver: MatchedDriver, onClick: () => void }) => {
+    return (
+        <div onClick={onClick} className="flex flex-col items-center mr-4 cursor-pointer min-w-[70px]">
+            <div className="relative w-14 h-14 mb-1">
+                <img src={driver.avatarUrl} alt={driver.name} className="w-full h-full rounded-full border-2 border-green-500 object-cover p-0.5 bg-white" />
+                <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
+                    <div className="bg-green-500 text-white text-[8px] px-1 rounded-full font-bold flex items-center gap-0.5">
+                        <Star size={8} fill="currentColor" /> {driver.rating}
+                    </div>
+                </div>
+            </div>
+            <p className="text-[10px] font-bold text-gray-700 dark:text-gray-200 text-center leading-tight line-clamp-2 w-16">{driver.name}</p>
+        </div>
+    );
 };
 
 const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
-  const { user, addSavedPlace } = useAuth();
+  const { user, addSavedPlace, toggleFavoriteDriver } = useAuth();
   const [step, setStep] = useState<RideStep>('SEARCH');
   const [selectedServiceId, setSelectedServiceId] = useState<ServiceId>('el_pana');
   const [price, setPrice] = useState<{usd: number, ves: number} | null>(null);
   const [driver, setDriver] = useState<MatchedDriver | null>(null);
   
+  // Specific Driver Request
+  const [preselectedDriver, setPreselectedDriver] = useState<MatchedDriver | null>(null);
+  const [favoriteDriversList, setFavoriteDriversList] = useState<MatchedDriver[]>([]);
+
   // Location State
   const [origin, setOrigin] = useState<LocationPoint>({ address: 'Ubicación Actual' });
   const [destination, setDestination] = useState<LocationPoint | null>(null);
@@ -89,8 +92,21 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   const tariff = getTariffs();
   const currentRate = tariff.currentBcvRate;
 
-  // Derived state for favorites from Context
+  // Favorites from Context
   const favorites = user?.savedPlaces || [];
+  const isDriverFavorite = driver && user?.favoriteDriverIds?.includes(driver.id);
+
+  // Load Favorite Drivers Data
+  useEffect(() => {
+      if (user?.favoriteDriverIds) {
+          const loadedDrivers = user.favoriteDriverIds
+              .map(id => getDriverById(id))
+              .filter((d): d is MatchedDriver => !!d);
+          setFavoriteDriversList(loadedDrivers);
+      } else {
+          setFavoriteDriversList([]);
+      }
+  }, [user?.favoriteDriverIds]);
 
   // Update price when service/dest changes
   useEffect(() => {
@@ -129,9 +145,12 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
     }
   };
 
-  const handleFavoriteClick = (place: SavedPlace) => {
-    setDestination({ address: place.address });
-    setStep('CONFIRM_SERVICE');
+  const handleSelectFavoriteDriver = (favDriver: MatchedDriver) => {
+      setPreselectedDriver(favDriver);
+      // Automatically prompt for destination
+      setPickingType('DESTINATION'); 
+      setStep('PICK_ON_MAP'); 
+      handleMapCenterChange();
   };
 
   // Ride Lifecycle Simulation
@@ -141,7 +160,8 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
 
     if (step === 'SEARCHING_DRIVER') {
       const service = SERVICE_CATALOG.find(s => s.id === selectedServiceId);
-      mockMatchDriver(service?.vehicleType || 'CAR').then((d) => {
+      // Pass the preselected driver ID if it exists to force a match
+      mockMatchDriver(service?.vehicleType || 'CAR', preselectedDriver?.id).then((d) => {
         if (isMounted) {
           setDriver(d);
           setStep('ACCEPTED');
@@ -169,11 +189,12 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
       isMounted = false;
       if (simulationCleanup) simulationCleanup();
     };
-  }, [step, selectedServiceId]);
+  }, [step, selectedServiceId, preselectedDriver]);
 
   const resetFlow = () => {
     setStep('SEARCH');
     setDriver(null);
+    setPreselectedDriver(null);
     setDestination(null);
     setRideProgress(0);
     setForWhom('ME');
@@ -303,6 +324,22 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                         <Search size={18} className="text-mipana-mediumBlue"/>
                      </div>
                 </div>
+
+                {/* FAVORITE DRIVERS SECTION */}
+                {favoriteDriversList.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Mis Panas de Confianza</p>
+                        <div className="flex overflow-x-auto pb-2 scrollbar-hide">
+                            {favoriteDriversList.map(fd => (
+                                <FavoriteDriverItem 
+                                    key={fd.id} 
+                                    driver={fd} 
+                                    onClick={() => handleSelectFavoriteDriver(fd)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
              </div>
 
              {/* WALLET WIDGET CARD */}
@@ -346,7 +383,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
       {step === 'PICK_ON_MAP' ? (
          <div className="absolute top-4 left-4 right-4 z-20 animate-slide-up">
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg flex items-center gap-3 border border-gray-100 dark:border-gray-700">
-               <button onClick={() => { setStep('SEARCH'); setPickingType(null); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+               <button onClick={() => { setStep('SEARCH'); setPickingType(null); setPreselectedDriver(null); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                  <ArrowLeft size={20} />
                </button>
                <div className="flex-1">
@@ -359,6 +396,12 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                     <p className="font-bold text-mipana-darkBlue dark:text-white truncate text-sm">{mapCenterAddress}</p>
                  )}
                </div>
+               {preselectedDriver && (
+                   <div className="flex items-center gap-2 bg-green-50 px-2 py-1 rounded-lg border border-green-100">
+                       <img src={preselectedDriver.avatarUrl} className="w-6 h-6 rounded-full" />
+                       <span className="text-xs font-bold text-green-800 hidden sm:block">{preselectedDriver.name}</span>
+                   </div>
+               )}
             </div>
          </div>
       ) : (
@@ -425,6 +468,18 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                  )}
               </div>
 
+              {/* Preselected Driver Alert */}
+              {preselectedDriver && (
+                  <div className="bg-green-50 border border-green-200 p-3 rounded-xl mb-4 flex items-center gap-3">
+                      <img src={preselectedDriver.avatarUrl} className="w-10 h-10 rounded-full border border-green-300" />
+                      <div className="flex-1">
+                          <p className="text-xs font-bold text-green-800 uppercase">Solicitud Directa</p>
+                          <p className="text-sm text-green-900">Este viaje será para <b>{preselectedDriver.name}</b></p>
+                      </div>
+                      <button onClick={() => setPreselectedDriver(null)} className="text-gray-400 hover:text-gray-600"><ArrowLeft size={16}/></button>
+                  </div>
+              )}
+
               {/* BENEFICIARY SELECTION */}
               <div className="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl mb-4 border border-gray-100 dark:border-gray-600">
                 <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">¿Para quién es el viaje?</p>
@@ -490,7 +545,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
               </div>
 
               <Button variant="action" fullWidth onClick={handleConfirmRide}>
-                 Solicitar {forWhom === 'OTHER' ? 'para ' + (beneficiary.name || 'otro') : 'Ahora'}
+                 {preselectedDriver ? `Solicitar a ${preselectedDriver.name.split(' ')[0]}` : (forWhom === 'OTHER' ? `Solicitar para ${beneficiary.name || 'otro'}` : 'Solicitar Ahora')}
               </Button>
           </div>
         )}
@@ -499,7 +554,9 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
         {step === 'SEARCHING_DRIVER' && (
            <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-2xl p-8 text-center animate-slide-up">
               <div className="mx-auto w-16 h-16 border-4 border-mipana-orange border-t-transparent rounded-full animate-spin mb-4"></div>
-              <h3 className="font-bold text-lg mb-2 dark:text-white">Contactando Panas cercanos...</h3>
+              <h3 className="font-bold text-lg mb-2 dark:text-white">
+                  {preselectedDriver ? `Esperando confirmación de ${preselectedDriver.name}...` : 'Contactando Panas cercanos...'}
+              </h3>
               <Button variant="outline" onClick={() => setStep('CONFIRM_SERVICE')}>Cancelar</Button>
            </div>
         )}
@@ -526,12 +583,22 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                   </div>
                )}
 
-               <div className="flex items-center space-x-4 mb-4">
-                 <img src={driver.avatarUrl} alt="Driver" className="w-14 h-14 rounded-full border-2 border-mipana-orange" />
-                 <div className="flex-1">
-                   <h4 className="font-bold dark:text-white text-lg">{driver.name}</h4>
-                   <p className="text-xs text-gray-500">{driver.vehicleModel} • {driver.plate}</p>
+               <div className="flex items-center justify-between space-x-4 mb-4">
+                 <div className="flex items-center gap-4">
+                    <img src={driver.avatarUrl} alt="Driver" className="w-14 h-14 rounded-full border-2 border-mipana-orange" />
+                    <div>
+                        <h4 className="font-bold dark:text-white text-lg">{driver.name}</h4>
+                        <p className="text-xs text-gray-500">{driver.vehicleModel} • {driver.plate}</p>
+                    </div>
                  </div>
+                 
+                 {/* FAVORITE TOGGLE */}
+                 <button 
+                    onClick={() => toggleFavoriteDriver(driver.id)}
+                    className={`p-2 rounded-full border transition-colors ${isDriverFavorite ? 'bg-red-50 border-red-200 text-red-500' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
+                 >
+                     <Heart size={20} fill={isDriverFavorite ? "currentColor" : "none"} />
+                 </button>
                </div>
                
                {/* COMMUNICATION ACTIONS */}

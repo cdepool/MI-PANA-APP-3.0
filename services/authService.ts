@@ -1,4 +1,5 @@
 
+
 import { User, UserRole, RegistrationData, TransactionType, Transaction } from '../types';
 import { getTariffs } from './mockService';
 
@@ -133,6 +134,7 @@ export const authService = {
       createdAt: Date.now(),
       verified: true,
       savedPlaces: [],
+      favoriteDriverIds: [],
       wallet: {
         balance: 0.00,
         transactions: []
@@ -265,5 +267,33 @@ export const authService = {
     }
 
     return user;
+  },
+
+  // 10. Toggle Favorite Driver
+  toggleFavoriteDriver: async (userId: string, driverId: string): Promise<User> => {
+    const users = getDbUsers();
+    const index = users.findIndex(u => u.id === userId);
+    if (index === -1) throw new Error('Usuario no encontrado');
+
+    const user = users[index];
+    const favorites = user.favoriteDriverIds || [];
+    
+    let newFavorites;
+    if (favorites.includes(driverId)) {
+        newFavorites = favorites.filter(id => id !== driverId);
+    } else {
+        newFavorites = [...favorites, driverId];
+    }
+
+    const updatedUser = { ...user, favoriteDriverIds: newFavorites };
+    users[index] = updatedUser;
+    saveDbUsers(users);
+
+    // Update Session
+    const session = authService.getSession();
+    if (session && session.id === userId) {
+      authService.setSession(updatedUser);
+    }
+    return updatedUser;
   }
 };
