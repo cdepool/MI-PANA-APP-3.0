@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AuthContextType, User, UserRole, SavedPlace } from '../types';
+import { AuthContextType, User, UserRole, SavedPlace, TransactionType } from '../types';
 import { mockLoginUser, simulateGoogleAuth } from '../services/mockService';
 import { authService } from '../services/authService';
 
@@ -39,6 +40,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const loggedUser = await authService.loginPassenger(phone, pin);
       setUser(loggedUser);
     } catch (error) {
+      throw error;
+    }
+  };
+
+  const updateProfile = async (data: Partial<User>) => {
+    if (!user) return;
+    try {
+      const updatedUser = await authService.updateUser(user.id, data);
+      setUser(updatedUser);
+    } catch (error) {
+      console.error("Profile update failed", error);
+      throw error;
+    }
+  };
+
+  const walletTransaction = async (amount: number, type: TransactionType, description: string, reference?: string) => {
+    if (!user) return;
+    try {
+      const updatedUser = await authService.processTransaction(user.id, amount, type, description, reference);
+      setUser(updatedUser);
+    } catch (error) {
+      console.error("Transaction failed", error);
       throw error;
     }
   };
@@ -101,6 +124,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, 
       login, 
       loginPassenger,
+      updateProfile,
+      walletTransaction,
       logout, 
       isAuthenticated: !!user,
       addSavedPlace,

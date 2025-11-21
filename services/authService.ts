@@ -1,4 +1,6 @@
-import { User, UserRole, RegistrationData } from '../types';
+
+import { User, UserRole, RegistrationData, TransactionType, Transaction } from '../types';
+import { getTariffs } from './mockService';
 
 // LocalStorage Keys to simulate Database
 const DB_USERS_KEY = 'mipana_db_users';
@@ -130,7 +132,11 @@ export const authService = {
       pin: data.pin, // Storing plain PIN for this local demo (In real app, use hash)
       createdAt: Date.now(),
       verified: true,
-      savedPlaces: []
+      savedPlaces: [],
+      wallet: {
+        balance: 0.00,
+        transactions: []
+      }
     };
 
     users.push(newUser);
@@ -188,5 +194,76 @@ export const authService = {
     };
     // For this demo, we just return it to pre-fill forms or login directly
     return mockGoogleUser;
+  },
+
+  // 8. Update User Profile
+  updateUser: async (userId: string, data: Partial<User>): Promise<User> => {
+    await delay(800);
+    const users = getDbUsers();
+    const index = users.findIndex(u => u.id === userId);
+    
+    if (index === -1) throw new Error('Usuario no encontrado');
+
+    const updatedUser = { ...users[index], ...data };
+    users[index] = updatedUser;
+    
+    saveDbUsers(users);
+    
+    // Update session if it's the current user
+    const session = authService.getSession();
+    if (session && session.id === userId) {
+      authService.setSession(updatedUser);
+    }
+
+    return updatedUser;
+  },
+
+  // 9. Wallet Transactions
+  processTransaction: async (userId: string, amount: number, type: TransactionType, description: string, reference?: string): Promise<User> => {
+    await delay(1500); // Processing payment delay
+    
+    const users = getDbUsers();
+    const index = users.findIndex(u => u.id === userId);
+    if (index === -1) throw new Error('Usuario no encontrado');
+
+    const user = users[index];
+    if (!user.wallet) {
+      user.wallet = { balance: 0, transactions: [] };
+    }
+
+    // Balance logic
+    let newBalance = user.wallet.balance;
+    if (type === 'DEPOSIT' || type === 'REFUND') {
+      newBalance += amount;
+    } else {
+      if (newBalance < amount) throw new Error('Saldo insuficiente en billetera');
+      newBalance -= amount;
+    }
+
+    const transaction: Transaction = {
+      id: `tx-${Date.now()}`,
+      amount: amount,
+      currency: 'USD', // Base currency
+      exchangeRate: getTariffs().currentBcvRate, // Use dynamic rate from mock service
+      date: Date.now(),
+      type,
+      description,
+      reference,
+      status: 'COMPLETED'
+    };
+
+    user.wallet.balance = newBalance;
+    user.wallet.transactions.unshift(transaction); // Add to top
+
+    users[index] = user;
+    saveDbUsers(users);
+
+    // Update Session
+    const session = authService.getSession();
+    if (session && session.id === userId) {
+      authService.setSession(user);
+    }
+
+    return user;
   }
 };

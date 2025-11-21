@@ -9,7 +9,7 @@ export enum UserRole {
 export type VehicleType = 'MOTO' | 'CAR' | 'FREIGHT';
 export type ServiceId = 'mototaxi' | 'el_pana' | 'el_amigo' | 'full_pana';
 
-export type AppView = 'HOME' | 'PROFILE' | 'HISTORY' | 'SETTINGS' | 'SCHEDULE' | 'REGISTER';
+export type AppView = 'HOME' | 'PROFILE' | 'HISTORY' | 'SETTINGS' | 'SCHEDULE' | 'REGISTER' | 'WALLET';
 
 export interface SavedPlace {
   id: string;
@@ -54,6 +54,25 @@ export interface GoogleProfile {
   scopes: ('calendar' | 'tasks' | 'gmail')[];
 }
 
+export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'PAYMENT' | 'REFUND';
+
+export interface Transaction {
+  id: string;
+  amount: number; // Always in USD for internal logic
+  currency: 'USD' | 'VES';
+  exchangeRate: number;
+  date: number;
+  type: TransactionType;
+  description: string;
+  reference?: string; // Pago Movil ref
+  status: 'COMPLETED' | 'PENDING' | 'FAILED';
+}
+
+export interface Wallet {
+  balance: number; // USD
+  transactions: Transaction[];
+}
+
 export interface User {
   id: string;
   name: string;
@@ -66,6 +85,7 @@ export interface User {
   googleProfile?: GoogleProfile;
   phone?: string; // Added phone for communication
   documentId?: string; // Cédula
+  wallet?: Wallet; // Digital Wallet
 }
 
 export interface ServiceConfig {
@@ -182,6 +202,9 @@ export interface ThemeContextType {
 export interface AuthContextType {
   user: User | null;
   login: (role: UserRole, userData?: Partial<User>) => void;
+  loginPassenger: (phone: string, pin: string) => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+  walletTransaction: (amount: number, type: TransactionType, description: string, reference?: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   addSavedPlace: (place: SavedPlace) => void;

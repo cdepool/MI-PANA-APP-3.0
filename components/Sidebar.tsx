@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, Home, User, Settings, LogOut, Car, History, CalendarClock } from 'lucide-react';
+import { X, Home, User, Settings, LogOut, Car, History, CalendarClock, CreditCard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole, AppView } from '../types';
 
@@ -21,6 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate }) => {
   const menuItems = [
     { icon: <Home size={20} />, label: 'Inicio', view: 'HOME' as AppView },
     { icon: <User size={20} />, label: 'Mi Perfil', view: 'PROFILE' as AppView },
+    { icon: <CreditCard size={20} />, label: 'Billetera', view: 'WALLET' as AppView },
     { icon: <History size={20} />, label: 'Mis Viajes', view: 'HISTORY' as AppView },
     { icon: <CalendarClock size={20} />, label: 'Programados / Agenda', view: 'SCHEDULE' as AppView },
   ];

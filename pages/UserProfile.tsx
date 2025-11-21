@@ -1,14 +1,45 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
-import { User, Mail, Star, Shield, Award, Edit2, LogOut } from 'lucide-react';
+import { User as UserIcon, Mail, Star, Shield, Award, Edit2, LogOut, Check, X, Camera } from 'lucide-react';
 import Button from '../components/Button';
+import Input from '../components/Input';
 
 const UserProfile: React.FC = () => {
-  const { user, connectGoogle, disconnectGoogle } = useAuth();
+  const { user, updateProfile, connectGoogle, disconnectGoogle } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    avatarUrl: user?.avatarUrl || ''
+  });
 
   if (!user) return null;
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await updateProfile(formData);
+      setIsEditing(false);
+    } catch (error) {
+      alert("Error al actualizar perfil");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl || ''
+    });
+    setIsEditing(false);
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-slide-up pb-12">
@@ -17,41 +48,78 @@ const UserProfile: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
         <div className="h-32 bg-gradient-to-r from-mipana-darkBlue to-mipana-mediumBlue"></div>
         <div className="px-6 pb-6 relative">
-          <div className="absolute -top-16 left-6">
-            <img 
-              src={user.avatarUrl} 
-              alt={user.name} 
-              className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover bg-white"
-            />
-            <button className="absolute bottom-0 right-0 bg-mipana-orange text-white p-2 rounded-full shadow-md hover:bg-orange-600 transition-colors">
-              <Edit2 size={16} />
-            </button>
+          <div className="absolute -top-16 left-6 group">
+            <div className="relative">
+              <img 
+                src={isEditing ? formData.avatarUrl : user.avatarUrl} 
+                alt={user.name} 
+                className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-md object-cover bg-white"
+              />
+              {isEditing && (
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center cursor-pointer">
+                   <Camera className="text-white" size={24} />
+                </div>
+              )}
+            </div>
           </div>
           
-          <div className="ml-40 pt-2">
-             <h2 className="text-2xl font-bold dark:text-white">{user.name}</h2>
-             <p className="text-mipana-mediumBlue font-medium flex items-center gap-1">
-               {user.role === UserRole.DRIVER ? 'Conductor Certificado' : 'Pasajero'} 
-               {user.role === UserRole.ADMIN && <Shield size={16} />}
-             </p>
+          <div className="ml-40 pt-2 flex justify-between items-start">
+             <div>
+               {isEditing ? (
+                  <input 
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="text-2xl font-bold dark:text-white bg-transparent border-b border-mipana-mediumBlue focus:outline-none w-full"
+                  />
+               ) : (
+                  <h2 className="text-2xl font-bold dark:text-white">{user.name}</h2>
+               )}
+               <p className="text-mipana-mediumBlue font-medium flex items-center gap-1">
+                 {user.role === UserRole.DRIVER ? 'Conductor Certificado' : 'Pasajero'} 
+                 {user.role === UserRole.ADMIN && <Shield size={16} />}
+               </p>
+             </div>
+             {!isEditing && (
+               <button 
+                 onClick={() => setIsEditing(true)}
+                 className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full hover:bg-gray-200 transition-colors"
+               >
+                 <Edit2 size={18} className="text-gray-600 dark:text-gray-300" />
+               </button>
+             )}
           </div>
 
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="space-y-4">
                 <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
-                   <Mail className="text-gray-400" />
-                   <div>
+                   <Mail className="text-gray-400 shrink-0" />
+                   <div className="w-full">
                       <p className="text-xs text-gray-400">Correo Electrónico</p>
-                      <p className="font-medium">{user.email}</p>
+                      {isEditing ? (
+                        <input 
+                          value={formData.email}
+                          onChange={(e) => setFormData({...formData, email: e.target.value})}
+                          className="font-medium bg-transparent border-b border-gray-300 focus:outline-none w-full"
+                        />
+                      ) : (
+                        <p className="font-medium truncate">{user.email}</p>
+                      )}
                    </div>
                 </div>
+                
                 <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
-                   <User className="text-gray-400" />
+                   <UserIcon className="text-gray-400 shrink-0" />
                    <div>
-                      <p className="text-xs text-gray-400">ID de Usuario</p>
-                      <p className="font-medium font-mono text-sm">{user.id}</p>
+                      <p className="text-xs text-gray-400">Cédula / ID</p>
+                      <p className="font-medium font-mono text-sm">{user.documentId || 'No registrado'}</p>
                    </div>
                 </div>
+
+                {isEditing && (
+                  <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-800">
+                    Para cambiar tu Cédula o Teléfono, contacta a soporte por seguridad.
+                  </div>
+                )}
              </div>
 
              {/* Google Integration Section */}
@@ -117,10 +185,22 @@ const UserProfile: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex justify-end">
-         <Button variant="outline" className="mr-2">Cambiar Contraseña</Button>
-         <Button>Editar Perfil</Button>
-      </div>
+      {isEditing && (
+        <div className="flex justify-end gap-3 animate-slide-up">
+           <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
+             <X size={16} className="mr-2"/> Cancelar
+           </Button>
+           <Button onClick={handleSave} disabled={isLoading}>
+             {isLoading ? 'Guardando...' : <><Check size={16} className="mr-2"/> Guardar Cambios</>}
+           </Button>
+        </div>
+      )}
+      
+      {!isEditing && (
+        <div className="flex justify-end">
+           <Button variant="outline" className="mr-2">Cambiar Contraseña</Button>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -13,6 +12,7 @@ import UserProfile from './pages/UserProfile';
 import RideHistory from './pages/RideHistory';
 import ScheduleRides from './pages/ScheduleRides';
 import Register from './pages/Register';
+import Wallet from './pages/Wallet';
 
 const AppContent: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -37,6 +37,7 @@ const AppContent: React.FC = () => {
     if (currentView === 'PROFILE') return <UserProfile />;
     if (currentView === 'HISTORY') return <RideHistory />;
     if (currentView === 'SCHEDULE') return <ScheduleRides />;
+    if (currentView === 'WALLET') return <Wallet />;
     if (currentView === 'SETTINGS') return <UserProfile />; // Placeholder, reusing profile for now
 
     switch (user?.role) {
