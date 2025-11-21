@@ -1,8 +1,9 @@
 
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { UserRole } from '../types';
-import { User as UserIcon, Mail, Star, Shield, Award, Edit2, LogOut, Check, X, Camera } from 'lucide-react';
+import { UserRole, User } from '../types';
+import { User as UserIcon, Mail, Star, Shield, Award, Edit2, LogOut, Check, X, Camera, Smartphone, CreditCard, Car } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
 
@@ -13,32 +14,59 @@ const UserProfile: React.FC = () => {
 
   // Form State
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    avatarUrl: user?.avatarUrl || ''
+    name: '',
+    email: '',
+    phone: '',
+    documentId: '',
+    avatarUrl: '',
+    // Driver Specific
+    vehicleModel: '',
+    vehicleColor: '',
+    vehiclePlate: ''
   });
 
   if (!user) return null;
 
+  const startEditing = () => {
+    setFormData({
+      name: user.name,
+      email: user.email,
+      phone: user.phone || '',
+      documentId: user.documentId || '',
+      avatarUrl: user.avatarUrl || '',
+      vehicleModel: user.vehicle?.model || '',
+      vehicleColor: user.vehicle?.color || '',
+      vehiclePlate: user.vehicle?.plate || ''
+    });
+    setIsEditing(true);
+  };
+
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      await updateProfile(formData);
+      const payload: Partial<User> = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        documentId: formData.documentId,
+        avatarUrl: formData.avatarUrl,
+      };
+
+      if (user.role === UserRole.DRIVER) {
+        payload.vehicle = {
+          model: formData.vehicleModel,
+          color: formData.vehicleColor,
+          plate: formData.vehiclePlate
+        };
+      }
+
+      await updateProfile(payload);
       setIsEditing(false);
     } catch (error) {
       alert("Error al actualizar perfil");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      name: user.name,
-      email: user.email,
-      avatarUrl: user.avatarUrl || ''
-    });
-    setIsEditing(false);
   };
 
   return (
@@ -64,12 +92,13 @@ const UserProfile: React.FC = () => {
           </div>
           
           <div className="ml-40 pt-2 flex justify-between items-start">
-             <div>
+             <div className="w-full mr-4">
                {isEditing ? (
                   <input 
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="text-2xl font-bold dark:text-white bg-transparent border-b border-mipana-mediumBlue focus:outline-none w-full"
+                    className="text-2xl font-bold dark:text-white bg-transparent border-b border-mipana-mediumBlue focus:outline-none w-full mb-1"
+                    placeholder="Nombre Completo"
                   />
                ) : (
                   <h2 className="text-2xl font-bold dark:text-white">{user.name}</h2>
@@ -81,7 +110,7 @@ const UserProfile: React.FC = () => {
              </div>
              {!isEditing && (
                <button 
-                 onClick={() => setIsEditing(true)}
+                 onClick={startEditing}
                  className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full hover:bg-gray-200 transition-colors"
                >
                  <Edit2 size={18} className="text-gray-600 dark:text-gray-300" />
@@ -90,7 +119,8 @@ const UserProfile: React.FC = () => {
           </div>
 
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-             <div className="space-y-4">
+             <div className="space-y-4 md:col-span-2">
+                {/* Email */}
                 <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
                    <Mail className="text-gray-400 shrink-0" />
                    <div className="w-full">
@@ -106,21 +136,96 @@ const UserProfile: React.FC = () => {
                       )}
                    </div>
                 </div>
-                
-                <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
-                   <UserIcon className="text-gray-400 shrink-0" />
-                   <div>
-                      <p className="text-xs text-gray-400">Cédula / ID</p>
-                      <p className="font-medium font-mono text-sm">{user.documentId || 'No registrado'}</p>
-                   </div>
-                </div>
 
-                {isEditing && (
-                  <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-800">
-                    Para cambiar tu Cédula o Teléfono, contacta a soporte por seguridad.
+                {/* Phone & ID Container */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+                     <Smartphone className="text-gray-400 shrink-0" />
+                     <div className="w-full">
+                        <p className="text-xs text-gray-400">Teléfono</p>
+                        {isEditing ? (
+                          <input 
+                            value={formData.phone}
+                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                            className="font-medium bg-transparent border-b border-gray-300 focus:outline-none w-full"
+                            placeholder="+58 412..."
+                          />
+                        ) : (
+                          <p className="font-medium font-mono text-sm">{user.phone || 'No registrado'}</p>
+                        )}
+                     </div>
                   </div>
-                )}
+
+                  <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+                     <CreditCard className="text-gray-400 shrink-0" />
+                     <div className="w-full">
+                        <p className="text-xs text-gray-400">Cédula / ID</p>
+                        {isEditing ? (
+                          <input 
+                            value={formData.documentId}
+                            onChange={(e) => setFormData({...formData, documentId: e.target.value})}
+                            className="font-medium bg-transparent border-b border-gray-300 focus:outline-none w-full"
+                            placeholder="V-12345678"
+                          />
+                        ) : (
+                          <p className="font-medium font-mono text-sm">{user.documentId || 'No registrado'}</p>
+                        )}
+                     </div>
+                  </div>
+                </div>
              </div>
+
+             {/* DRIVER VEHICLE INFO */}
+             {user.role === UserRole.DRIVER && (
+               <div className="md:col-span-2 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-gray-600">
+                  <h3 className="font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                    <Car size={18} /> Datos del Vehículo
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                       <p className="text-xs text-gray-400 mb-1">Modelo</p>
+                       {isEditing ? (
+                          <Input 
+                            value={formData.vehicleModel} 
+                            onChange={e => setFormData({...formData, vehicleModel: e.target.value})}
+                            placeholder="Ej: Bera SBR"
+                            className="h-10 text-sm"
+                          />
+                       ) : (
+                          <p className="font-bold dark:text-white">{user.vehicle?.model || 'Sin definir'}</p>
+                       )}
+                    </div>
+                    <div>
+                       <p className="text-xs text-gray-400 mb-1">Color</p>
+                       {isEditing ? (
+                          <Input 
+                            value={formData.vehicleColor} 
+                            onChange={e => setFormData({...formData, vehicleColor: e.target.value})}
+                            placeholder="Ej: Azul"
+                            className="h-10 text-sm"
+                          />
+                       ) : (
+                          <p className="font-bold dark:text-white">{user.vehicle?.color || 'Sin definir'}</p>
+                       )}
+                    </div>
+                    <div>
+                       <p className="text-xs text-gray-400 mb-1">Placa</p>
+                       {isEditing ? (
+                          <Input 
+                            value={formData.vehiclePlate} 
+                            onChange={e => setFormData({...formData, vehiclePlate: e.target.value})}
+                            placeholder="Ej: AB123CD"
+                            className="h-10 text-sm uppercase font-mono"
+                          />
+                       ) : (
+                          <div className="inline-block bg-yellow-300 text-black font-bold font-mono px-2 py-1 rounded border border-yellow-400 text-sm">
+                            {user.vehicle?.plate || 'NO-PLATE'}
+                          </div>
+                       )}
+                    </div>
+                  </div>
+               </div>
+             )}
 
              {/* Google Integration Section */}
              <div className="md:col-span-2 bg-white dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600 p-4 rounded-xl">
@@ -187,7 +292,7 @@ const UserProfile: React.FC = () => {
 
       {isEditing && (
         <div className="flex justify-end gap-3 animate-slide-up">
-           <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
+           <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isLoading}>
              <X size={16} className="mr-2"/> Cancelar
            </Button>
            <Button onClick={handleSave} disabled={isLoading}>

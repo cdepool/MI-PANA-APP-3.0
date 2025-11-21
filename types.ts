@@ -73,6 +73,12 @@ export interface Wallet {
   transactions: Transaction[];
 }
 
+export interface VehicleInfo {
+  model: string;
+  color: string;
+  plate: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -86,6 +92,7 @@ export interface User {
   phone?: string; // Added phone for communication
   documentId?: string; // Cédula
   wallet?: Wallet; // Digital Wallet
+  vehicle?: VehicleInfo; // Driver Vehicle Info
 }
 
 export interface ServiceConfig {
