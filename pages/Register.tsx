@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
-import { ArrowLeft, Smartphone, Lock, User, CreditCard, CheckCircle, AlertCircle, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Smartphone, Lock, User, CreditCard, AlertCircle, MessageCircle, Mail } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Stepper from '../components/Stepper';
-import { authApi } from '../services/mockService';
+import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 
@@ -46,25 +45,57 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
   // --- HANDLERS ---
 
-  const handlePhoneSubmit = async () => {
-    setError(null);
+  const handleGoogleRegister = async () => {
+    setIsLoading(true);
+    try {
+      const gUser = await authService.simulateGoogleLogin();
+      // Pre-fill data with Google info
+      const names = gUser.name.split(' ');
+      setFirstName(names[0]);
+      setLastName(names.slice(1).join(' '));
+      // Continue regular flow but skipping manual input if we had a real OAuth
+      setError(null);
+      alert("Datos recuperados de Google. Por favor verifica tu número móvil para continuar.");
+    } catch (e) {
+      setError("Error conectando con Google");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const checkPhoneAvailability = async () => {
     const result = phoneSchema.safeParse(phone.replace(/\s/g, ''));
     if (!result.success) {
       setError(result.error.errors[0].message);
-      return;
+      return false;
     }
+    try {
+      setIsLoading(true);
+      const { exists } = await authService.checkPhone(phone);
+      if (exists) {
+        setError("Este número ya está registrado. Por favor inicia sesión.");
+        return false;
+      }
+      return true;
+    } catch (e) {
+      setError("Error de conexión");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendCode = async (channel: 'SMS' | 'WHATSAPP') => {
+    setError(null);
+    const isAvailable = await checkPhoneAvailability();
+    if (!isAvailable) return;
 
     setIsLoading(true);
     try {
-      const { exists } = await authApi.checkPhone(phone);
-      if (exists) {
-        setError("Este número ya está registrado. Por favor inicia sesión.");
-      } else {
-        await authApi.requestOtp(phone);
-        setCurrentStep(1);
-      }
+      await authService.sendOtp(phone, channel);
+      setCurrentStep(1);
     } catch (err) {
-      setError("Error de conexión. Intenta de nuevo.");
+      setError("Error enviando código.");
     } finally {
       setIsLoading(false);
     }
@@ -79,11 +110,11 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
     setIsLoading(true);
     try {
-      const { valid } = await authApi.verifyOtp(phone, otp);
+      const { valid, message } = await authService.verifyOtp(phone, otp);
       if (valid) {
         setCurrentStep(2);
       } else {
-        setError("Código incorrecto. Revisa tus mensajes.");
+        setError(message || "Código incorrecto.");
       }
     } catch (err) {
       setError("Error verificando código.");
@@ -115,7 +146,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
     setIsLoading(true);
     try {
-      const { user } = await authApi.registerUser({
+      const user = await authService.registerUser({
         phone,
         firstName,
         lastName,
@@ -126,11 +157,12 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
       });
       
       // Auto-login and redirect
+      // We use the base login method here to update context
       login(UserRole.PASSENGER, user);
       onNavigateHome();
 
-    } catch (err) {
-      setError("Error creando cuenta. Intenta nuevamente.");
+    } catch (err: any) {
+      setError(err.message || "Error creando cuenta.");
     } finally {
       setIsLoading(false);
     }
@@ -144,9 +176,26 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
         return (
           <div className="space-y-6 animate-slide-left">
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">¿Cuál es tu número?</h2>
-              <p className="text-gray-500 text-sm">Te enviaremos un código de confirmación.</p>
+              <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">Crear Cuenta</h2>
+              <p className="text-gray-500 text-sm">Ingresa tu número móvil para comenzar.</p>
             </div>
+
+            {/* Google Register Button */}
+            <button 
+              onClick={handleGoogleRegister}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-700 text-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 p-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="G" />
+              Registrarse con Google
+            </button>
+
+            <div className="flex items-center gap-2 my-4">
+               <div className="h-px bg-gray-200 flex-1"></div>
+               <span className="text-xs text-gray-400">O usa tu móvil</span>
+               <div className="h-px bg-gray-200 flex-1"></div>
+            </div>
+
             <Input 
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -155,9 +204,15 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
               className="text-lg tracking-wide font-mono"
               autoFocus
             />
-            <Button onClick={handlePhoneSubmit} fullWidth disabled={isLoading}>
-              {isLoading ? 'Verificando...' : 'Continuar'}
-            </Button>
+
+            <div className="grid grid-cols-2 gap-3">
+               <Button onClick={() => handleSendCode('SMS')} disabled={isLoading} variant="primary" className="text-xs">
+                  <Mail size={16} className="mr-2"/> Enviar SMS
+               </Button>
+               <Button onClick={() => handleSendCode('WHATSAPP')} disabled={isLoading} className="bg-[#25D366] hover:bg-[#1da851] text-xs">
+                  <MessageCircle size={16} className="mr-2"/> WhatsApp
+               </Button>
+            </div>
           </div>
         );
 
@@ -166,7 +221,8 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
           <div className="space-y-6 animate-slide-left">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">Código de Verificación</h2>
-              <p className="text-gray-500 text-sm">Enviado al {phone} <button className="text-mipana-mediumBlue font-bold" onClick={() => setCurrentStep(0)}>Editar</button></p>
+              <p className="text-gray-500 text-sm">Enviado al {phone}</p>
+              <button className="text-xs text-mipana-mediumBlue font-bold underline" onClick={() => setCurrentStep(0)}>Cambiar número</button>
             </div>
             <div className="flex justify-center">
               <input 
@@ -176,9 +232,12 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
                 onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
                 className="w-48 text-center text-3xl font-bold tracking-[0.5em] border-b-4 border-mipana-mediumBlue bg-transparent focus:outline-none dark:text-white py-2"
                 autoFocus
+                placeholder="000000"
               />
             </div>
-            <p className="text-xs text-center text-gray-400">Esperando SMS... (Demo: usa 123456)</p>
+            <p className="text-xs text-center text-gray-400 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+               ⚠️ Simulación activa: Revisa la alerta del navegador o usa <b>000000</b>
+            </p>
             <Button onClick={handleOtpSubmit} fullWidth disabled={isLoading}>
               {isLoading ? 'Validando...' : 'Verificar Código'}
             </Button>

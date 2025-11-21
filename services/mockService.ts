@@ -1,6 +1,4 @@
-
-
-import { Ride, Tariff, User, UserRole, VehicleType, MatchedDriver, ServiceConfig, ServiceId, LiquidationResult, SavedPlace, RecurringRide, GoogleProfile, ChatMessage, RegistrationData } from '../types';
+import { Ride, Tariff, User, UserRole, VehicleType, MatchedDriver, ServiceConfig, ServiceId, LiquidationResult, SavedPlace, RecurringRide, GoogleProfile, ChatMessage } from '../types';
 
 // --- CONFIGURACIÓN TASA BCV ---
 // Endpoint oficial según documentación: https://dolarapi.com/docs/venezuela/operations/get-dolar-oficial
@@ -343,57 +341,4 @@ export const sendChatMessage = (rideId: string, sender: User, text: string): Cha
     timestamp: new Date(),
     read: false
   };
-};
-
-// --- AUTH & REGISTRATION UTILITIES ---
-
-export const authApi = {
-  // Step 1: Check if phone exists
-  checkPhone: (phone: string): Promise<{ exists: boolean, name?: string }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock check: numbers ending in 0000 exist
-        const exists = phone.endsWith('0000'); 
-        resolve({ exists, name: exists ? 'María' : undefined });
-      }, 800);
-    });
-  },
-
-  // Step 2: Send OTP
-  requestOtp: (phone: string): Promise<{ success: boolean, message: string }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log(`🔐 OTP sent to ${phone}: 123456`);
-        resolve({ success: true, message: 'Código enviado correctamente' });
-      }, 1000);
-    });
-  },
-
-  // Step 2: Verify OTP
-  verifyOtp: (phone: string, code: string): Promise<{ valid: boolean }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock code 123456 is always valid
-        resolve({ valid: code === '123456' });
-      }, 1000);
-    });
-  },
-
-  // Step 4: Complete Registration
-  registerUser: (data: RegistrationData): Promise<{ user: User }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newUser: User = {
-          id: `user-${Date.now()}`,
-          name: `${data.firstName} ${data.lastName}`,
-          email: `${data.firstName.toLowerCase()}@mipana.app`,
-          phone: data.phone,
-          role: UserRole.PASSENGER,
-          avatarUrl: `https://ui-avatars.com/api/?name=${data.firstName}+${data.lastName}&background=048ABF&color=fff`,
-          documentId: `${data.idType}-${data.idNumber}`
-        };
-        resolve({ user: newUser });
-      }, 2000);
-    });
-  }
 };
