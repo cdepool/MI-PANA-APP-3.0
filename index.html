@@ -60,19 +60,21 @@
         background: #444;
       }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "recharts": "https://aistudiocdn.com/recharts@^2.15.0"
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.4.1"
   }
 }
 </script>
 </head>
   <body class="bg-mipana-lightGray text-mipana-black dark:bg-mipana-darkBlue dark:text-white transition-colors duration-200">
     <div id="root"></div>
+    <!-- PUNTO DE ENTRADA CRÍTICO PARA VITE/VERCEL -->
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
