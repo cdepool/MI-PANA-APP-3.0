@@ -1,4 +1,5 @@
 
+
 export enum UserRole {
   ADMIN = 'ADMIN',
   PASSENGER = 'PASSENGER',
@@ -209,7 +210,7 @@ export interface ThemeContextType {
 export interface AuthContextType {
   user: User | null;
   login: (role: UserRole, userData?: Partial<User>) => void;
-  loginPassenger: (phone: string, pin: string) => Promise<void>;
+  loginPassenger: (identifier: string, pin: string) => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   walletTransaction: (amount: number, type: TransactionType, description: string, reference?: string) => Promise<void>;
   toggleFavoriteDriver: (driverId: string) => Promise<void>;
@@ -223,6 +224,7 @@ export interface AuthContextType {
 
 // Registration specific types
 export interface RegistrationData {
+  email: string; // Changed from phone to email as primary
   phone: string;
   firstName: string;
   lastName: string;

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
@@ -15,20 +16,20 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
   const [view, setView] = useState<'ROLE_SELECT' | 'PASSENGER_LOGIN'>('ROLE_SELECT');
   
   // Passenger Login State
-  const [phone, setPhone] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [pin, setPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handlePassengerLogin = async () => {
-    if (!phone || !pin) {
-      setError('Ingresa tu teléfono y PIN.');
+    if (!identifier || !pin) {
+      setError('Ingresa tus datos y PIN.');
       return;
     }
     setError(null);
     setIsLoading(true);
     try {
-      await loginPassenger(phone, pin);
+      await loginPassenger(identifier, pin);
       // Navigation handled by App.tsx on user state change
     } catch (err: any) {
       setError(err.message || 'Credenciales inválidas.');
@@ -89,11 +90,11 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
       </div>
 
       <Input 
-        label="Teléfono Móvil"
-        placeholder="04121234567"
-        icon={<Smartphone size={18}/>}
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
+        label="Móvil o Correo Electrónico"
+        placeholder="0412... o usuario@gmail.com"
+        icon={<User size={18}/>}
+        value={identifier}
+        onChange={(e) => setIdentifier(e.target.value)}
       />
 
       <Input 

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { ArrowLeft, Smartphone, Lock, User, CreditCard, AlertCircle, MessageCircle, Mail } from 'lucide-react';
@@ -10,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 
 // --- SCHEMAS (Zod Validation) ---
-// Updated to accept local 11-digit format (e.g. 0412...)
+const emailSchema = z.string().email("Correo electrónico inválido");
 const phoneSchema = z.string().regex(/^0(4|2)\d{9}$/, "Número válido requerido (Ej: 04121234567)");
 const otpSchema = z.string().length(6, "El código debe tener 6 dígitos");
 const pinSchema = z.string().length(6, "El PIN debe tener 6 dígitos").regex(/^\d+$/, "Solo números");
@@ -19,9 +20,10 @@ const profileSchema = z.object({
   lastName: z.string().min(2, "Mínimo 2 letras"),
   idNumber: z.string().min(6, "Cédula inválida").regex(/^\d+$/, "Solo números"),
   age: z.number().min(18, "Debes ser mayor de edad"),
+  phone: phoneSchema
 });
 
-const STEPS = ['Móvil', 'Código', 'Perfil', 'Seguridad'];
+const STEPS = ['Correo', 'Código', 'Perfil', 'Seguridad'];
 
 interface RegisterProps {
   onNavigateHome: () => void;
@@ -35,7 +37,8 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
   const [error, setError] = useState<string | null>(null);
 
   // Form State
-  const [phone, setPhone] = useState(''); // Removed +58 default
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState(''); // Phone is now part of profile, not verification
   const [otp, setOtp] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -55,9 +58,11 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
       const names = gUser.name.split(' ');
       setFirstName(names[0]);
       setLastName(names.slice(1).join(' '));
-      // Continue regular flow but skipping manual input if we had a real OAuth
+      setEmail(gUser.email);
+      
+      // Skip email verification since it comes from Google
+      setCurrentStep(2);
       setError(null);
-      alert("Datos recuperados de Google. Por favor verifica tu número móvil para continuar.");
     } catch (e) {
       setError("Error conectando con Google");
     } finally {
@@ -65,17 +70,17 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
     }
   };
 
-  const checkPhoneAvailability = async () => {
-    const result = phoneSchema.safeParse(phone.replace(/\s/g, ''));
+  const checkEmailAvailability = async () => {
+    const result = emailSchema.safeParse(email);
     if (!result.success) {
       setError(result.error.errors[0].message);
       return false;
     }
     try {
       setIsLoading(true);
-      const { exists } = await authService.checkPhone(phone);
+      const { exists } = await authService.checkEmail(email);
       if (exists) {
-        setError("Este número ya está registrado. Por favor inicia sesión.");
+        setError("Este correo ya está registrado. Por favor inicia sesión.");
         return false;
       }
       return true;
@@ -87,14 +92,14 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
     }
   };
 
-  const handleSendCode = async (channel: 'SMS' | 'WHATSAPP') => {
+  const handleSendCode = async () => {
     setError(null);
-    const isAvailable = await checkPhoneAvailability();
+    const isAvailable = await checkEmailAvailability();
     if (!isAvailable) return;
 
     setIsLoading(true);
     try {
-      await authService.sendOtp(phone, channel);
+      await authService.sendOtp(email);
       setCurrentStep(1);
     } catch (err) {
       setError("Error enviando código.");
@@ -112,7 +117,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
     setIsLoading(true);
     try {
-      const { valid, message } = await authService.verifyOtp(phone, otp);
+      const { valid, message } = await authService.verifyOtp(email, otp);
       if (valid) {
         setCurrentStep(2);
       } else {
@@ -127,7 +132,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
   const handleProfileSubmit = () => {
     setError(null);
-    const result = profileSchema.safeParse({ firstName, lastName, idNumber, age: Number(age) });
+    const result = profileSchema.safeParse({ firstName, lastName, idNumber, age: Number(age), phone });
     if (!result.success) {
       setError(result.error.errors[0].message);
       return;
@@ -149,6 +154,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
     setIsLoading(true);
     try {
       const user = await authService.registerUser({
+        email,
         phone,
         firstName,
         lastName,
@@ -159,7 +165,6 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
       });
       
       // Auto-login and redirect
-      // We use the base login method here to update context
       login(UserRole.PASSENGER, user);
       onNavigateHome();
 
@@ -174,12 +179,12 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 0: // PHONE
+      case 0: // EMAIL
         return (
           <div className="space-y-6 animate-slide-left">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">Crear Cuenta</h2>
-              <p className="text-gray-500 text-sm">Ingresa tu número móvil para comenzar.</p>
+              <p className="text-gray-500 text-sm">Usa tu correo electrónico para empezar.</p>
             </div>
 
             {/* Google Register Button */}
@@ -189,32 +194,28 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
               className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-700 text-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 p-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="G" />
-              Registrarse con Google
+              Continuar con Google
             </button>
 
             <div className="flex items-center gap-2 my-4">
                <div className="h-px bg-gray-200 flex-1"></div>
-               <span className="text-xs text-gray-400">O usa tu móvil</span>
+               <span className="text-xs text-gray-400">O usa tu correo</span>
                <div className="h-px bg-gray-200 flex-1"></div>
             </div>
 
             <Input 
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="04121234567"
-              icon={<Smartphone size={20}/>}
-              className="text-lg tracking-wide font-mono"
+              value={email}
+              type="email"
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu.nombre@gmail.com"
+              icon={<Mail size={20}/>}
+              className="text-lg"
               autoFocus
             />
 
-            <div className="grid grid-cols-2 gap-3">
-               <Button onClick={() => handleSendCode('SMS')} disabled={isLoading} variant="primary" className="text-xs">
-                  <Mail size={16} className="mr-2"/> Enviar SMS
-               </Button>
-               <Button onClick={() => handleSendCode('WHATSAPP')} disabled={isLoading} className="bg-[#25D366] hover:bg-[#1da851] text-xs">
-                  <MessageCircle size={16} className="mr-2"/> WhatsApp
-               </Button>
-            </div>
+            <Button onClick={handleSendCode} disabled={isLoading} fullWidth>
+               {isLoading ? 'Enviando...' : 'Enviar Código al Correo'}
+            </Button>
           </div>
         );
 
@@ -223,8 +224,8 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
           <div className="space-y-6 animate-slide-left">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">Código de Verificación</h2>
-              <p className="text-gray-500 text-sm">Enviado al {phone}</p>
-              <button className="text-xs text-mipana-mediumBlue font-bold underline" onClick={() => setCurrentStep(0)}>Cambiar número</button>
+              <p className="text-gray-500 text-sm">Enviado a {email}</p>
+              <button className="text-xs text-mipana-mediumBlue font-bold underline" onClick={() => setCurrentStep(0)}>Cambiar correo</button>
             </div>
             <div className="flex justify-center">
               <input 
@@ -238,7 +239,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
               />
             </div>
             <p className="text-xs text-center text-gray-400 bg-gray-100 dark:bg-gray-700 p-2 rounded">
-               ⚠️ Simulación activa: Revisa la alerta del navegador o usa <b>000000</b>
+               ⚠️ Simulación Gmail: Revisa la alerta del navegador o usa <b>000000</b>
             </p>
             <Button onClick={handleOtpSubmit} fullWidth disabled={isLoading}>
               {isLoading ? 'Validando...' : 'Verificar Código'}
@@ -250,14 +251,22 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
         return (
           <div className="space-y-4 animate-slide-left">
             <div className="text-center mb-4">
-              <h2 className="text-xl font-bold text-mipana-darkBlue dark:text-white">Cuéntanos sobre ti</h2>
-              <p className="text-gray-500 text-sm">Datos para tu perfil de pasajero.</p>
+              <h2 className="text-xl font-bold text-mipana-darkBlue dark:text-white">Datos Personales</h2>
+              <p className="text-gray-500 text-sm">Completa tu perfil de pasajero.</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <Input label="Nombre" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Pedro" />
               <Input label="Apellido" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Pérez" />
             </div>
+
+            <Input 
+              label="Móvil de Contacto"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="04121234567"
+              icon={<Smartphone size={18}/>}
+            />
 
             <div className="flex gap-2">
               <select 
@@ -297,7 +306,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
           <div className="space-y-6 animate-slide-left">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">Crea tu PIN</h2>
-              <p className="text-gray-500 text-sm">Para autorizar pagos y cambios importantes.</p>
+              <p className="text-gray-500 text-sm">Para autorizar pagos y seguridad.</p>
             </div>
             
             <Input 

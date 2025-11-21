@@ -1,4 +1,5 @@
 
+
 import { User, UserRole, RegistrationData, TransactionType, Transaction } from '../types';
 import { getTariffs } from './mockService';
 
@@ -49,48 +50,47 @@ const saveDbOtps = (otps: Record<string, { code: string, expires: number }>) => 
 
 export const authService = {
   
-  // 1. Check if phone exists
-  checkPhone: async (phone: string): Promise<{ exists: boolean; user?: StoredUser }> => {
+  // 1. Check if email exists
+  checkEmail: async (email: string): Promise<{ exists: boolean; user?: StoredUser }> => {
     await delay(600);
     const users = getDbUsers();
-    const user = users.find(u => u.phone === phone);
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     return { exists: !!user, user };
   },
 
-  // 2. Send OTP (Simulating SMS or WhatsApp Gateway)
-  sendOtp: async (phone: string, channel: 'SMS' | 'WHATSAPP'): Promise<{ success: boolean, message: string }> => {
-    await delay(1200); // Network delay
+  // 2. Send OTP (Simulating Email)
+  sendOtp: async (email: string): Promise<{ success: boolean, message: string }> => {
+    await delay(1500); // Network delay
     
     // Generate 6-digit random code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     
     // Store with 5 min expiration
     const otps = getDbOtps();
-    otps[phone] = { 
+    otps[email.toLowerCase()] = { 
       code, 
       expires: Date.now() + 5 * 60 * 1000 
     };
     saveDbOtps(otps);
 
     // --- SIMULATION OUTPUT ---
-    const provider = channel === 'SMS' ? 'Movistar/Digitel Gateway' : 'Meta WhatsApp API';
-    console.log(`%c[${provider}] 📨 Enviando a ${phone}: ${code}`, 'color: #048ABF; font-weight: bold; font-size: 12px;');
+    console.log(`%c[GMAIL API] 📨 Enviando a ${email}: ${code}`, 'color: #EA4335; font-weight: bold; font-size: 12px;');
     
     // Browser Alert to show the code to the user
-    alert(`[SIMULACIÓN ${channel}]\n\nTu código de verificación Mi Pana es: ${code}\n\n(Expira en 5 minutos)`);
+    alert(`[SIMULACIÓN GMAIL]\n\nCódigo de verificación enviado a ${email}:\n\n${code}\n\n(Revisa tu bandeja de entrada)`);
 
-    return { success: true, message: `Código enviado por ${channel}` };
+    return { success: true, message: `Código enviado a ${email}` };
   },
 
   // 3. Verify OTP
-  verifyOtp: async (phone: string, code: string): Promise<{ valid: boolean; message?: string }> => {
+  verifyOtp: async (email: string, code: string): Promise<{ valid: boolean; message?: string }> => {
     await delay(800);
     
     // Backdoor for testing ease
     if (code === '000000') return { valid: true };
 
     const otps = getDbOtps();
-    const record = otps[phone];
+    const record = otps[email.toLowerCase()];
 
     if (!record) {
       return { valid: false, message: 'No se ha solicitado un código.' };
@@ -105,7 +105,7 @@ export const authService = {
     }
 
     // Consume OTP
-    delete otps[phone];
+    delete otps[email.toLowerCase()];
     saveDbOtps(otps);
 
     return { valid: true };
@@ -117,14 +117,14 @@ export const authService = {
     const users = getDbUsers();
     
     // Double check existence
-    if (users.find(u => u.phone === data.phone)) {
-      throw new Error('El usuario ya existe.');
+    if (users.find(u => u.email.toLowerCase() === data.email.toLowerCase())) {
+      throw new Error('El correo electrónico ya está registrado.');
     }
 
     const newUser: StoredUser = {
       id: `u-${Date.now()}`,
       name: `${data.firstName} ${data.lastName}`,
-      email: `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@mipana.app`, // Auto-generated email if not provided
+      email: data.email,
       phone: data.phone,
       role: UserRole.PASSENGER,
       avatarUrl: `https://ui-avatars.com/api/?name=${data.firstName}+${data.lastName}&background=048ABF&color=fff&bold=true`,
@@ -146,13 +146,18 @@ export const authService = {
     return newUser;
   },
 
-  // 5. Login (Passenger)
-  loginPassenger: async (phone: string, pin: string): Promise<User> => {
+  // 5. Login (Passenger) - Supports Phone OR Email
+  loginPassenger: async (identifier: string, pin: string): Promise<User> => {
     await delay(1000);
     const users = getDbUsers();
-    const user = users.find(u => u.phone === phone);
+    
+    // Find by Phone OR Email
+    const user = users.find(u => 
+      (u.phone === identifier) || 
+      (u.email.toLowerCase() === identifier.toLowerCase())
+    );
 
-    if (!user) throw new Error('Número no registrado.');
+    if (!user) throw new Error('Usuario no registrado.');
     if (user.pin !== pin) throw new Error('PIN de seguridad incorrecto.');
 
     // Create Session
