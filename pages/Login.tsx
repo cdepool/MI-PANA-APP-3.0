@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
@@ -89,7 +90,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 
       <Input 
         label="Teléfono Móvil"
-        placeholder="+58 412 0000000"
+        placeholder="0412 0000000"
         icon={<Smartphone size={18}/>}
         value={phone}
         onChange={(e) => setPhone(e.target.value)}

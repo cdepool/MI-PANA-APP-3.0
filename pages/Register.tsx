@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { ArrowLeft, Smartphone, Lock, User, CreditCard, AlertCircle, MessageCircle, Mail } from 'lucide-react';
@@ -9,7 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 
 // --- SCHEMAS (Zod Validation) ---
-const phoneSchema = z.string().regex(/^(\+58)?\d{10}$/, "Debe ser un número válido (+58...)");
+// Updated to accept local 11-digit format (e.g. 0412...)
+const phoneSchema = z.string().regex(/^(04|02)\d{9}$/, "Debe ser un número válido (Ej: 0412...)");
 const otpSchema = z.string().length(6, "El código debe tener 6 dígitos");
 const pinSchema = z.string().length(6, "El PIN debe tener 6 dígitos").regex(/^\d+$/, "Solo números");
 const profileSchema = z.object({
@@ -33,7 +35,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
   const [error, setError] = useState<string | null>(null);
 
   // Form State
-  const [phone, setPhone] = useState('+58');
+  const [phone, setPhone] = useState(''); // Removed +58 default
   const [otp, setOtp] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -199,7 +201,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
             <Input 
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+58 412 0000000"
+              placeholder="0412 0000000"
               icon={<Smartphone size={20}/>}
               className="text-lg tracking-wide font-mono"
               autoFocus
