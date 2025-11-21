@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, useState } from 'react';
 import { AuthContextType, User, UserRole, SavedPlace } from '../types';
 import { mockLoginUser, simulateGoogleAuth } from '../services/mockService';
@@ -8,10 +9,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = (role: UserRole) => {
+  const login = (role: UserRole, userData?: Partial<User>) => {
     // Simulate API call
-    const newUser = mockLoginUser(role);
-    setUser(newUser);
+    const baseUser = mockLoginUser(role);
+    
+    // If we have custom data (from registration), merge it
+    const finalUser = userData ? { ...baseUser, ...userData } : baseUser;
+    
+    setUser(finalUser);
   };
 
   const logout = () => {

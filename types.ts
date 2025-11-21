@@ -9,7 +9,7 @@ export enum UserRole {
 export type VehicleType = 'MOTO' | 'CAR' | 'FREIGHT';
 export type ServiceId = 'mototaxi' | 'el_pana' | 'el_amigo' | 'full_pana';
 
-export type AppView = 'HOME' | 'PROFILE' | 'HISTORY' | 'SETTINGS' | 'SCHEDULE';
+export type AppView = 'HOME' | 'PROFILE' | 'HISTORY' | 'SETTINGS' | 'SCHEDULE' | 'REGISTER';
 
 export interface SavedPlace {
   id: string;
@@ -65,6 +65,7 @@ export interface User {
   savedPlaces?: SavedPlace[];
   googleProfile?: GoogleProfile;
   phone?: string; // Added phone for communication
+  documentId?: string; // Cédula
 }
 
 export interface ServiceConfig {
@@ -180,11 +181,22 @@ export interface ThemeContextType {
 
 export interface AuthContextType {
   user: User | null;
-  login: (role: UserRole) => void;
+  login: (role: UserRole, userData?: Partial<User>) => void;
   logout: () => void;
   isAuthenticated: boolean;
   addSavedPlace: (place: SavedPlace) => void;
   removeSavedPlace: (id: string) => void;
   connectGoogle: () => Promise<void>;
   disconnectGoogle: () => void;
+}
+
+// Registration specific types
+export interface RegistrationData {
+  phone: string;
+  firstName: string;
+  lastName: string;
+  idType: 'V' | 'E' | 'J';
+  idNumber: string;
+  age: number;
+  pin: string;
 }

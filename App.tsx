@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -11,13 +12,25 @@ import AdminHome from './pages/AdminHome';
 import UserProfile from './pages/UserProfile';
 import RideHistory from './pages/RideHistory';
 import ScheduleRides from './pages/ScheduleRides';
+import Register from './pages/Register';
 
 const AppContent: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const [currentView, setCurrentView] = useState<AppView>('HOME');
 
+  // Special Route: Registration (No auth required)
+  if (currentView === 'REGISTER') {
+    return (
+      <Register 
+        onNavigateHome={() => setCurrentView('HOME')} 
+        onNavigateLogin={() => setCurrentView('HOME')} // Takes back to default login state
+      />
+    );
+  }
+
+  // Default Login State (No auth)
   if (!isAuthenticated) {
-    return <Login />;
+    return <Login onNavigateRegister={() => setCurrentView('REGISTER')} />;
   }
 
   const renderContent = () => {

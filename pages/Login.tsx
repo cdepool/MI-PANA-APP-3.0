@@ -1,10 +1,15 @@
+
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { UserRole } from '../types';
+import { UserRole, AppView } from '../types';
 import Button from '../components/Button';
-import { Car, User, ShieldCheck } from 'lucide-react';
+import { Car, User, ShieldCheck, ArrowRight } from 'lucide-react';
 
-const Login: React.FC = () => {
+interface LoginProps {
+  onNavigateRegister: () => void;
+}
+
+const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
   const { login } = useAuth();
 
   return (
@@ -23,7 +28,7 @@ const Login: React.FC = () => {
           <p className="text-mipana-mediumBlue text-sm tracking-widest font-medium mb-8">SIEMPRE CONECTADO</p>
           
           <p className="text-gray-500 dark:text-gray-400 mb-6">
-            Selecciona tu perfil para ingresar (Demo Mode)
+            Selecciona tu perfil para ingresar
           </p>
 
           <div className="space-y-3">
@@ -56,7 +61,17 @@ const Login: React.FC = () => {
             </Button>
           </div>
           
-          <div className="mt-8 text-xs text-gray-400">
+          <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
+             <p className="text-sm text-gray-500 mb-3">¿No tienes cuenta?</p>
+             <button 
+               onClick={onNavigateRegister}
+               className="text-mipana-mediumBlue font-bold hover:underline flex items-center justify-center gap-1 w-full"
+             >
+                Crear Cuenta Nueva <ArrowRight size={16} />
+             </button>
+          </div>
+          
+          <div className="mt-6 text-xs text-gray-400">
             &copy; 2025 Mi Pana App. Acarigua - Araure.
           </div>
         </div>
