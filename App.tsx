@@ -47,7 +47,7 @@ const AppContent: React.FC = () => {
         return <DriverHome />;
       case UserRole.PASSENGER:
       default:
-        return <PassengerHome />;
+        return <PassengerHome onNavigateWallet={() => setCurrentView('WALLET')} />;
     }
   };
 

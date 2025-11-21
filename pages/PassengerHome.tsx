@@ -1,17 +1,19 @@
 
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import MapPlaceholder from '../components/MapPlaceholder';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import ChatInterface from '../components/ChatInterface';
-import { MapPin, Star, Plus, Home, Briefcase, Clock, Heart, ArrowLeft, Search, User, Users, Smartphone, MessageCircle, Phone, MessageSquare } from 'lucide-react';
-import { calculatePrice, mockMatchDriver, SERVICE_CATALOG, simulateReverseGeocoding, startRideSimulation, sendChatMessage, cleanPhoneNumber } from '../services/mockService';
+import { MapPin, Star, Plus, Home, Briefcase, Clock, Heart, ArrowLeft, Search, User, Users, Smartphone, MessageCircle, Phone, MessageSquare, QrCode, RefreshCw } from 'lucide-react';
+import { calculatePrice, mockMatchDriver, SERVICE_CATALOG, simulateReverseGeocoding, startRideSimulation, sendChatMessage, cleanPhoneNumber, getTariffs } from '../services/mockService';
 import { MatchedDriver, ServiceId, SavedPlace, LocationPoint, RideBeneficiary, ChatMessage, UserRole } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 type RideStep = 'SEARCH' | 'PICK_ON_MAP' | 'CONFIRM_SERVICE' | 'SEARCHING_DRIVER' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED';
+
+interface PassengerHomeProps {
+  onNavigateWallet?: () => void;
+}
 
 const ServiceOption = ({ id, nombre, icono, price, isSelected, onClick }: { id: string, nombre: string, icono: string, price: {usd: number, ves: number}, isSelected: boolean, onClick: () => void }) => {
   return (
@@ -53,7 +55,7 @@ const QuickFavorite = ({ place, onClick }: { place: SavedPlace, onClick: () => v
   );
 };
 
-const PassengerHome: React.FC = () => {
+const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   const { user, addSavedPlace } = useAuth();
   const [step, setStep] = useState<RideStep>('SEARCH');
   const [selectedServiceId, setSelectedServiceId] = useState<ServiceId>('el_pana');
@@ -61,7 +63,7 @@ const PassengerHome: React.FC = () => {
   const [driver, setDriver] = useState<MatchedDriver | null>(null);
   
   // Location State
-  const [origin, setOrigin] = useState<LocationPoint>({ address: 'Ubicación Actual (CC Buenaventura)' });
+  const [origin, setOrigin] = useState<LocationPoint>({ address: 'Ubicación Actual' });
   const [destination, setDestination] = useState<LocationPoint | null>(null);
   
   // Map Selection State
@@ -81,6 +83,11 @@ const PassengerHome: React.FC = () => {
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  // Wallet & Rate
+  const walletBalance = user?.wallet?.balance || 0;
+  const tariff = getTariffs();
+  const currentRate = tariff.currentBcvRate;
 
   // Derived state for favorites from Context
   const favorites = user?.savedPlaces || [];
@@ -224,14 +231,12 @@ const PassengerHome: React.FC = () => {
 
   const handleSendMessage = (text: string) => {
     if (!user) return;
-    // Add message to local state to simulate instant update
-    // In real app, this goes to backend and returns via socket
     const newMsg = sendChatMessage('current-ride-id', user, text);
     setChatMessages([...chatMessages, newMsg]);
   };
 
   return (
-    <div className="h-[calc(100vh-5rem)] flex flex-col relative">
+    <div className="h-[calc(100vh-5rem)] flex flex-col relative overflow-hidden">
       
       {/* Map Layer */}
       <div className="absolute inset-0 z-0">
@@ -243,65 +248,139 @@ const PassengerHome: React.FC = () => {
         />
       </div>
 
-      {/* TOP BAR */}
+      {/* SEARCH STEP UI: Redesigned with Wallet & Inputs */}
+      {step === 'SEARCH' && (
+        <>
+          <div className="absolute top-0 left-0 right-0 z-20 p-4 space-y-3 bg-gradient-to-b from-black/5 to-transparent pb-8">
+             
+             {/* HEADER: GREETING & RATE */}
+             <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md p-2 pr-4 rounded-full shadow-lg border border-white/50">
+                   <div className="w-10 h-10 rounded-full bg-mipana-mediumBlue/10 flex items-center justify-center border border-mipana-mediumBlue/20 overflow-hidden">
+                      {user?.avatarUrl ? <img src={user.avatarUrl} alt="User" className="w-full h-full object-cover" /> : <User className="text-mipana-mediumBlue" size={20} />}
+                   </div>
+                   <div>
+                      <p className="text-xs text-gray-500 font-bold flex items-center gap-1">
+                         Hola, {user?.name?.split(' ')[0]} <span className="text-lg">👋</span>
+                      </p>
+                      <div className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full">
+                         <span className="text-[10px] font-bold text-mipana-darkBlue">$1 ↔ Bs {currentRate.toFixed(2)}</span>
+                      </div>
+                   </div>
+                </div>
+             </div>
+
+             {/* SEARCH INPUTS CARD */}
+             <div className="bg-white rounded-2xl shadow-xl p-4 animate-slide-up border border-gray-100">
+                <div className="flex justify-between items-center mb-3">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">¿A dónde vamos?</p>
+                </div>
+                
+                {/* Origin Field */}
+                <div className="flex items-center gap-3 mb-3 relative group">
+                     {/* Connecting line */}
+                     <div className="absolute left-[9px] top-6 h-6 w-0.5 bg-gray-200 z-0"></div>
+                     
+                     <div className="relative z-10 w-5 h-5 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.15)]"></div>
+                     </div>
+                     <div 
+                       className="flex-1 border-b border-gray-100 pb-2 cursor-pointer hover:bg-gray-50 transition-colors rounded px-2 -ml-2" 
+                       onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); handleMapCenterChange(); }}
+                     >
+                        <p className="text-[10px] text-green-600 font-bold uppercase">Desde</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">{origin.address}</p>
+                     </div>
+                </div>
+
+                {/* Dest Field */}
+                <div className="flex items-center gap-3 relative group" onClick={() => { setPickingType('DESTINATION'); setStep('PICK_ON_MAP'); handleMapCenterChange(); }}>
+                     <div className="relative z-10 w-5 h-5 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-mipana-orange shadow-[0_0_0_3px_rgba(242,98,15,0.15)]"></div>
+                     </div>
+                     <div className="flex-1 bg-gray-50 rounded-xl px-3 py-3 flex items-center justify-between border border-gray-200 cursor-pointer hover:border-mipana-mediumBlue transition-colors shadow-inner">
+                        <span className="text-gray-400 text-sm font-medium">Ingresar destino...</span>
+                        <Search size={18} className="text-mipana-mediumBlue"/>
+                     </div>
+                </div>
+             </div>
+
+             {/* WALLET WIDGET CARD */}
+             <div className="bg-white rounded-2xl shadow-xl p-4 animate-slide-up border border-gray-100 relative overflow-hidden flex items-center justify-between" style={{ animationDelay: '0.1s' }}>
+                 {/* Decorative BG */}
+                 <div className="absolute -right-4 -top-4 w-20 h-20 bg-yellow-400/20 rounded-full blur-xl"></div>
+                 
+                 <div className="relative z-10">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 flex items-center gap-1">
+                       Saldo disponible 
+                       <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                    </p>
+                    <div className="flex items-baseline gap-2">
+                       <h3 className="text-2xl font-extrabold text-mipana-darkBlue">Bs. {(walletBalance * currentRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                       <div className="bg-blue-50 px-1.5 rounded text-[10px] font-bold text-blue-700 border border-blue-100">$ {walletBalance.toFixed(2)}</div>
+                    </div>
+                 </div>
+
+                 <Button 
+                    onClick={onNavigateWallet} 
+                    className="relative z-10 bg-[#ccff00] hover:bg-[#b3e600] text-black border-none shadow-lg font-bold px-6 py-3 rounded-xl active:scale-95 transition-all"
+                 >
+                    Recargar
+                 </Button>
+             </div>
+          </div>
+
+          {/* Floating QR Button */}
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20">
+             <button className="w-16 h-16 bg-[#ccff00] rounded-full flex items-center justify-center shadow-[0_8px_25px_rgba(0,0,0,0.2)] border-4 border-white animate-fade-in hover:scale-110 transition-transform">
+                <QrCode size={28} className="text-black" strokeWidth={2} />
+             </button>
+          </div>
+        </>
+      )}
+
+
+      {/* TOP BAR FOR PICKING/CONFIRMING (Overrides Search Step UI) */}
       {step === 'PICK_ON_MAP' ? (
          <div className="absolute top-4 left-4 right-4 z-20 animate-slide-up">
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg flex items-center gap-3 border border-gray-100 dark:border-gray-700">
-               <button onClick={() => { setStep('SEARCH'); setPickingType(null); }} className="p-2 hover:bg-gray-100 rounded-full">
-                 <ArrowLeft />
+               <button onClick={() => { setStep('SEARCH'); setPickingType(null); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                 <ArrowLeft size={20} />
                </button>
                <div className="flex-1">
-                 <p className="text-xs text-gray-400 font-bold uppercase">
+                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                    {pickingType === 'ORIGIN' ? 'Fijar Punto de Partida' : 'Fijar Destino'}
                  </p>
                  {isMapMoving ? (
-                    <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mt-1"></div>
+                    <div className="h-5 w-40 bg-gray-100 dark:bg-gray-700 rounded animate-pulse mt-1"></div>
                  ) : (
-                    <p className="font-semibold text-mipana-darkBlue dark:text-white truncate">{mapCenterAddress}</p>
+                    <p className="font-bold text-mipana-darkBlue dark:text-white truncate text-sm">{mapCenterAddress}</p>
                  )}
                </div>
             </div>
          </div>
       ) : (
-        (step === 'SEARCH' || step === 'CONFIRM_SERVICE') && (
-          <div className="absolute top-4 left-4 right-4 z-20 max-w-md mx-auto">
-              {/* Origin Input */}
-              <div className="bg-white dark:bg-gray-800 rounded-t-xl shadow-sm p-3 flex items-center gap-3 border-b border-gray-100 dark:border-gray-700">
-                 <div className="w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
-                 <div className="flex-1 cursor-pointer" onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); handleMapCenterChange(); }}>
-                   <p className="text-xs text-gray-400">Punto de partida</p>
-                   <p className="text-sm font-medium dark:text-gray-200 truncate">{origin.address}</p>
+        // CONFIRM SERVICE HEADER
+        step === 'CONFIRM_SERVICE' && (
+          <div className="absolute top-4 left-4 right-4 z-20">
+             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-0 overflow-hidden border border-gray-100 dark:border-gray-700 animate-slide-up">
+                 <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3" onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); handleMapCenterChange(); }}>
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="flex-1">
+                       <p className="text-[10px] text-gray-400 font-bold uppercase">Desde</p>
+                       <p className="text-sm font-medium truncate dark:text-white">{origin.address}</p>
+                    </div>
                  </div>
-              </div>
-              {/* Destination Input */}
-              <div className="bg-white dark:bg-gray-800 rounded-b-xl shadow-lg p-3 flex items-center gap-3">
-                 <div className="w-2 h-2 bg-mipana-orange rounded-full shadow-lg shadow-orange-500/50"></div>
-                 {step === 'CONFIRM_SERVICE' ? (
-                    <div className="flex-1 cursor-pointer" onClick={() => setStep('SEARCH')}>
-                       <p className="text-xs text-gray-400">Destino</p>
-                       <p className="text-sm font-medium dark:text-gray-200 truncate">{destination?.address}</p>
+                 <div className="p-3 flex items-center gap-3" onClick={() => { setStep('SEARCH'); }}>
+                    <div className="w-2 h-2 bg-mipana-orange rounded-full"></div>
+                    <div className="flex-1">
+                       <p className="text-[10px] text-gray-400 font-bold uppercase">Hasta</p>
+                       <p className="text-sm font-medium truncate dark:text-white">{destination?.address}</p>
                     </div>
-                 ) : (
-                    <div className="flex-1 relative">
-                       <Search size={16} className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"/>
-                       <input 
-                         type="text" 
-                         placeholder="¿A dónde vamos hoy?" 
-                         className="w-full pl-6 bg-transparent focus:outline-none text-sm dark:text-white"
-                         onFocus={() => setPickingType(null)} // Just focusing text
-                       />
-                    </div>
-                 )}
-                 {/* Map Pick Button */}
-                 {step === 'SEARCH' && (
-                   <button 
-                      onClick={() => { setPickingType('DESTINATION'); setStep('PICK_ON_MAP'); handleMapCenterChange(); }}
-                      className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full text-mipana-mediumBlue hover:bg-gray-200"
-                   >
-                      <MapPin size={18} />
-                   </button>
-                 )}
-              </div>
+                 </div>
+             </div>
           </div>
         )
       )}
@@ -334,50 +413,9 @@ const PassengerHome: React.FC = () => {
            </div>
         )}
 
-        {/* SEARCH VIEW: FAVORITES & RECENT */}
-        {step === 'SEARCH' && (
-           <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-2xl p-6 animate-slide-up">
-              <div className="flex items-center justify-between mb-4">
-                 <h3 className="font-bold text-mipana-darkBlue dark:text-white">Favoritos</h3>
-                 <button 
-                   onClick={() => { setPickingType('DESTINATION'); setStep('PICK_ON_MAP'); handleMapCenterChange(); }}
-                   className="text-mipana-mediumBlue text-xs font-bold flex items-center gap-1"
-                 >
-                   <Plus size={14}/> Agregar
-                 </button>
-              </div>
-              
-              <div className="flex space-x-3 overflow-x-auto pb-4 no-scrollbar mb-4">
-                 {favorites.map((place) => (
-                    <QuickFavorite key={place.id} place={place} onClick={() => handleFavoriteClick(place)} />
-                 ))}
-                 <button 
-                    onClick={() => { setPickingType('DESTINATION'); setStep('PICK_ON_MAP'); handleMapCenterChange(); }}
-                    className="flex items-center space-x-2 bg-gray-50 dark:bg-gray-700/50 px-4 py-2 rounded-full border border-dashed border-gray-300 min-w-fit text-gray-400"
-                 >
-                    <Plus size={14} />
-                    <span className="text-sm">Nuevo</span>
-                 </button>
-              </div>
-
-              <div className="space-y-3">
-                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Recientes</p>
-                 <div className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors" onClick={() => { setDestination({address: 'Centro Acarigua'}); setStep('CONFIRM_SERVICE');}}>
-                    <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full">
-                       <Clock size={16} className="text-gray-500"/>
-                    </div>
-                    <div className="flex-1 border-b border-gray-100 dark:border-gray-700 pb-2">
-                       <p className="font-medium dark:text-gray-200">Centro Acarigua</p>
-                       <p className="text-xs text-gray-400">Av. Libertador</p>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        )}
-
         {/* CONFIRMATION SHEET */}
         {step === 'CONFIRM_SERVICE' && price && (
-          <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-2xl p-6 animate-slide-up max-h-[80vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-[0_-5px_20px_rgba(0,0,0,0.1)] p-6 animate-slide-up max-h-[80vh] overflow-y-auto border-t border-gray-100">
               <div className="flex justify-between items-center mb-4">
                  <h3 className="font-bold text-lg dark:text-white">Confirmar Viaje</h3>
                  {destination && !favorites.some(f => f.address === destination.address) && (
