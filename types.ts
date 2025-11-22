@@ -81,9 +81,11 @@ export interface VehicleInfo {
 
 export enum AdminRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
-  SUPPORT = 'SUPPORT',
-  FINANCE = 'FINANCE',
-  OPERATIONS = 'OPERATIONS'
+  SUPPORT = 'SUPPORT', // General support
+  CONFLICT_RESOLUTION = 'CONFLICT_RESOLUTION', // Disputes, mediation
+  SECURITY = 'SECURITY', // Interdiction, bans, fraud
+  FINANCE = 'FINANCE', // Payments, refunds
+  OPERATIONS = 'OPERATIONS' // Fleet, logistics
 }
 
 export interface User {

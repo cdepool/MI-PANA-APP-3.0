@@ -85,8 +85,8 @@ export const AdminUserCreationModal: React.FC<AdminUserCreationModalProps> = ({ 
                                 type="button"
                                 onClick={() => setRole(UserRole.PASSENGER)}
                                 className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${role === UserRole.PASSENGER
-                                        ? 'border-mipana-mediumBlue bg-blue-50 dark:bg-blue-900/20 text-mipana-mediumBlue'
-                                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-500'
+                                    ? 'border-mipana-mediumBlue bg-blue-50 dark:bg-blue-900/20 text-mipana-mediumBlue'
+                                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-500'
                                     }`}
                             >
                                 <User size={24} />
@@ -97,8 +97,8 @@ export const AdminUserCreationModal: React.FC<AdminUserCreationModalProps> = ({ 
                                 type="button"
                                 onClick={() => setRole(UserRole.DRIVER)}
                                 className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${role === UserRole.DRIVER
-                                        ? 'border-mipana-yellow bg-yellow-50 dark:bg-yellow-900/20 text-mipana-yellow'
-                                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-500'
+                                    ? 'border-mipana-yellow bg-yellow-50 dark:bg-yellow-900/20 text-mipana-yellow'
+                                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-500'
                                     }`}
                             >
                                 <Car size={24} />
@@ -109,8 +109,8 @@ export const AdminUserCreationModal: React.FC<AdminUserCreationModalProps> = ({ 
                                 type="button"
                                 onClick={() => setRole(UserRole.ADMIN)}
                                 className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${role === UserRole.ADMIN
-                                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-500'
-                                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-500'
+                                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-500'
+                                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-500'
                                     }`}
                             >
                                 <Shield size={24} />
@@ -130,8 +130,10 @@ export const AdminUserCreationModal: React.FC<AdminUserCreationModalProps> = ({ 
                                     className="w-full p-2 rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
                                 >
                                     <option value={AdminRole.SUPER_ADMIN}>Super Admin (Acceso Total)</option>
-                                    <option value={AdminRole.SUPPORT}>Soporte (Ver y Editar)</option>
-                                    <option value={AdminRole.FINANCE}>Finanzas (Pagos y Reportes)</option>
+                                    <option value={AdminRole.SUPPORT}>Soporte General (Atención al Usuario)</option>
+                                    <option value={AdminRole.CONFLICT_RESOLUTION}>Resolución de Conflictos (Disputas)</option>
+                                    <option value={AdminRole.SECURITY}>Seguridad (Interdicción y Bloqueos)</option>
+                                    <option value={AdminRole.FINANCE}>Finanzas (Pagos y Reembolsos)</option>
                                     <option value={AdminRole.OPERATIONS}>Operaciones (Flota y Viajes)</option>
                                 </select>
                             </div>
