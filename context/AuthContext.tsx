@@ -27,12 +27,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Legacy/Mock login for Driver/Admin
     const baseUser = mockLoginUser(role);
     const finalUser = userData ? { ...baseUser, ...userData } : baseUser;
-    
+
     setUser(finalUser);
-    // Only persist if it's a passenger (since we only implemented real auth for them)
-    if (role === UserRole.PASSENGER) {
-      authService.setSession(finalUser);
-    }
+    // Persist session for ALL roles (Driver, Admin, Passenger)
+    authService.setSession(finalUser);
   };
 
   const loginPassenger = async (phone: string, pin: string) => {
@@ -69,10 +67,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const toggleFavoriteDriver = async (driverId: string) => {
     if (!user) return;
     try {
-        const updatedUser = await authService.toggleFavoriteDriver(user.id, driverId);
-        setUser(updatedUser);
+      const updatedUser = await authService.toggleFavoriteDriver(user.id, driverId);
+      setUser(updatedUser);
     } catch (error) {
-        console.error("Failed to toggle favorite driver", error);
+      console.error("Failed to toggle favorite driver", error);
     }
   };
 
@@ -130,14 +128,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
+    <AuthContext.Provider value={{
+      user,
+      login,
       loginPassenger,
       updateProfile,
       walletTransaction,
       toggleFavoriteDriver,
-      logout, 
+      logout,
       isAuthenticated: !!user,
       addSavedPlace,
       removeSavedPlace,
