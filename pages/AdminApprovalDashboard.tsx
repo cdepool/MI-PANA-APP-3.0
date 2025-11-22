@@ -131,7 +131,7 @@ const AdminApprovalDashboard: React.FC = () => {
                     </div>
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mt-4">
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Resumen Financiero Demo</h2>
-                        <p className="text-gray-700 dark:text-gray-300">Valor total: <span className="font-semibold">$25,000</span></p>
+                        <p className="text-gray-700 dark:text-gray-300">Facturación Bruta: <span className="font-semibold">$25,000</span></p>
                         <p className="text-gray-700 dark:text-gray-300">Comisiones (10%): <span className="font-semibold">$2,500</span></p>
                         <p className="text-gray-700 dark:text-gray-300">Impuestos (15%): <span className="font-semibold">$3,750</span></p>
                     </div>
