@@ -4,7 +4,7 @@ import GoogleMapComponent from '../components/GoogleMapComponent';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import ChatInterface from '../components/ChatInterface';
-import { MapPin, Star, Plus, Home, Briefcase, Clock, Heart, ArrowLeft, Search, User, Users, Smartphone, MessageCircle, Phone, MessageSquare, QrCode, RefreshCw } from 'lucide-react';
+import { MapPin, Star, Plus, Home, Briefcase, Clock, Heart, ArrowLeft, Search, User, Users, Smartphone, MessageCircle, Phone, MessageSquare, RefreshCw } from 'lucide-react';
 import { calculatePrice, mockMatchDriver, SERVICE_CATALOG, simulateReverseGeocoding, startRideSimulation, sendChatMessage, cleanPhoneNumber, getTariffs, getDriverById } from '../services/mockService';
 import { MatchedDriver, ServiceId, SavedPlace, LocationPoint, RideBeneficiary, ChatMessage, UserRole } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -365,13 +365,6 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                 Recargar
               </Button>
             </div>
-          </div>
-
-          {/* Floating QR Button */}
-          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20">
-            <button className="w-16 h-16 bg-[#ccff00] rounded-full flex items-center justify-center shadow-[0_8px_25px_rgba(0,0,0,0.2)] border-4 border-white animate-fade-in hover:scale-110 transition-transform">
-              <QrCode size={28} className="text-black" strokeWidth={2} />
-            </button>
           </div>
         </>
       )}
