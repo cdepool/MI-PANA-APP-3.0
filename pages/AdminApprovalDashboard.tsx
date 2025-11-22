@@ -131,11 +131,14 @@ const AdminApprovalDashboard: React.FC = () => {
                         <span className="text-sm text-blue-700 ml-2">pendientes</span>
                     </div>
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mt-4">
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Resumen Financiero Demo</h2>
-                        <p className="text-gray-700 dark:text-gray-300">Facturación Bruta: <span className="font-semibold">$25,000</span></p>
-                        <p className="text-gray-700 dark:text-gray-300">Facturación Bruta (VES): <span className="font-semibold">{(25000 * (currentBcvRate || 0)).toLocaleString()}</span></p>
-                        <p className="text-gray-700 dark:text-gray-300">Comisiones (10%): <span className="font-semibold">$2,500</span></p>
-                        <p className="text-gray-700 dark:text-gray-300">Impuestos (15%): <span className="font-semibold">$3,750</span></p>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Resumen Financiero Simulado</h2>
+                        <p className="text-gray-700 dark:text-gray-300">Facturación Bruta: <span className="font-semibold">$50,000.00</span></p>
+                        <p className="text-gray-700 dark:text-gray-300">Facturación Bruta (VES): <span className="font-semibold">{(50000 * (currentBcvRate || 0)).toLocaleString()}</span></p>
+                        <p className="text-gray-700 dark:text-gray-300">Tasa BCV usada: <span className="font-semibold">{(currentBcvRate || 0).toFixed(2)}</span></p>
+                        <p className="text-gray-700 dark:text-gray-300">Comisión Conductores (95%): <span className="font-semibold">$47,500.00</span></p>
+                        <p className="text-gray-700 dark:text-gray-300">Comisión App (5%): <span className="font-semibold">$2,500.00</span></p>
+                        <p className="text-gray-700 dark:text-gray-300">ISLR (3% sobre conductor): <span className="font-semibold">$1,425.00</span></p>
+                        <p className="text-gray-700 dark:text-gray-300">IVA (16% sobre app): <span className="font-semibold">$344.83</span></p>
                     </div>
                 </div>
 

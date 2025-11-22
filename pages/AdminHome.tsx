@@ -168,14 +168,6 @@ const AdminHome: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Facturación Bruta"
-          value={`$${totalFacturado.toFixed(2)}`}
-          subValue={`≈ Bs ${(totalFacturado * currentViewRate).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`}
-          icon={<DollarSign />}
-          color="#022859"
-        />
-        {/* Demo Facturación Bruta */}
-        <StatCard
-          title="Facturación Bruta Demo"
           value="$25,000.00"
           subValue={`≈ Bs ${(25000 * currentViewRate).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`}
           icon={<DollarSign />}
