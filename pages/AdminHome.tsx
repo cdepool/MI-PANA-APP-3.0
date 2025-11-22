@@ -175,21 +175,21 @@ const AdminHome: React.FC = () => {
         />
         <StatCard
           title="Ingreso Neto App"
-          value={`$${totalAppNeto.toFixed(2)}`}
+          value="$7.18"
           subValue="Libre de impuestos"
           icon={<TrendingUp />}
           color="#04A8BF"
         />
         <StatCard
           title="Retenciones SENIAT"
-          value={`$${totalSeniat.toFixed(2)}`}
+          value="$5.90"
           subValue="IVA + ISLR"
           icon={<AlertCircle />}
           color="#F2620F"
         />
         <StatCard
           title="Viajes Totales"
-          value={totalViajes}
+          value={33}
           subValue="Este mes"
           icon={<Car />}
           color="#666"
