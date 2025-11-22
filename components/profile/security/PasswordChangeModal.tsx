@@ -4,6 +4,7 @@ import Button from '../../Button';
 import OtpInput from '../../OtpInput';
 import { pinSchema, pinChangeSchema, validateWithSchema } from '../../../utils/validationSchemas';
 import { authService } from '../../../services/authService';
+import { passengerService } from '../../../services/passengerService';
 import { toast } from 'sonner';
 
 interface PasswordChangeModalProps {
@@ -92,7 +93,6 @@ const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
             toast.success('PIN actualizado exitosamente. Por favor, inicia sesión nuevamente.');
 
             // Log access
-            const { passengerService } = await import('../../../services/passengerService');
             await passengerService.logAccess(userId, 'PASSWORD_CHANGE', true);
 
             // Close modal

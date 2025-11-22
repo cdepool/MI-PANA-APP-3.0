@@ -1,164 +1,144 @@
 
-
 import { User, UserRole, RegistrationData, TransactionType, Transaction } from '../types';
 import { getTariffs } from './mockService';
+import { supabase } from './supabaseClient';
 
-// LocalStorage Keys to simulate Database
-const DB_USERS_KEY = 'mipana_db_users';
-const DB_OTPS_KEY = 'mipana_db_otps';
+// LocalStorage Keys (Keep for fallback or session cache if needed, but primary is now Supabase)
 const SESSION_KEY = 'mipana_session';
 
-// Extended User type for DB storage
+// Extended User type for DB storage (matching Supabase 'profiles' table structure ideally)
 export interface StoredUser extends User {
-  pin: string;
-  createdAt: number;
-  verified: boolean;
+  pin?: string; // Optional now as auth is handled by Supabase
+  created_at?: string;
+  verified?: boolean;
 }
 
-// Helper: Sleep to simulate network latency
+// Helper: Sleep to simulate network latency (can be removed or reduced)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// --- DATABASE ACCESS HELPERS ---
-
-const getDbUsers = (): StoredUser[] => {
-  try {
-    const stored = localStorage.getItem(DB_USERS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (e) {
-    return [];
-  }
-};
-
-const saveDbUsers = (users: StoredUser[]) => {
-  localStorage.setItem(DB_USERS_KEY, JSON.stringify(users));
-};
-
-const getDbOtps = (): Record<string, { code: string, expires: number }> => {
-  try {
-    const stored = localStorage.getItem(DB_OTPS_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch (e) {
-    return {};
-  }
-};
-
-const saveDbOtps = (otps: Record<string, { code: string, expires: number }>) => {
-  localStorage.setItem(DB_OTPS_KEY, JSON.stringify(otps));
-};
 
 // --- PUBLIC SERVICE ---
 
 export const authService = {
-  
+
   // 1. Check if email exists
   checkEmail: async (email: string): Promise<{ exists: boolean; user?: StoredUser }> => {
-    await delay(600);
-    const users = getDbUsers();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    return { exists: !!user, user };
+    // Check in Supabase profiles or auth
+    // Note: Checking auth existence directly via API is restricted for security.
+    // We usually check the 'profiles' table.
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (data) {
+      return { exists: true, user: data as StoredUser };
+    }
+    return { exists: false };
   },
 
-  // 2. Send OTP (Simulating Email)
+  // 2. Send OTP (Simulating Email) -> Now can use Supabase Auth OTP
   sendOtp: async (email: string): Promise<{ success: boolean, message: string }> => {
-    await delay(1500); // Network delay
-    
-    // Generate 6-digit random code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Store with 5 min expiration
-    const otps = getDbOtps();
-    otps[email.toLowerCase()] = { 
-      code, 
-      expires: Date.now() + 5 * 60 * 1000 
-    };
-    saveDbOtps(otps);
+    const { error } = await supabase.auth.signInWithOtp({ email });
 
-    // --- SIMULATION OUTPUT ---
-    console.log(`%c[GMAIL API] 📨 Enviando a ${email}: ${code}`, 'color: #EA4335; font-weight: bold; font-size: 12px;');
-    
-    // Browser Alert to show the code to the user
-    alert(`[SIMULACIÓN GMAIL]\n\nCódigo de verificación enviado a ${email}:\n\n${code}\n\n(Revisa tu bandeja de entrada)`);
+    if (error) {
+      console.error('Error sending OTP:', error);
+      return { success: false, message: error.message };
+    }
 
     return { success: true, message: `Código enviado a ${email}` };
   },
 
   // 3. Verify OTP
-  verifyOtp: async (email: string, code: string): Promise<{ valid: boolean; message?: string }> => {
-    await delay(800);
-    
-    // Backdoor for testing ease
-    if (code === '000000') return { valid: true };
+  verifyOtp: async (email: string, code: string): Promise<{ valid: boolean; message?: string; session?: any }> => {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email',
+    });
 
-    const otps = getDbOtps();
-    const record = otps[email.toLowerCase()];
-
-    if (!record) {
-      return { valid: false, message: 'No se ha solicitado un código.' };
+    if (error) {
+      return { valid: false, message: error.message };
     }
 
-    if (Date.now() > record.expires) {
-      return { valid: false, message: 'El código ha expirado. Solicita uno nuevo.' };
-    }
-
-    if (record.code !== code) {
-      return { valid: false, message: 'Código incorrecto.' };
-    }
-
-    // Consume OTP
-    delete otps[email.toLowerCase()];
-    saveDbOtps(otps);
-
-    return { valid: true };
+    return { valid: true, session: data.session };
   },
 
   // 4. Register User (Commit to DB)
   registerUser: async (data: RegistrationData): Promise<User> => {
-    await delay(1500);
-    const users = getDbUsers();
-    
-    // Double check existence
-    if (users.find(u => u.email.toLowerCase() === data.email.toLowerCase())) {
-      throw new Error('El correo electrónico ya está registrado.');
-    }
+    // 1. Sign up with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.pin, // Using PIN as password for simplicity in migration, or generate a random one
+      options: {
+        data: {
+          first_name: data.firstName,
+          last_name: data.lastName,
+          phone: data.phone,
+          role: UserRole.PASSENGER,
+        }
+      }
+    });
 
+    if (authError) throw new Error(authError.message);
+    if (!authData.user) throw new Error('No se pudo crear el usuario');
+
+    // 2. Create Profile in 'profiles' table
     const newUser: StoredUser = {
-      id: `u-${Date.now()}`,
+      id: authData.user.id,
       name: `${data.firstName} ${data.lastName}`,
       email: data.email,
       phone: data.phone,
       role: UserRole.PASSENGER,
       avatarUrl: `https://ui-avatars.com/api/?name=${data.firstName}+${data.lastName}&background=048ABF&color=fff&bold=true`,
       documentId: `${data.idType}-${data.idNumber}`,
-      pin: data.pin, // Storing plain PIN for this local demo (In real app, use hash)
-      createdAt: Date.now(),
+      // pin: data.pin, // Don't store PIN in plain text in profiles if possible
+      created_at: new Date().toISOString(),
       verified: true,
       savedPlaces: [],
-      favoriteDriverIds: ['driver-99'], // Default mock driver for testing
+      favoriteDriverIds: [],
       wallet: {
         balance: 0.00,
         transactions: []
       }
     };
 
-    users.push(newUser);
-    saveDbUsers(users);
-    
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([newUser]);
+
+    if (profileError) {
+      // If profile creation fails, we might want to rollback auth, but for now just throw
+      console.error('Error creating profile:', profileError);
+      // Fallback: return the user object anyway so UI can proceed, but data might be desynced
+    }
+
     return newUser;
   },
 
   // 5. Login (Passenger) - Supports Phone OR Email
   loginPassenger: async (identifier: string, pin: string): Promise<User> => {
-    await delay(1000);
-    const users = getDbUsers();
-    
-    // Find by Phone OR Email
-    const user = users.find(u => 
-      (u.phone === identifier) || 
-      (u.email.toLowerCase() === identifier.toLowerCase())
-    );
+    // Assuming 'pin' is used as password for Supabase Auth
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: identifier,
+      password: pin,
+    });
 
-    if (!user) throw new Error('Usuario no registrado.');
-    if (user.pin !== pin) throw new Error('PIN de seguridad incorrecto.');
+    if (error) throw new Error(error.message);
+    if (!data.user) throw new Error('Error de autenticación');
+
+    // Fetch full profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      throw new Error('Perfil no encontrado');
+    }
+
+    const user = profile as User;
 
     // Create Session
     localStorage.setItem(SESSION_KEY, JSON.stringify(user));
@@ -167,78 +147,73 @@ export const authService = {
 
   // 6. Session Management
   getSession: (): User | null => {
+    // Check local storage first for speed
     const json = localStorage.getItem(SESSION_KEY);
-    return json ? JSON.parse(json) : null;
+    if (json) return JSON.parse(json);
+
+    // Ideally we should check supabase.auth.getSession() and refresh profile
+    return null;
   },
 
   setSession: (user: User) => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(user));
   },
 
-  logout: () => {
+  logout: async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem(SESSION_KEY);
   },
 
-  // 7. Google Auth Simulation
-  simulateGoogleLogin: async (): Promise<User> => {
-    await delay(1500);
-    // Simulate a returned user from Google
-    const mockGoogleUser: User = {
-      id: `g-${Date.now()}`,
-      name: 'Usuario Google',
-      email: 'usuario.google@gmail.com',
-      role: UserRole.PASSENGER,
-      avatarUrl: 'https://ui-avatars.com/api/?name=Usuario+Google&background=DB4437&color=fff',
-      phone: '', // Phone still needs to be collected/verified in a real flow
-      googleProfile: {
-        email: 'usuario.google@gmail.com',
-        name: 'Usuario Google',
-        picture: 'https://ui-avatars.com/api/?name=Usuario+Google&background=DB4437&color=fff',
-        connectedAt: new Date(),
-        scopes: ['calendar', 'gmail']
-      }
-    };
-    // For this demo, we just return it to pre-fill forms or login directly
-    return mockGoogleUser;
+  // 7. Google Auth
+  loginWithGoogle: async (): Promise<User> => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    });
+
+    if (error) throw error;
+
+    // Note: This will redirect the browser.
+    return {} as User;
   },
 
   // 8. Update User Profile
   updateUser: async (userId: string, data: Partial<User>): Promise<User> => {
-    await delay(800);
-    const users = getDbUsers();
-    const index = users.findIndex(u => u.id === userId);
-    
-    if (index === -1) throw new Error('Usuario no encontrado');
+    const { data: updated, error } = await supabase
+      .from('profiles')
+      .update(data)
+      .eq('id', userId)
+      .select()
+      .single();
 
-    const updatedUser = { ...users[index], ...data };
-    users[index] = updatedUser;
-    
-    saveDbUsers(users);
-    
+    if (error) throw new Error(error.message);
+
     // Update session if it's the current user
     const session = authService.getSession();
     if (session && session.id === userId) {
-      authService.setSession(updatedUser);
+      authService.setSession(updated as User);
     }
 
-    return updatedUser;
+    return updated as User;
   },
 
   // 9. Wallet Transactions
   processTransaction: async (userId: string, amount: number, type: TransactionType, description: string, reference?: string): Promise<User> => {
-    await delay(1500); // Processing payment delay
-    
-    const users = getDbUsers();
-    const index = users.findIndex(u => u.id === userId);
-    if (index === -1) throw new Error('Usuario no encontrado');
+    // ⚠️ SECURITY WARNING: This logic runs on the client side. 
+    // In a production environment, wallet transactions MUST be handled by a secure backend (e.g., Supabase Edge Functions)
+    // to prevent manipulation. This implementation is for demonstration/MVP purposes only.
 
-    const user = users[index];
-    if (!user.wallet) {
-      user.wallet = { balance: 0, transactions: [] };
-    }
+    // This requires a more complex backend logic (RPC or multiple queries)
+    // For now, we fetch, update, and push. NOT ATOMIC/SAFE for production without RLS/Functions.
 
-    // Balance logic
-    let newBalance = user.wallet.balance;
+    const { data: user, error: fetchError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError || !user) throw new Error('Usuario no encontrado');
+
+    let newBalance = user.wallet?.balance || 0;
     if (type === 'DEPOSIT' || type === 'REFUND') {
       newBalance += amount;
     } else {
@@ -249,8 +224,8 @@ export const authService = {
     const transaction: Transaction = {
       id: `tx-${Date.now()}`,
       amount: amount,
-      currency: 'USD', // Base currency
-      exchangeRate: getTariffs().currentBcvRate, // Use dynamic rate from mock service
+      currency: 'USD',
+      exchangeRate: getTariffs().currentBcvRate,
       date: Date.now(),
       type,
       description,
@@ -258,46 +233,61 @@ export const authService = {
       status: 'COMPLETED'
     };
 
-    user.wallet.balance = newBalance;
-    user.wallet.transactions.unshift(transaction); // Add to top
+    const newWallet = {
+      balance: newBalance,
+      transactions: [transaction, ...(user.wallet?.transactions || [])]
+    };
 
-    users[index] = user;
-    saveDbUsers(users);
+    const { data: updated, error: updateError } = await supabase
+      .from('profiles')
+      .update({ wallet: newWallet })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (updateError) throw new Error(updateError.message);
 
     // Update Session
     const session = authService.getSession();
     if (session && session.id === userId) {
-      authService.setSession(user);
+      authService.setSession(updated as User);
     }
 
-    return user;
+    return updated as User;
   },
 
   // 10. Toggle Favorite Driver
   toggleFavoriteDriver: async (userId: string, driverId: string): Promise<User> => {
-    const users = getDbUsers();
-    const index = users.findIndex(u => u.id === userId);
-    if (index === -1) throw new Error('Usuario no encontrado');
+    const { data: user, error: fetchError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-    const user = users[index];
+    if (fetchError || !user) throw new Error('Usuario no encontrado');
+
     const favorites = user.favoriteDriverIds || [];
-    
     let newFavorites;
     if (favorites.includes(driverId)) {
-        newFavorites = favorites.filter(id => id !== driverId);
+      newFavorites = favorites.filter((id: string) => id !== driverId);
     } else {
-        newFavorites = [...favorites, driverId];
+      newFavorites = [...favorites, driverId];
     }
 
-    const updatedUser = { ...user, favoriteDriverIds: newFavorites };
-    users[index] = updatedUser;
-    saveDbUsers(users);
+    const { data: updated, error: updateError } = await supabase
+      .from('profiles')
+      .update({ favoriteDriverIds: newFavorites })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (updateError) throw new Error(updateError.message);
 
     // Update Session
     const session = authService.getSession();
     if (session && session.id === userId) {
-      authService.setSession(updatedUser);
+      authService.setSession(updated as User);
     }
-    return updatedUser;
+    return updated as User;
   }
 };

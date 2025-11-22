@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthContextType, User, UserRole, SavedPlace, TransactionType } from '../types';
-import { mockLoginUser, simulateGoogleAuth } from '../services/mockService';
+import { mockLoginUser } from '../services/mockService';
 import { authService } from '../services/authService';
 
 interface ExtendedAuthContextType extends AuthContextType {
@@ -107,10 +107,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const connectGoogle = async () => {
     if (!user) return;
     try {
-      const googleProfile = await simulateGoogleAuth(user);
-      const updatedUser = { ...user, googleProfile };
-      setUser(updatedUser);
-      authService.setSession(updatedUser);
+      await authService.loginWithGoogle();
+      // The user will be redirected to Google login
     } catch (error) {
       console.error("Error connecting google", error);
     }
