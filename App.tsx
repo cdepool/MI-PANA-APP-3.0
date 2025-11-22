@@ -1,10 +1,11 @@
-
 import React, { useState, Suspense } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UserRole, AppView } from './types';
 import Layout from './components/Layout';
 import { Toaster } from './components/ui/sonner';
+import ErrorBoundary from './components/ErrorBoundary';
+import OnboardingTour from './components/OnboardingTour';
 
 // Lazy Load Pages for Performance (Code Splitting)
 const Login = React.lazy(() => import('./pages/Login'));
@@ -16,6 +17,8 @@ const RideHistory = React.lazy(() => import('./pages/RideHistory'));
 const ScheduleRides = React.lazy(() => import('./pages/ScheduleRides'));
 const Register = React.lazy(() => import('./pages/Register'));
 const Wallet = React.lazy(() => import('./pages/Wallet'));
+const ConductorProfile = React.lazy(() => import('./pages/ConductorProfile'));
+const AdminApprovalDashboard = React.lazy(() => import('./pages/AdminApprovalDashboard'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-mipana-lightGray dark:bg-gray-900">
@@ -49,11 +52,15 @@ const AppContent: React.FC = () => {
   }
 
   const renderContent = () => {
-    if (currentView === 'PROFILE') return <UserProfile />;
+    if (currentView === 'PROFILE') {
+      // Show ConductorProfile for drivers, UserProfile for others
+      return user?.role === UserRole.DRIVER ? <ConductorProfile /> : <UserProfile />;
+    }
     if (currentView === 'HISTORY') return <RideHistory />;
     if (currentView === 'SCHEDULE') return <ScheduleRides />;
     if (currentView === 'WALLET') return <Wallet />;
     if (currentView === 'SETTINGS') return <UserProfile />;
+    if (currentView === 'APPROVALS') return <AdminApprovalDashboard />; // New admin view
 
     switch (user?.role) {
       case UserRole.ADMIN:
@@ -67,11 +74,14 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <Layout onNavigate={setCurrentView}>
-      <Suspense fallback={<LoadingFallback />}>
-        {renderContent()}
-      </Suspense>
-    </Layout>
+    <ErrorBoundary>
+      <OnboardingTour />
+      <Layout onNavigate={setCurrentView}>
+        <Suspense fallback={<LoadingFallback />}>
+          {renderContent()}
+        </Suspense>
+      </Layout>
+    </ErrorBoundary>
   );
 };
 

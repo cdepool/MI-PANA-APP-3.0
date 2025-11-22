@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import MapPlaceholder from '../components/MapPlaceholder';
+import GoogleMapComponent from '../components/GoogleMapComponent';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import ChatInterface from '../components/ChatInterface';
@@ -20,8 +20,8 @@ const ServiceOption = ({ id, nombre, icono, price, isSelected, onClick }: { id: 
     <button
       onClick={onClick}
       className={`relative p-3 rounded-xl flex flex-col items-center justify-center transition-all duration-200 border-2 ${isSelected
-          ? 'border-mipana-mediumBlue bg-mipana-mediumBlue/10 shadow-md transform scale-105'
-          : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 opacity-70 hover:opacity-100'
+        ? 'border-mipana-mediumBlue bg-mipana-mediumBlue/10 shadow-md transform scale-105'
+        : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 opacity-70 hover:opacity-100'
         }`}
     >
       <div className="text-2xl mb-1">{icono}</div>
@@ -257,9 +257,9 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   return (
     <main className="h-[calc(100vh-5rem)] flex flex-col relative overflow-hidden">
 
-      {/* Map Layer */}
+      {/* Google Maps con Capa de Tráfico */}
       <div className="absolute inset-0 z-0">
-        <MapPlaceholder
+        <GoogleMapComponent
           className="h-full w-full rounded-none md:rounded-xl"
           status={getMapStatus()}
           onCenterChange={handleMapCenterChange}

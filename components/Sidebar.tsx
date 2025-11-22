@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, Home, User, Settings, LogOut, Car, History, CalendarClock, CreditCard } from 'lucide-react';
+import { X, Home, User, Settings, LogOut, Car, History, CalendarClock, CreditCard, FileCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole, AppView } from '../types';
 
@@ -12,7 +12,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate }) => {
   const { user, logout } = useAuth();
-  
+
   const handleNavigation = (view: AppView) => {
     onNavigate(view);
     onClose();
@@ -30,7 +30,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate }) => {
     <>
       {/* Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm transition-opacity"
           onClick={onClose}
         />
@@ -39,10 +39,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate }) => {
       {/* Sidebar Panel */}
       <div className={`fixed top-0 left-0 h-full w-64 bg-mipana-darkBlue text-white z-50 transform transition-transform duration-300 ease-in-out shadow-2xl ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-5 flex justify-between items-center border-b border-white/10">
-          <img 
-            src="https://storage.googleapis.com/msgsndr/u0yeLpwH9qH0cMOrw2KP/media/69058570de82838b521f4610.png" 
-            alt="MI PANA APP" 
-            className="h-8 w-auto bg-white rounded px-2 py-1" 
+          <img
+            src="https://storage.googleapis.com/msgsndr/u0yeLpwH9qH0cMOrw2KP/media/69058570de82838b521f4610.png"
+            alt="MI PANA APP"
+            className="h-8 w-auto bg-white rounded px-2 py-1"
           />
           <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <X size={24} />
@@ -51,9 +51,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate }) => {
 
         <div className="p-6 bg-gradient-to-b from-mipana-darkBlue to-[#011e45]">
           <div className="flex items-center space-x-3 mb-2">
-            <img 
-              src={user?.avatarUrl} 
-              alt="Profile" 
+            <img
+              src={user?.avatarUrl}
+              alt="Profile"
               className="w-12 h-12 rounded-full border-2 border-mipana-orange object-cover"
             />
             <div>
@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate }) => {
 
         <nav className="p-4 space-y-2">
           {menuItems.map((item, idx) => (
-            <button 
+            <button
               key={idx}
               onClick={() => handleNavigation(item.view)}
               className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors text-gray-100"
@@ -76,26 +76,36 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate }) => {
           ))}
 
           {user?.role === UserRole.DRIVER && (
-             <button 
-               onClick={() => handleNavigation('PROFILE')}
-               className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors text-gray-100"
-             >
-               <Car size={20} />
-               <span>Mis Vehículos</span>
-             </button>
+            <button
+              onClick={() => handleNavigation('PROFILE')}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors text-gray-100"
+            >
+              <Car size={20} />
+              <span>Mis Vehículos</span>
+            </button>
           )}
-          
+
+          {user?.role === UserRole.ADMIN && (
+            <button
+              onClick={() => handleNavigation('APPROVALS' as AppView)}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors text-gray-100"
+            >
+              <FileCheck size={20} />
+              <span>Aprobaciones</span>
+            </button>
+          )}
+
           <div className="h-px bg-white/10 my-4" />
 
-          <button 
+          <button
             onClick={() => handleNavigation('SETTINGS')}
             className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors text-gray-100"
           >
-             <Settings size={20} />
-             <span>Configuración</span>
+            <Settings size={20} />
+            <span>Configuración</span>
           </button>
 
-          <button 
+          <button
             onClick={() => {
               logout();
               onClose();

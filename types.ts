@@ -169,15 +169,15 @@ export interface Ride {
   distanceKm: number;
   createdAt: Date;
   liquidation?: LiquidationResult;
-  
+
   // GPS & Tracking
   currentProgress?: number; // 0 to 100
   etaMinutes?: number;
   heading?: number; // 0-360 degrees
 
   // Third party booking
-  beneficiary?: RideBeneficiary; 
-  
+  beneficiary?: RideBeneficiary;
+
   // Communication / Audit
   chatLogs?: ChatMessage[];
 }
@@ -232,4 +232,177 @@ export interface RegistrationData {
   idNumber: string;
   age: number;
   pin: string;
+}
+
+// --- DRIVER PROFILE EXTENSIONS ---
+
+export type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
+
+export interface DriverDocument {
+  id: string;
+  type: 'CEDULA' | 'LICENCIA' | 'RIF' | 'TITULO_PROPIEDAD' | 'CERTIFICADO_MEDICO' | 'POLIZA_RCV' | 'COMPROBANTE_BANCARIO';
+  url: string;
+  thumbnailUrl?: string;
+  uploadedAt: Date;
+  expiresAt?: Date;
+  status: VerificationStatus;
+  rejectionReason?: string;
+  metadata?: {
+    fileSize: number;
+    mimeType: string;
+    ocrData?: any;
+  };
+}
+
+export interface FiscalData {
+  rif: string; // J-12345678-9
+  address: string;
+  fiscalStatus: 'CONTRIBUYENTE_ORDINARIO' | 'PERSONA_NATURAL' | 'NO_SUJETO';
+  rifDocumentUrl?: string;
+}
+
+export interface BankingData {
+  bankName: 'BANCAMIGA'; // Fixed for this project
+  accountNumber: string; // Encrypted/Masked in real app
+  accountType: 'CORRIENTE' | 'AHORRO';
+  pagoMovilPhone: string;
+  pagoMovilId: string; // Cédula associated
+  isVerified: boolean;
+  lastVerificationDate?: Date;
+}
+
+export interface VehicleExtendedInfo extends VehicleInfo {
+  brand: string;
+  year: number;
+  vin?: string;
+  engineSerial?: string;
+  serviceType: ServiceId;
+  documents: DriverDocument[];
+}
+
+export interface AuditChange {
+  id: string;
+  field: string;
+  oldValue: any;
+  newValue: any;
+  timestamp: Date;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  adminComment?: string;
+}
+
+export interface DriverProfile {
+  userId: string;
+  personalData: {
+    fullName: string;
+    birthDate: Date;
+    nationality: 'VENEZOLANO' | 'EXTRANJERO';
+    address: string;
+    phone: string;
+  };
+  fiscalData?: FiscalData;
+  bankingData?: BankingData;
+  vehicle: VehicleExtendedInfo;
+  documents: DriverDocument[];
+  auditLog: AuditChange[];
+  pendingChanges: AuditChange[];
+}
+
+// --- PASSENGER PROFILE EXTENSIONS ---
+
+export interface PersonalData {
+  fullName: string;
+  birthDate?: Date;
+  gender?: 'MASCULINO' | 'FEMENINO' | 'OTRO' | 'PREFIERO_NO_DECIRLO';
+  nationality?: 'VENEZOLANO' | 'EXTRANJERO';
+  cedula: string; // V-12345678
+  address?: string;
+}
+
+export interface PhotoProfile {
+  url?: string;
+  thumbnailUrl?: string;
+  verified: boolean;
+  uploadedAt?: Date;
+  fileSize?: number;
+}
+
+export interface SecuritySettings {
+  pin: string; // Hashed PIN
+  securityImageId?: string;
+  twoFactorEnabled: boolean;
+  lastPasswordChange?: Date;
+}
+
+export interface TravelPreferences {
+  preferredVehicleType?: VehicleType;
+  preferredTime?: string; // "morning", "afternoon", "evening", "night"
+  requireHighRating: boolean;
+  minDriverRating: number; // 0.0 - 5.0
+  preferFemaleDriver: boolean;
+  preferConversationalDriver: boolean;
+  musicPreference?: 'NINGUNA' | 'SUAVE' | 'VARIADA' | 'REGGAETON' | 'SALSA' | 'POP' | 'ROCK';
+  temperaturePreference?: number; // 16-28 celsius
+}
+
+export interface ContactVerification {
+  phoneVerified: boolean;
+  emailVerified: boolean;
+  phoneVerifiedAt?: Date;
+  emailVerifiedAt?: Date;
+}
+
+export interface PassengerProfile {
+  userId: string;
+  personalData: PersonalData;
+  photoProfile: PhotoProfile;
+  security: SecuritySettings;
+  preferences?: TravelPreferences;
+  contactVerification: ContactVerification;
+  profileCompleteness: number; // 0-100%
+  createdAt: Date;
+  updatedAt: Date;
+  status: 'ACTIVE' | 'SUSPENDED' | 'DELETED';
+}
+
+export interface AccessLog {
+  id: string;
+  userId: string;
+  timestamp: Date;
+  ipAddress: string;
+  userAgent: string;
+  browser?: string;
+  device?: string;
+  os?: string;
+  location?: string;
+  accessType: 'LOGIN' | 'LOGOUT' | 'PASSWORD_CHANGE' | 'PROFILE_UPDATE';
+  success: boolean;
+  failureReason?: string;
+}
+
+export interface DeviceInfo {
+  id: string;
+  userId: string;
+  deviceId: string; // Unique identifier
+  deviceName: string;
+  deviceType: 'MOBILE' | 'TABLET' | 'DESKTOP';
+  browser: string;
+  os: string;
+  ipAddress: string;
+  location?: string;
+  lastAccessAt: Date;
+  isActive: boolean;
+  sessionToken?: string;
+}
+
+export interface ProfileChange {
+  id: string;
+  userId: string;
+  changeType: 'PHOTO' | 'PERSONAL_DATA' | 'CONTACT' | 'SECURITY' | 'PREFERENCES';
+  fieldModified: string;
+  oldValue: any;
+  newValue: any;
+  performedBy: 'USER' | 'ADMIN' | 'SYSTEM';
+  timestamp: Date;
+  requiresVerification: boolean;
+  verified: boolean;
 }
