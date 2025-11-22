@@ -173,6 +173,14 @@ const AdminHome: React.FC = () => {
           icon={<DollarSign />}
           color="#022859"
         />
+        {/* Demo Facturación Bruta */}
+        <StatCard
+          title="Facturación Bruta Demo"
+          value="$25,000.00"
+          subValue={`≈ Bs ${(25000 * currentViewRate).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`}
+          icon={<DollarSign />}
+          color="#022859"
+        />
         <StatCard
           title="Ingreso Neto App"
           value={`$${totalAppNeto.toFixed(2)}`}

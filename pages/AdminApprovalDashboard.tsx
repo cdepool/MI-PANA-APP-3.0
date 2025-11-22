@@ -4,6 +4,7 @@ import { ChevronRight, FileCheck, XCircle, Clock, CheckCircle } from 'lucide-rea
 import { driverService } from '../services/driverService';
 import { AuditChange } from '../types';
 import Button from '../components/Button';
+import { currentBcvRate } from '../services/pricingService';
 
 // Admin view to review and approve/reject driver profile changes
 const AdminApprovalDashboard: React.FC = () => {
@@ -132,6 +133,7 @@ const AdminApprovalDashboard: React.FC = () => {
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mt-4">
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Resumen Financiero Demo</h2>
                         <p className="text-gray-700 dark:text-gray-300">Facturación Bruta: <span className="font-semibold">$25,000</span></p>
+                        <p className="text-gray-700 dark:text-gray-300">Facturación Bruta (VES): <span className="font-semibold">{(25000 * currentBcvRate).toLocaleString()}</span></p>
                         <p className="text-gray-700 dark:text-gray-300">Comisiones (10%): <span className="font-semibold">$2,500</span></p>
                         <p className="text-gray-700 dark:text-gray-300">Impuestos (15%): <span className="font-semibold">$3,750</span></p>
                     </div>
