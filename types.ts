@@ -79,11 +79,19 @@ export interface VehicleInfo {
   plate: string;
 }
 
+export enum AdminRole {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  SUPPORT = 'SUPPORT',
+  FINANCE = 'FINANCE',
+  OPERATIONS = 'OPERATIONS'
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  adminRole?: AdminRole; // Sub-role for admins
   avatarUrl?: string;
   isOnline?: boolean; // For drivers
   driverStats?: DriverStats;

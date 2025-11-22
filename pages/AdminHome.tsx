@@ -4,6 +4,7 @@ import { Users, Car, DollarSign, TrendingUp, AlertCircle, Calendar, RefreshCw, M
 import { getTariffs, SERVICE_CATALOG, mockBcvRate } from '../services/mockService';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ChatMessage, UserRole } from '../types';
+import { AdminUserCreationModal } from '../components/admin/AdminUserCreationModal';
 
 // Generate data using the CURRENT BCV RATE to ensure consistency
 const generateAdminData = (currentRate: number) => {
@@ -11,9 +12,9 @@ const generateAdminData = (currentRate: number) => {
   const rides = Array.from({ length: 50 }).map((_, i) => {
     const service = SERVICE_CATALOG[Math.floor(Math.random() * SERVICE_CATALOG.length)];
     const distance = Math.random() * 15 + 2; // 2 to 17 km
-    
+
     const pfs = service.pfs_base_usd + (distance > 6 ? (distance - 6) * service.pfs_km_adicional_usd : 0);
-    
+
     // Generate fake chat history for some rides
     let chats: ChatMessage[] = [];
     if (i % 3 === 0) {
@@ -24,7 +25,7 @@ const generateAdminData = (currentRate: number) => {
     }
 
     return {
-      id: `R-${1000+i}`,
+      id: `R-${1000 + i}`,
       serviceName: service.nombre,
       pfs_usd: pfs,
       pfs_ves: pfs * currentRate,
@@ -43,6 +44,7 @@ const AdminHome: React.FC = () => {
   // State to hold current rate for the view
   const [currentViewRate, setCurrentViewRate] = useState<number>(mockBcvRate);
   const [selectedRideLogs, setSelectedRideLogs] = useState<ChatMessage[] | null>(null);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   // Polling for rate updates to keep dashboard live
   useEffect(() => {
@@ -55,8 +57,8 @@ const AdminHome: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentViewRate]);
 
-  const data = useMemo(() => generateAdminData(currentViewRate), [currentViewRate]); 
-  
+  const data = useMemo(() => generateAdminData(currentViewRate), [currentViewRate]);
+
   // KPI Calculations
   const totalViajes = data.length;
   const totalFacturado = data.reduce((acc, r) => acc + r.pfs_usd, 0);
@@ -97,40 +99,42 @@ const AdminHome: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 relative">
-      
+
       {/* AUDIT LOG MODAL */}
       {selectedRideLogs && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-           <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl flex flex-col max-h-[80vh]">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                 <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
-                   <MessageSquare size={20} className="text-mipana-mediumBlue"/> Auditoría de Chat
-                 </h3>
-                 <button onClick={() => setSelectedRideLogs(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
-                    <X size={20} />
-                 </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900">
-                 {selectedRideLogs.length === 0 ? (
-                   <p className="text-center text-gray-400 italic">No se registraron mensajes en este viaje.</p>
-                 ) : (
-                   selectedRideLogs.map((msg, i) => (
-                      <div key={i} className={`p-3 rounded-lg border ${msg.senderRole === UserRole.PASSENGER ? 'bg-white border-gray-200 ml-0 mr-8' : 'bg-blue-50 border-blue-100 ml-8 mr-0'}`}>
-                         <div className="flex justify-between items-center mb-1">
-                            <span className={`text-xs font-bold uppercase ${msg.senderRole === UserRole.PASSENGER ? 'text-gray-600' : 'text-blue-600'}`}>{msg.senderName} ({msg.senderRole})</span>
-                            <span className="text-[10px] text-gray-400">{msg.timestamp.toLocaleTimeString()}</span>
-                         </div>
-                         <p className="text-sm text-gray-800">{msg.text}</p>
-                      </div>
-                   ))
-                 )}
-              </div>
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-xl">
-                 <p className="text-xs text-gray-500 text-center">Registro inmutable para fines de soporte.</p>
-              </div>
-           </div>
+          <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl flex flex-col max-h-[80vh]">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
+                <MessageSquare size={20} className="text-mipana-mediumBlue" /> Auditoría de Chat
+              </h3>
+              <button onClick={() => setSelectedRideLogs(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900">
+              {selectedRideLogs.length === 0 ? (
+                <p className="text-center text-gray-400 italic">No se registraron mensajes en este viaje.</p>
+              ) : (
+                selectedRideLogs.map((msg, i) => (
+                  <div key={i} className={`p-3 rounded-lg border ${msg.senderRole === UserRole.PASSENGER ? 'bg-white border-gray-200 ml-0 mr-8' : 'bg-blue-50 border-blue-100 ml-8 mr-0'}`}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={`text-xs font-bold uppercase ${msg.senderRole === UserRole.PASSENGER ? 'text-gray-600' : 'text-blue-600'}`}>{msg.senderName} ({msg.senderRole})</span>
+                      <span className="text-[10px] text-gray-400">{msg.timestamp.toLocaleTimeString()}</span>
+                    </div>
+                    <p className="text-sm text-gray-800">{msg.text}</p>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-xl">
+              <p className="text-xs text-gray-500 text-center">Registro inmutable para fines de soporte.</p>
+            </div>
+          </div>
         </div>
       )}
+
+      <AdminUserCreationModal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} />
 
       {/* Dashboard Header */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
@@ -139,48 +143,56 @@ const AdminHome: React.FC = () => {
           <p className="text-xs text-gray-500">Next TV C.A. | Sistema de Gestión Financiera</p>
         </div>
         <div className="flex items-center gap-4">
-           <div className="text-right px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider flex items-center justify-end gap-1">
-                 <RefreshCw size={10} className="animate-spin-slow" /> Tasa Oficial BCV
-              </p>
-              <div className="flex items-center justify-end gap-2">
-                <span className="font-mono font-bold text-xl text-green-600 dark:text-green-400">Bs {currentViewRate.toFixed(2)}</span>
-              </div>
-              <p className="text-[9px] text-gray-400">Fuente: DolarAPI (BCV)</p>
-           </div>
+          <button
+            onClick={() => setIsUserModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-mipana-mediumBlue text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-bold shadow-md"
+          >
+            <Users size={16} />
+            Crear Usuario
+          </button>
+
+          <div className="text-right px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider flex items-center justify-end gap-1">
+              <RefreshCw size={10} className="animate-spin-slow" /> Tasa Oficial BCV
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <span className="font-mono font-bold text-xl text-green-600 dark:text-green-400">Bs {currentViewRate.toFixed(2)}</span>
+            </div>
+            <p className="text-[9px] text-gray-400">Fuente: DolarAPI (BCV)</p>
+          </div>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="Facturación Bruta" 
-          value={`$${totalFacturado.toFixed(2)}`} 
-          subValue={`≈ Bs ${(totalFacturado * currentViewRate).toLocaleString('es-VE', {maximumFractionDigits: 2})}`}
-          icon={<DollarSign />} 
-          color="#022859" 
+        <StatCard
+          title="Facturación Bruta"
+          value={`$${totalFacturado.toFixed(2)}`}
+          subValue={`≈ Bs ${(totalFacturado * currentViewRate).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`}
+          icon={<DollarSign />}
+          color="#022859"
         />
-        <StatCard 
-          title="Ingreso Neto App" 
-          value={`$${totalAppNeto.toFixed(2)}`} 
+        <StatCard
+          title="Ingreso Neto App"
+          value={`$${totalAppNeto.toFixed(2)}`}
           subValue="Libre de impuestos"
-          icon={<TrendingUp />} 
-          color="#04A8BF" 
+          icon={<TrendingUp />}
+          color="#04A8BF"
         />
-        <StatCard 
-          title="Retenciones SENIAT" 
-          value={`$${totalSeniat.toFixed(2)}`} 
+        <StatCard
+          title="Retenciones SENIAT"
+          value={`$${totalSeniat.toFixed(2)}`}
           subValue="IVA + ISLR"
-          icon={<AlertCircle />} 
-          color="#F2620F" 
+          icon={<AlertCircle />}
+          color="#F2620F"
         />
-        <StatCard 
-          title="Viajes Totales" 
-          value={totalViajes} 
+        <StatCard
+          title="Viajes Totales"
+          value={totalViajes}
           subValue="Este mes"
-          icon={<Car />} 
-          color="#666" 
+          icon={<Car />}
+          color="#666"
         />
       </div>
 
@@ -205,11 +217,11 @@ const AdminHome: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   formatter={(value: number) => [`$${value.toFixed(2)}`, 'Monto']}
                   contentStyle={{ backgroundColor: '#fff', borderRadius: '8px' }}
                 />
-                <Legend verticalAlign="bottom" height={36}/>
+                <Legend verticalAlign="bottom" height={36} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -224,9 +236,9 @@ const AdminHome: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                 <XAxis dataKey="name" stroke="#888" fontSize={12} />
                 <YAxis stroke="#888" fontSize={12} />
-                <Tooltip 
+                <Tooltip
                   formatter={(value: number) => [`$${value.toFixed(2)}`, '']}
-                  cursor={{fill: 'transparent'}}
+                  cursor={{ fill: 'transparent' }}
                 />
                 <Legend />
                 <Bar dataKey="conductor" name="Pago Conductor" stackId="a" fill="#04A8BF" />
@@ -243,7 +255,7 @@ const AdminHome: React.FC = () => {
         <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
           <h3 className="font-bold text-gray-900 dark:text-white">Detalle de Liquidaciones (Simulación)</h3>
           <button className="text-xs text-mipana-mediumBlue font-bold hover:underline flex items-center gap-1">
-             <Calendar size={14} /> Exportar Reporte Fiscal
+            <Calendar size={14} /> Exportar Reporte Fiscal
           </button>
         </div>
         <div className="overflow-x-auto">
@@ -267,12 +279,12 @@ const AdminHome: React.FC = () => {
                   <td className="px-6 py-4 text-right text-blue-600">${ride.app_neto.toFixed(2)}</td>
                   <td className="px-6 py-4 text-right text-xs text-gray-400">{ride.rate_used.toFixed(2)}</td>
                   <td className="px-6 py-4 text-center">
-                    <button 
+                    <button
                       onClick={() => setSelectedRideLogs(ride.chatLogs)}
                       className="text-mipana-mediumBlue hover:bg-blue-50 p-1.5 rounded-md transition-colors"
                       title="Ver Logs de Chat"
                     >
-                       <Eye size={16} />
+                      <Eye size={16} />
                     </button>
                   </td>
                 </tr>

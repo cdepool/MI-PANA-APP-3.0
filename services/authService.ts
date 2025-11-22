@@ -65,6 +65,8 @@ export const authService = {
   },
 
   // 4. Register User (Commit to DB)
+  // NOTE: This function is strictly for registering PASSENGERS from the public interface.
+  // Drivers and Admins should be created via internal admin tools or separate flows.
   registerUser: async (data: RegistrationData): Promise<User> => {
     // 1. Sign up with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -289,5 +291,25 @@ export const authService = {
       authService.setSession(updated as User);
     }
     return updated as User;
+  },
+
+  // 11. Admin: Create User (Simulation)
+  // NOTE: In production, this MUST be an Edge Function using supabase-admin (service_role key).
+  // Client-side creation of other users is not possible without logging out the current admin.
+  adminCreateUser: async (data: any): Promise<{ success: boolean, message: string }> => {
+    console.log('Admin creating user:', data);
+
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Validate basic fields
+    if (!data.email || !data.password || !data.name || !data.role) {
+      throw new Error('Todos los campos son obligatorios');
+    }
+
+    // In a real app with Edge Functions:
+    // await supabase.functions.invoke('admin-create-user', { body: data })
+
+    return { success: true, message: `Usuario ${data.name} (${data.role}) creado exitosamente.` };
   }
 };
