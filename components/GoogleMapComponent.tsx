@@ -42,7 +42,7 @@ const GoogleMapComponent: React.FC<GoogleMapComponentProps> = ({
 }) => {
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: 'AIzaSyDXor-A_3wbyGdcikMPgdlTzjOAn-yF15k' // ✅ API Key configurada
+        googleMapsApiKey: 'AIzaSy8k70qph0XpgfSBEWAfQiTgEsslgQwE' // ✅ Nueva API Key
     });
 
     const [map, setMap] = useState<google.maps.Map | null>(null);
