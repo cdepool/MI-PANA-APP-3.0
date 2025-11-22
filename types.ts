@@ -9,7 +9,7 @@ export enum UserRole {
 export type VehicleType = 'MOTO' | 'CAR' | 'FREIGHT';
 export type ServiceId = 'mototaxi' | 'el_pana' | 'el_amigo' | 'full_pana';
 
-export type AppView = 'HOME' | 'PROFILE' | 'HISTORY' | 'SETTINGS' | 'SCHEDULE' | 'REGISTER' | 'WALLET';
+export type AppView = 'HOME' | 'PROFILE' | 'HISTORY' | 'SETTINGS' | 'SCHEDULE' | 'REGISTER' | 'WALLET' | 'APPROVALS';
 
 export interface SavedPlace {
   id: string;
@@ -104,6 +104,7 @@ export interface User {
   wallet?: Wallet; // Digital Wallet
   vehicle?: VehicleInfo; // Driver Vehicle Info
   favoriteDriverIds?: string[]; // List of IDs of favorite drivers
+  googleAccessToken?: string; // Access token for Google APIs
 }
 
 export interface ServiceConfig {

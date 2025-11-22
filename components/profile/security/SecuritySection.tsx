@@ -51,7 +51,6 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({ userId }) => {
                         <Button
                             onClick={() => setShowPasswordModal(true)}
                             variant="outline"
-                            size="sm"
                         >
                             Cambiar
                         </Button>

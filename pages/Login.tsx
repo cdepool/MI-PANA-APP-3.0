@@ -64,8 +64,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
         // Log in the user with the Google profile and access token
         login(UserRole.PASSENGER, {
           email: userInfo.email,
-          firstName: userInfo.given_name,
-          lastName: userInfo.family_name,
+          name: `${userInfo.given_name} ${userInfo.family_name}`,
           googleAccessToken: tokenResponse.access_token // Store token for Calendar/Tasks
         });
 

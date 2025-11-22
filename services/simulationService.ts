@@ -1,4 +1,4 @@
-import { Ride, User, UserRole, VehicleType, MatchedDriver, SavedPlace, RecurringRide, GoogleProfile, ChatMessage } from '../types';
+import { Ride, User, UserRole, VehicleType, MatchedDriver, SavedPlace, RecurringRide, GoogleProfile, ChatMessage, ServiceId } from '../types';
 import { SERVICE_CATALOG, calculateLiquidation, round2, roundMoney } from './pricingService';
 
 // --- MOCK DRIVER DATABASE ---
