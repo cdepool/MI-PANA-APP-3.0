@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { ArrowLeft, Smartphone, Lock, User, CreditCard, AlertCircle, MessageCircle, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { useGoogleLogin } from '@react-oauth/google';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Stepper from '../components/Stepper';
@@ -52,23 +53,35 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
   // --- HANDLERS ---
 
-  const handleGoogleRegister = async () => {
-    setIsLoading(true);
-    try {
-      const gUser = await authService.simulateGoogleLogin();
-      const names = gUser.name.split(' ');
-      setFirstName(names[0]);
-      setLastName(names.slice(1).join(' '));
-      setEmail(gUser.email);
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsLoading(true);
+      try {
+        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        }).then(res => res.json());
 
-      setCurrentStep(2);
-      setError(null);
-      toast.success("Conectado con Google exitosamente");
-    } catch (e) {
-      toast.error("Error conectando con Google");
-    } finally {
-      setIsLoading(false);
+        // Pre-fill data with Google info
+        setFirstName(userInfo.given_name);
+        setLastName(userInfo.family_name);
+        setEmail(userInfo.email);
+
+        setCurrentStep(2);
+        setError(null);
+        toast.success("Conectado con Google exitosamente");
+      } catch (e) {
+        toast.error("Error conectando con Google");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => {
+      toast.error("Falló el registro con Google");
     }
+  });
+
+  const handleGoogleRegister = () => {
+    googleLogin();
   };
 
   const checkEmailAvailability = async () => {

@@ -1,156 +1,226 @@
 
-
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import { Car, User, ShieldCheck, ArrowRight, ArrowLeft, Lock, Smartphone, AlertCircle } from 'lucide-react';
+import { User, Lock, ArrowRight, AlertCircle } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
+import { toast } from 'sonner';
+import { authService } from '../services/authService';
 
 interface LoginProps {
   onNavigateRegister: () => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
-  const { login, loginPassenger } = useAuth();
-  const [view, setView] = useState<'ROLE_SELECT' | 'PASSENGER_LOGIN'>('ROLE_SELECT');
-
-  // Passenger Login State
+  const { login } = useAuth();
+  const [role, setRole] = useState<UserRole | null>(null);
   const [identifier, setIdentifier] = useState('');
   const [pin, setPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handlePassengerLogin = async () => {
-    if (!identifier || !pin) {
-      setError('Ingresa tus datos y PIN.');
-      return;
-    }
-    setError(null);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!role) return;
+
     setIsLoading(true);
+    setError(null);
+
     try {
-      await loginPassenger(identifier, pin);
-      // Navigation handled by App.tsx on user state change
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (role === UserRole.PASSENGER) {
+        // Validate Passenger Credentials (Mock)
+        // In a real app, this would verify against backend
+        if (identifier && pin === '123456') { // Mock PIN check
+          login(role, { email: identifier });
+        } else {
+          throw new Error("Credenciales inválidas. (Usa PIN 123456 para demo)");
+        }
+      } else {
+        // Driver/Admin login
+        login(role);
+      }
     } catch (err: any) {
-      setError(err.message || 'Credenciales inválidas.');
+      setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const renderRoleSelection = () => (
-    <div className="space-y-3 animate-fade-in">
-      <Button
-        fullWidth
-        variant="primary"
-        onClick={() => setView('PASSENGER_LOGIN')}
-        icon={<User size={18} />}
-      >
-        Soy Pasajero
-      </Button>
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsLoading(true);
+      try {
+        // Fetch user info using the access token
+        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        }).then(res => res.json());
 
-      <Button
-        fullWidth
-        variant="outline"
-        onClick={() => login(UserRole.DRIVER)}
-        icon={<Car size={18} />}
-      >
-        Soy Conductor (Pana)
-      </Button>
+        // Log in the user with the Google profile and access token
+        login(UserRole.PASSENGER, {
+          email: userInfo.email,
+          firstName: userInfo.given_name,
+          lastName: userInfo.family_name,
+          googleAccessToken: tokenResponse.access_token // Store token for Calendar/Tasks
+        });
 
-      <Button
-        fullWidth
-        variant="secondary"
-        className="opacity-70 hover:opacity-100"
-        onClick={() => login(UserRole.ADMIN)}
-        icon={<ShieldCheck size={18} />}
-      >
-        Administrador
-      </Button>
+        toast.success(`Bienvenido, ${userInfo.given_name}!`);
+      } catch (error) {
+        console.error(error);
+        toast.error("Error al iniciar sesión con Google");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => {
+      toast.error("Falló el inicio de sesión con Google");
+    },
+    scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/tasks.readonly'
+  });
 
-      <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
-        <p className="text-sm text-gray-500 mb-3">¿No tienes cuenta?</p>
-        <button
-          onClick={onNavigateRegister}
-          className="text-mipana-mediumBlue font-bold hover:underline flex items-center justify-center gap-1 w-full"
-        >
-          Crear Cuenta Nueva <ArrowRight size={16} />
-        </button>
-      </div>
-    </div>
-  );
+  if (!role) {
+    return (
+      <div className="min-h-screen bg-mipana-lightGray dark:bg-[#011836] flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-8 animate-fade-in">
+          <div className="text-center">
+            <img src="https://storage.googleapis.com/msgsndr/u0yeLpwH9qH0cMOrw2KP/media/68f4c7a98a42bd7e9f0909b7.png" alt="Mi Pana App" className="h-24 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-mipana-darkBlue dark:text-white">Bienvenido</h1>
+            <p className="text-gray-500 mt-2">Selecciona tu perfil para ingresar</p>
+          </div>
 
-  const renderPassengerForm = () => (
-    <div className="space-y-4 animate-slide-left">
-      <div className="text-left mb-4">
-        <button onClick={() => setView('ROLE_SELECT')} className="text-gray-400 hover:text-gray-600 flex items-center gap-1 text-sm mb-4">
-          <ArrowLeft size={14} /> Volver
-        </button>
-        <h2 className="text-xl font-bold text-mipana-darkBlue dark:text-white">Bienvenido Pasajero</h2>
-      </div>
+          <div className="grid grid-cols-1 gap-4">
+            <button
+              onClick={() => setRole(UserRole.PASSENGER)}
+              className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-mipana-mediumBlue flex items-center justify-between group"
+            >
+              <div className="text-left">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Pasajero</h3>
+                <p className="text-sm text-gray-500">Solicita viajes y envíos</p>
+              </div>
+              <ArrowRight className="text-mipana-mediumBlue opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
 
-      <Input
-        label="Móvil o Correo Electrónico"
-        placeholder="0412... o usuario@gmail.com"
-        icon={<User size={18} />}
-        value={identifier}
-        onChange={(e) => setIdentifier(e.target.value)}
-      />
+            <button
+              onClick={() => setRole(UserRole.DRIVER)}
+              className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-mipana-yellow flex items-center justify-between group"
+            >
+              <div className="text-left">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Conductor</h3>
+                <p className="text-sm text-gray-500">Gana dinero conduciendo</p>
+              </div>
+              <ArrowRight className="text-mipana-yellow opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
 
-      <Input
-        label="PIN de Seguridad"
-        type="password"
-        placeholder="******"
-        maxLength={6}
-        icon={<Lock size={18} />}
-        value={pin}
-        onChange={(e) => setPin(e.target.value)}
-      />
-
-      {error && (
-        <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-2 text-red-600 text-xs">
-          <AlertCircle size={14} /> {error}
+            <button
+              onClick={() => setRole(UserRole.ADMIN)}
+              className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-red-500 flex items-center justify-between group"
+            >
+              <div className="text-left">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Administrador</h3>
+                <p className="text-sm text-gray-500">Gestión de flota y usuarios</p>
+              </div>
+              <ArrowRight className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          </div>
         </div>
-      )}
-
-      <Button fullWidth onClick={handlePassengerLogin} disabled={isLoading}>
-        {isLoading ? 'Ingresando...' : 'Iniciar Sesión'}
-      </Button>
-
-      <div className="text-center mt-4">
-        <button className="text-xs text-gray-400 hover:text-mipana-mediumBlue">¿Olvidaste tu PIN?</button>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-mipana-darkBlue to-black">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
-        <div className="p-8 text-center">
-          <div className="w-24 h-24 bg-white dark:bg-gray-700 rounded-full mx-auto flex items-center justify-center mb-6 shadow-md p-3">
-            <img
-              src="https://storage.googleapis.com/msgsndr/u0yeLpwH9qH0cMOrw2KP/media/68f4c7a98a42bd7e9f0909b7.png"
-              alt="Mi Pana Icon"
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <h1 className="text-3xl font-bold text-mipana-darkBlue dark:text-white mb-1">MI PANA APP</h1>
-          <p className="text-mipana-mediumBlue text-sm tracking-widest font-medium mb-8">SIEMPRE CONECTADO</p>
+    <div className="min-h-screen bg-mipana-lightGray dark:bg-[#011836] flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 animate-slide-up">
+        <button
+          onClick={() => setRole(null)}
+          className="text-sm text-gray-500 hover:text-mipana-mediumBlue mb-6 flex items-center gap-1"
+        >
+          ← Volver a selección
+        </button>
 
-          {view === 'ROLE_SELECT' && (
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              Selecciona tu perfil
-            </p>
-          )}
-
-          {view === 'ROLE_SELECT' ? renderRoleSelection() : renderPassengerForm()}
-
-          <div className="mt-6 text-xs text-gray-400">
-            &copy; 2025 Mi Pana App. Acarigua - Araure.
-          </div>
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">
+            {role === UserRole.PASSENGER ? 'Hola, Pasajero 👋' :
+              role === UserRole.DRIVER ? 'Hola, Conductor 🚗' : 'Panel Admin 🛡️'}
+          </h2>
+          <p className="text-gray-500 text-sm">Ingresa tus credenciales</p>
         </div>
+
+        {role === UserRole.PASSENGER ? (
+          <form onSubmit={handleLogin} className="space-y-6">
+            <Input
+              label="Correo o Teléfono"
+              icon={<User size={18} />}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="usuario@ejemplo.com"
+            />
+
+            <Input
+              label="PIN de Seguridad"
+              icon={<Lock size={18} />}
+              type="password"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="******"
+            />
+
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-2 text-red-600 text-sm">
+                <AlertCircle size={16} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <Button type="submit" fullWidth isLoading={isLoading}>
+              Ingresar
+            </Button>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">O continúa con</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => googleLogin()}
+              className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-700 text-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 p-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="G" />
+              Google
+            </button>
+
+            <p className="text-center text-sm text-gray-500 mt-6">
+              ¿No tienes cuenta?{' '}
+              <button
+                type="button"
+                onClick={onNavigateRegister}
+                className="text-mipana-mediumBlue font-bold hover:underline"
+              >
+                Regístrate aquí
+              </button>
+            </p>
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-center text-gray-500 italic">
+              Simulación de acceso para {role}
+            </p>
+            <Button onClick={handleLogin} fullWidth isLoading={isLoading}>
+              Ingresar Demo
+            </Button>
+          </div>
+        )}
       </div>
-    </main>
+    </div>
   );
 };
 
