@@ -138,7 +138,7 @@ const AdminApprovalDashboard: React.FC = () => {
                         <p className="text-gray-700 dark:text-gray-300">Comisión Conductores (95%): <span className="font-semibold">$47,500.00</span></p>
                         <p className="text-gray-700 dark:text-gray-300">Comisión App (5%): <span className="font-semibold">$2,500.00</span></p>
                         <p className="text-gray-700 dark:text-gray-300">ISLR (3% sobre conductor): <span className="font-semibold">$1,425.00</span></p>
-                        <p className="text-gray-700 dark:text-gray-300">IVA (16% sobre app): <span className="font-semibold">$344.83</span></p>
+                        <p className="text-gray-700 dark:text-gray-300">IVA (16% sobre app): <span className="font-semibold">$400.00</span></p>
                     </div>
                 </div>
 
