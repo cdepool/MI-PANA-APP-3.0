@@ -4,16 +4,14 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Strict validation: Fail fast if credentials are missing
+// Strict validation: Log error but allow app to load (prevent WSOD)
 if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-        '🔴 CRITICAL: Supabase credentials missing!\n\n' +
-        'Required environment variables:\n' +
-        '- VITE_SUPABASE_URL\n' +
-        '- VITE_SUPABASE_ANON_KEY\n\n' +
-        'Please check your .env file and ensure all variables are set.\n' +
-        'See .env.example for reference.'
+    console.error(
+        '🔴 CRITICAL: Supabase credentials missing!\n' +
+        'Features requiring database will fail.\n' +
+        'Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
     );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Initialize with fallback to prevent crash, requests will fail gracefully
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');

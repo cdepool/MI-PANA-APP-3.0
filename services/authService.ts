@@ -151,8 +151,14 @@ export const authService = {
   // 6. Session Management
   getSession: (): User | null => {
     // Check local storage first for speed
-    const json = localStorage.getItem(SESSION_KEY);
-    if (json) return JSON.parse(json);
+    try {
+      const json = localStorage.getItem(SESSION_KEY);
+      if (json) return JSON.parse(json);
+    } catch (e) {
+      console.error('Error parsing session from local storage', e);
+      // Optional: Clear invalid session
+      localStorage.removeItem(SESSION_KEY);
+    }
 
     // Ideally we should check supabase.auth.getSession() and refresh profile
     return null;
