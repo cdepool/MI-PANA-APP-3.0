@@ -348,7 +348,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
               <div className="relative z-10">
                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 flex items-center gap-1">
                   Saldo disponible
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse block"></span>
                 </p>
                 <div className="flex items-baseline gap-2">
                   <h3 className="text-2xl font-extrabold text-mipana-darkBlue">Bs. {(walletBalance * currentRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>

@@ -1,4 +1,5 @@
 import { Tariff, ServiceConfig, ServiceId, LiquidationResult } from '../types';
+import logger from '../utils/logger';
 
 // --- CONFIGURACIÓN TASA BCV ---
 // Endpoint oficial según documentación: https://dolarapi.com/docs/venezuela/operations/get-dolar-oficial
@@ -11,7 +12,7 @@ export let lastBcvUpdate = new Date();
 // Función Crítica: Obtener Tasa Oficial
 export const fetchBcvRate = async () => {
     try {
-        console.log('🔄 Consultando Tasa Oficial BCV...');
+        logger.log('🔄 Consultando Tasa Oficial BCV...');
         const response = await fetch(BCV_API_URL);
 
         if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
@@ -23,12 +24,12 @@ export const fetchBcvRate = async () => {
         if (typeof rate === 'number' && rate > 0) {
             currentBcvRate = rate;
             lastBcvUpdate = new Date(data.fechaActualizacion || Date.now());
-            console.log(`✅ Tasa BCV Actualizada: Bs ${currentBcvRate} (Fuente: ${data.fuente || 'BCV'})`);
+            logger.log(`✅ Tasa BCV Actualizada: Bs ${currentBcvRate} (Fuente: ${data.fuente || 'BCV'})`);
         } else {
-            console.warn('⚠️ Formato de tasa inválido recibido del API, manteniendo tasa anterior.');
+            logger.warn('⚠️ Formato de tasa inválido recibido del API, manteniendo tasa anterior.');
         }
     } catch (error) {
-        console.error('❌ Error obteniendo tasa BCV (usando valor en memoria):', error);
+        logger.error('❌ Error obteniendo tasa BCV (usando valor en memoria):', error);
     }
 };
 

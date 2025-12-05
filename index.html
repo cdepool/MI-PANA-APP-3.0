@@ -35,49 +35,9 @@
   <meta name="theme-color" content="#022859" />
   <link rel="icon" type="image/png"
     href="https://storage.googleapis.com/msgsndr/u0yeLpwH9qH0cMOrw2KP/media/68f4c7a98a42bd7e9f0909b7.png" />
-  <script src="https://cdn.tailwindcss.com"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            mipana: {
-              darkBlue: '#022859', // primary_navy
-              mediumBlue: '#048ABF', // primary_cyan (Updated to match spec)
-              orange: '#F2620F', // accent_orange
-              lightGray: '#F2F2F2', // neutral_light
-              black: '#0D0D0D' // neutral_black
-            }
-          },
-          animation: {
-            'fade-in': 'fadeIn 0.5s ease-out',
-            'slide-up': 'slideUp 0.5s ease-out',
-            'slide-left': 'slideLeft 0.3s ease-out',
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-          },
-          keyframes: {
-            fadeIn: {
-              '0%': { opacity: '0' },
-              '100%': { opacity: '1' },
-            },
-            slideUp: {
-              '0%': { transform: 'translateY(20px)', opacity: '0' },
-              '100%': { transform: 'translateY(0)', opacity: '1' },
-            },
-            slideLeft: {
-              '0%': { transform: 'translateX(20px)', opacity: '0' },
-              '100%': { transform: 'translateX(0)', opacity: '1' },
-            }
-          }
-        }
-      }
-    }
-  </script>
+
   <style>
     /* Custom scrollbar for webkit */
     ::-webkit-scrollbar {

@@ -261,7 +261,7 @@ export interface DriverDocument {
   metadata?: {
     fileSize: number;
     mimeType: string;
-    ocrData?: any;
+    ocrData?: Record<string, unknown>;
   };
 }
 
@@ -294,8 +294,8 @@ export interface VehicleExtendedInfo extends VehicleInfo {
 export interface AuditChange {
   id: string;
   field: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: unknown;
+  newValue: unknown;
   timestamp: Date;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   adminComment?: string;
@@ -410,8 +410,8 @@ export interface ProfileChange {
   userId: string;
   changeType: 'PHOTO' | 'PERSONAL_DATA' | 'CONTACT' | 'SECURITY' | 'PREFERENCES';
   fieldModified: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: unknown;
+  newValue: unknown;
   performedBy: 'USER' | 'ADMIN' | 'SYSTEM';
   timestamp: Date;
   requiresVerification: boolean;

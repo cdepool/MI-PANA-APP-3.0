@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthContextType, User, UserRole, SavedPlace, TransactionType } from '../types';
 import { mockLoginUser } from '../services/mockService';
 import { authService } from '../services/authService';
+import logger from '../utils/logger';
 
 interface ExtendedAuthContextType extends AuthContextType {
   loginPassenger: (phone: string, pin: string) => Promise<void>;
@@ -48,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const updatedUser = await authService.updateUser(user.id, data);
       setUser(updatedUser);
     } catch (error) {
-      console.error("Profile update failed", error);
+      logger.error("Profile update failed", error);
       throw error;
     }
   };
@@ -59,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const updatedUser = await authService.processTransaction(user.id, amount, type, description, reference);
       setUser(updatedUser);
     } catch (error) {
-      console.error("Transaction failed", error);
+      logger.error("Transaction failed", error);
       throw error;
     }
   };
@@ -70,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const updatedUser = await authService.toggleFavoriteDriver(user.id, driverId);
       setUser(updatedUser);
     } catch (error) {
-      console.error("Failed to toggle favorite driver", error);
+      logger.error("Failed to toggle favorite driver", error);
     }
   };
 
@@ -110,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await authService.loginWithGoogle();
       // The user will be redirected to Google login
     } catch (error) {
-      console.error("Error connecting google", error);
+      logger.error("Error connecting google", error);
     }
   };
 

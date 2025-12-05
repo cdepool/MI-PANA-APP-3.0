@@ -2,6 +2,7 @@
 import { User, UserRole, RegistrationData, TransactionType, Transaction } from '../types';
 import { getTariffs } from './mockService';
 import { supabase } from './supabaseClient';
+import logger from '../utils/logger';
 
 // LocalStorage Keys (Keep for fallback or session cache if needed, but primary is now Supabase)
 const SESSION_KEY = 'mipana_session';
@@ -42,7 +43,7 @@ export const authService = {
     const { error } = await supabase.auth.signInWithOtp({ email });
 
     if (error) {
-      console.error('Error sending OTP:', error);
+      logger.error('Error sending OTP:', error);
       return { success: false, message: error.message };
     }
 
@@ -111,7 +112,7 @@ export const authService = {
 
     if (profileError) {
       // If profile creation fails, we might want to rollback auth, but for now just throw
-      console.error('Error creating profile:', profileError);
+      logger.error('Error creating profile:', profileError);
       // Fallback: return the user object anyway so UI can proceed, but data might be desynced
     }
 
@@ -199,63 +200,41 @@ export const authService = {
   },
 
   // 9. Wallet Transactions
+  // ✅ SECURITY FIX: Now uses Edge Function for server-side processing
   processTransaction: async (userId: string, amount: number, type: TransactionType, description: string, reference?: string): Promise<User> => {
-    // ⚠️ SECURITY WARNING: This logic runs on the client side. 
-    // In a production environment, wallet transactions MUST be handled by a secure backend (e.g., Supabase Edge Functions)
-    // to prevent manipulation. This implementation is for demonstration/MVP purposes only.
+    try {
+      // Invoke Edge Function for secure server-side transaction processing
+      const { data, error } = await supabase.functions.invoke('process-transaction', {
+        body: {
+          userId,
+          amount,
+          type,
+          description,
+          reference
+        }
+      });
 
-    // This requires a more complex backend logic (RPC or multiple queries)
-    // For now, we fetch, update, and push. NOT ATOMIC/SAFE for production without RLS/Functions.
+      if (error) {
+        throw new Error(error.message || 'Transaction failed');
+      }
 
-    const { data: user, error: fetchError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+      if (!data?.success || !data?.profile) {
+        throw new Error('Transaction processing failed');
+      }
 
-    if (fetchError || !user) throw new Error('Usuario no encontrado');
+      const updatedUser = data.profile as User;
 
-    let newBalance = user.wallet?.balance || 0;
-    if (type === 'DEPOSIT' || type === 'REFUND') {
-      newBalance += amount;
-    } else {
-      if (newBalance < amount) throw new Error('Saldo insuficiente en billetera');
-      newBalance -= amount;
+      // Update local session
+      const session = authService.getSession();
+      if (session && session.id === userId) {
+        authService.setSession(updatedUser);
+      }
+
+      return updatedUser;
+    } catch (error) {
+      logger.error('Transaction processing error:', error);
+      throw error;
     }
-
-    const transaction: Transaction = {
-      id: `tx-${Date.now()}`,
-      amount: amount,
-      currency: 'USD',
-      exchangeRate: getTariffs().currentBcvRate,
-      date: Date.now(),
-      type,
-      description,
-      reference,
-      status: 'COMPLETED'
-    };
-
-    const newWallet = {
-      balance: newBalance,
-      transactions: [transaction, ...(user.wallet?.transactions || [])]
-    };
-
-    const { data: updated, error: updateError } = await supabase
-      .from('profiles')
-      .update({ wallet: newWallet })
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (updateError) throw new Error(updateError.message);
-
-    // Update Session
-    const session = authService.getSession();
-    if (session && session.id === userId) {
-      authService.setSession(updated as User);
-    }
-
-    return updated as User;
   },
 
   // 10. Toggle Favorite Driver
@@ -297,7 +276,7 @@ export const authService = {
   // NOTE: In production, this MUST be an Edge Function using supabase-admin (service_role key).
   // Client-side creation of other users is not possible without logging out the current admin.
   adminCreateUser: async (data: any): Promise<{ success: boolean, message: string }> => {
-    console.log('Admin creating user:', data);
+    logger.log('Admin creating user:', data);
 
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1500));
