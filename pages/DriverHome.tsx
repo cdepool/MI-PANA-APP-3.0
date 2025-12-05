@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Button from '../components/Button';
-import GoogleMapComponent from '../components/GoogleMapComponent';
+import MapComponent from '../components/MapComponent';
 import ChatInterface from '../components/ChatInterface';
 import { mockRides, calculateLiquidation, SERVICE_CATALOG, startRideSimulation, sendChatMessage, cleanPhoneNumber } from '../services/mockService';
 import { MapPin, DollarSign, Navigation, Trophy, Star, Phone, MessageCircle, XCircle, Info, User, Users, MessageSquare } from 'lucide-react';
@@ -160,7 +160,7 @@ const DriverHome: React.FC = () => {
 
                {/* Map for Active Ride */}
                <div className="h-64 w-full bg-gray-200 relative">
-                  <GoogleMapComponent
+                  <MapComponent
                      className="w-full h-full rounded-t-xl md:rounded-xl"
                      status="IN_PROGRESS"
                      currentProgress={gpsProgress}

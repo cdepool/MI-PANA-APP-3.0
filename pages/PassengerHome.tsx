@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import GoogleMapComponent from '../components/GoogleMapComponent';
+import MapComponent from '../components/MapComponent';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import ChatInterface from '../components/ChatInterface';
@@ -259,7 +259,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
 
       {/* Google Maps con Capa de Tráfico */}
       <div className="absolute inset-0 z-0">
-        <GoogleMapComponent
+        <MapComponent
           className="h-full w-full rounded-none md:rounded-xl"
           status={getMapStatus()}
           onCenterChange={handleMapCenterChange}
