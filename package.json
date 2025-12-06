@@ -12,7 +12,6 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@react-google-maps/api": "^2.20.7",
     "@react-oauth/google": "^0.12.2",
     "@supabase/supabase-js": "^2.84.0",
     "@types/leaflet": "^1.9.21",
