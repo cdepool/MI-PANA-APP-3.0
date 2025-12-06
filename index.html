@@ -64,6 +64,16 @@
 <body
   class="bg-mipana-lightGray text-mipana-black dark:bg-mipana-darkBlue dark:text-white transition-colors duration-200">
   <div id="root"></div>
+  <!-- Unregister service workers to clear old PWA cache -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+  </script>
   <!-- Usar ruta relativa ./index.tsx para evitar errores de resolución en Vercel -->
   <script type="module" src="./index.tsx"></script>
 </body>
