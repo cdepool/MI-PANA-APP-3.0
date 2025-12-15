@@ -80,12 +80,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onNavigate }) => {
         </div>
       </header>
 
-      {/* Persistent BCV Rate Bar */}
-      <div className="sticky top-16 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-1.5 px-4 flex justify-center items-center gap-2 text-xs shadow-sm transition-colors duration-200">
-        <TrendingUp size={14} className="text-green-600 dark:text-green-400" />
-        <span className="font-medium text-gray-500 dark:text-gray-400">Tasa BCV:</span>
-        <span className="font-bold text-gray-900 dark:text-white font-mono">Bs {bcvRate.toFixed(2)}</span>
-      </div>
+
 
       {/* Main Content */}
       <main className="flex-1 relative overflow-y-auto overflow-x-hidden">
