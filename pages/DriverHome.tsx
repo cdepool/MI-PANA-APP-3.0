@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Button from '../components/Button';
-import GoogleMapComponent from '../components/GoogleMapComponent';
 import LeafletMapComponent from '../components/LeafletMapComponent';
 import ChatInterface from '../components/ChatInterface';
 import { mockRides, calculateLiquidation, SERVICE_CATALOG, startRideSimulation, sendChatMessage, cleanPhoneNumber } from '../services/mockService';
@@ -163,21 +162,12 @@ const DriverHome: React.FC = () => {
 
                {/* Map for Active Ride */}
                <div className="h-64 w-full bg-gray-200 relative">
-                  {import.meta.env.VITE_USE_LEAFLET === 'true' ? (
-                     <LeafletMapComponent
-                        className="h-full w-full rounded-none md:rounded-xl"
-                        origin={activeRide.originCoords}
-                        destination={activeRide.destinationCoords}
-                     />
-                  ) : (
-                     <GoogleMapComponent
-                        className="h-full w-full rounded-none md:rounded-xl"
-                        status={activeRide ? 'IN_PROGRESS' : 'IDLE'}
-                        currentProgress={gpsProgress}
-                        origin={activeRide.originCoords}
-                        destination={activeRide.destinationCoords}
-                     />
-                  )}<div className="absolute bottom-4 right-4 bg-white/90 p-2 rounded-lg shadow text-xs font-bold">
+                  <LeafletMapComponent
+                     className="h-full w-full rounded-none md:rounded-xl"
+                     origin={activeRide.originCoords}
+                     destination={activeRide.destinationCoords}
+                  />
+                  <div className="absolute bottom-4 right-4 bg-white/90 p-2 rounded-lg shadow text-xs font-bold">
                      <Navigation size={16} className="inline mr-1 text-blue-600" /> Navegación Activa
                   </div>
                </div>

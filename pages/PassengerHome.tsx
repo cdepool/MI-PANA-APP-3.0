@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import GoogleMapComponent from '../components/GoogleMapComponent';
 import LeafletMapComponent from '../components/LeafletMapComponent';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -288,16 +287,16 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   return (
     <main className="h-[calc(100vh-5rem)] flex flex-col relative overflow-hidden">
 
-      {/* Google Maps con Capa de Tráfico */}
+      {/* Mapa Interactivo (Leaflet/OpenStreetMap) */}
       <div className="absolute inset-0 z-0">
-        <GoogleMapComponent
+        <LeafletMapComponent
           className="flex-1"
-          status={getMapStatus()}
-          onCenterChange={handleMapCenterChange}
-          onCameraChange={handleMapCameraChange}
-          currentProgress={rideProgress}
           origin={getOriginCoords()}
           destination={getDestCoords()}
+          onRouteChange={(summary) => {
+            // Handle route change if needed
+            console.log('Route:', summary);
+          }}
         />
       </div>
 
