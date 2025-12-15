@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import MapComponent from '../components/MapComponent';
+import GoogleMapComponent from '../components/GoogleMapComponent';
+import LeafletMapComponent from '../components/LeafletMapComponent';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import ChatInterface from '../components/ChatInterface';
@@ -70,8 +70,12 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   // Map Selection State
   const [pickingType, setPickingType] = useState<'ORIGIN' | 'DESTINATION' | null>(null);
   const [mapCenterAddress, setMapCenterAddress] = useState<string>('');
+  const [mapCenterCoords, setMapCenterCoords] = useState<{ lat: number, lng: number } | null>(null);
   const [isMapMoving, setIsMapMoving] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Real User Location tracking from Map
+  const [userRealLocation, setUserRealLocation] = useState<{ lat: number, lng: number } | null>(null);
 
   // Beneficiary State
   const [forWhom, setForWhom] = useState<'ME' | 'OTHER'>('ME');
@@ -114,25 +118,41 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
     }
   }, [selectedServiceId, destination]);
 
-  // Handle Map Interaction for Picking Location
-  const handleMapCenterChange = () => {
+  // Handle Map Camera Change (Coordinates)
+  const handleMapCameraChange = (coords: { lat: number, lng: number }) => {
     setIsMapMoving(true);
+    setMapCenterCoords(coords);
+    if (!userRealLocation) setUserRealLocation(coords); // Init user loc if empty
+
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
     // Simulate geocoding delay
     debounceTimer.current = setTimeout(async () => {
-      // Mock coords, randomizing slightly
-      const addr = await simulateReverseGeocoding(10, 10);
+      // In a real app, we would use Geocoding API with coords.lat, coords.lng
+      const addr = await simulateReverseGeocoding(coords.lat, coords.lng);
       setMapCenterAddress(addr);
       setIsMapMoving(false);
     }, 600);
   };
 
+  const handleMapCenterChange = () => {
+    // Deprecated in favor of handleMapCameraChange for coords, 
+    // keeping empty or removing if unused by child (GoogleMapComponent handles it internaly then calls onCameraChange)
+  };
+
   const confirmMapSelection = () => {
-    if (pickingType === 'ORIGIN') {
-      setOrigin({ address: mapCenterAddress });
-    } else if (pickingType === 'DESTINATION') {
-      setDestination({ address: mapCenterAddress });
+    if (pickingType === 'ORIGIN' && mapCenterCoords) {
+      setOrigin({
+        address: mapCenterAddress,
+        lat: mapCenterCoords.lat,
+        lng: mapCenterCoords.lng
+      });
+    } else if (pickingType === 'DESTINATION' && mapCenterCoords) {
+      setDestination({
+        address: mapCenterAddress,
+        lat: mapCenterCoords.lat,
+        lng: mapCenterCoords.lng
+      });
       setStep('CONFIRM_SERVICE');
     }
     setPickingType(null);
@@ -148,7 +168,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
     // Automatically prompt for destination
     setPickingType('DESTINATION');
     setStep('PICK_ON_MAP');
-    handleMapCenterChange();
+    // We can't really "recenter" to driver without coords, but we enter pick mode
   };
 
   // Ride Lifecycle Simulation
@@ -254,16 +274,30 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
     setChatMessages([...chatMessages, newMsg]);
   };
 
+  // Mock destinations for 'Real' feel if coords missing (fallback)
+  const getOriginCoords = () => {
+    if (origin.lat && origin.lng) return { lat: origin.lat, lng: origin.lng };
+    return userRealLocation || undefined;
+  };
+
+  const getDestCoords = () => {
+    if (destination?.lat && destination?.lng) return { lat: destination.lat, lng: destination.lng };
+    return undefined;
+  };
+
   return (
     <main className="h-[calc(100vh-5rem)] flex flex-col relative overflow-hidden">
 
       {/* Google Maps con Capa de Tráfico */}
       <div className="absolute inset-0 z-0">
-        <MapComponent
-          className="h-full w-full rounded-none md:rounded-xl"
+        <GoogleMapComponent
+          className="flex-1"
           status={getMapStatus()}
           onCenterChange={handleMapCenterChange}
+          onCameraChange={handleMapCameraChange}
           currentProgress={rideProgress}
+          origin={getOriginCoords()}
+          destination={getDestCoords()}
         />
       </div>
 
@@ -305,7 +339,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                 </div>
                 <div
                   className="flex-1 border-b border-gray-100 pb-2 cursor-pointer hover:bg-gray-50 transition-colors rounded px-2 -ml-2"
-                  onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); handleMapCenterChange(); }}
+                  onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); }}
                 >
                   <p className="text-[10px] text-green-600 font-bold uppercase">Desde</p>
                   <p className="text-sm font-medium text-gray-900 truncate">{origin.address}</p>
@@ -313,7 +347,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
               </div>
 
               {/* Dest Field */}
-              <div className="flex items-center gap-3 relative group" onClick={() => { setPickingType('DESTINATION'); setStep('PICK_ON_MAP'); handleMapCenterChange(); }}>
+              <div className="flex items-center gap-3 relative group" onClick={() => { setPickingType('DESTINATION'); setStep('PICK_ON_MAP'); }}>
                 <div className="relative z-10 w-5 h-5 flex items-center justify-center">
                   <div className="w-2 h-2 rounded-full bg-mipana-orange shadow-[0_0_0_3px_rgba(242,98,15,0.15)]"></div>
                 </div>
@@ -400,7 +434,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
         step === 'CONFIRM_SERVICE' && (
           <div className="absolute top-4 left-4 right-4 z-20">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-0 overflow-hidden border border-gray-100 dark:border-gray-700 animate-slide-up">
-              <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3" onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); handleMapCenterChange(); }}>
+              <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3" onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); }}>
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <div className="flex-1">
                   <p className="text-[10px] text-gray-400 font-bold uppercase">Desde</p>

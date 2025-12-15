@@ -3,7 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Button from '../components/Button';
-import MapComponent from '../components/MapComponent';
+import GoogleMapComponent from '../components/GoogleMapComponent';
+import LeafletMapComponent from '../components/LeafletMapComponent';
 import ChatInterface from '../components/ChatInterface';
 import { mockRides, calculateLiquidation, SERVICE_CATALOG, startRideSimulation, sendChatMessage, cleanPhoneNumber } from '../services/mockService';
 import { MapPin, DollarSign, Navigation, Trophy, Star, Phone, MessageCircle, XCircle, Info, User, Users, MessageSquare } from 'lucide-react';
@@ -41,6 +42,8 @@ const DriverHome: React.FC = () => {
             passengerId: `p-${Math.floor(Math.random() * 1000)}`,
             origin: ['CC Llano Mall', 'Plaza Bolivar', 'Terminal', 'Urb. El Pilar'][Math.floor(Math.random() * 4)],
             destination: ['La Espiga', 'Araure Centro', 'Agua Blanca', 'Rio Acarigua'][Math.floor(Math.random() * 4)],
+            originCoords: { lat: 9.55 + Math.random() * 0.02, lng: -69.21 + Math.random() * 0.02 },
+            destinationCoords: { lat: 9.56 + Math.random() * 0.02, lng: -69.22 + Math.random() * 0.02 },
             status: 'PENDING',
             vehicleType: randomService.vehicleType,
             serviceId: randomService.id,
@@ -160,12 +163,21 @@ const DriverHome: React.FC = () => {
 
                {/* Map for Active Ride */}
                <div className="h-64 w-full bg-gray-200 relative">
-                  <MapComponent
-                     className="w-full h-full rounded-t-xl md:rounded-xl"
-                     status="IN_PROGRESS"
-                     currentProgress={gpsProgress}
-                  />
-                  <div className="absolute bottom-4 right-4 bg-white/90 p-2 rounded-lg shadow text-xs font-bold">
+                  {import.meta.env.VITE_USE_LEAFLET === 'true' ? (
+                     <LeafletMapComponent
+                        className="h-full w-full rounded-none md:rounded-xl"
+                        origin={activeRide.originCoords}
+                        destination={activeRide.destinationCoords}
+                     />
+                  ) : (
+                     <GoogleMapComponent
+                        className="h-full w-full rounded-none md:rounded-xl"
+                        status={activeRide ? 'IN_PROGRESS' : 'IDLE'}
+                        currentProgress={gpsProgress}
+                        origin={activeRide.originCoords}
+                        destination={activeRide.destinationCoords}
+                     />
+                  )}<div className="absolute bottom-4 right-4 bg-white/90 p-2 rounded-lg shadow text-xs font-bold">
                      <Navigation size={16} className="inline mr-1 text-blue-600" /> Navegación Activa
                   </div>
                </div>

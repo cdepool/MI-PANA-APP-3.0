@@ -4,6 +4,28 @@ import { SERVICE_CATALOG, calculateLiquidation, round2, roundMoney } from './pri
 // --- MOCK DRIVER DATABASE ---
 export const MOCK_DRIVERS_POOL: MatchedDriver[] = [
     {
+        id: 'driver-001',
+        name: 'Pedro "El Rápido" González',
+        vehicleModel: 'Chevrolet Aveo',
+        vehicleColor: 'Blanco',
+        plate: 'AA456BB',
+        rating: 4.95,
+        phone: '+584121111111',
+        avatarUrl: 'https://ui-avatars.com/api/?name=Pedro+Gonzalez&background=10B981&color=fff',
+        timeAway: '2 min'
+    },
+    {
+        id: 'driver-002',
+        name: 'Ana "La Segura" Rodríguez',
+        vehicleModel: 'Nissan Versa',
+        vehicleColor: 'Gris',
+        plate: 'BB789CC',
+        rating: 5.0,
+        phone: '+584142222222',
+        avatarUrl: 'https://ui-avatars.com/api/?name=Ana+Rodriguez&background=8B5CF6&color=fff',
+        timeAway: '4 min'
+    },
+    {
         id: 'driver-99',
         name: 'Carlos El Pana',
         vehicleModel: 'Bera SBR',
@@ -101,11 +123,17 @@ const generateMockRide = (id: string, serviceId: ServiceId, distance: number, st
         ];
     }
 
+    // Acarigua / Araure Coords Validation
+    const baseLat = 9.56;
+    const baseLng = -69.21;
+
     return {
         id,
         passengerId: 'user-002',
         origin: 'CC Buenaventura',
         destination: 'Centro Acarigua',
+        originCoords: { lat: baseLat + Math.random() * 0.01, lng: baseLng + Math.random() * 0.01 },
+        destinationCoords: { lat: baseLat - Math.random() * 0.01, lng: baseLng - Math.random() * 0.01 },
         status,
         vehicleType: service.vehicleType,
         serviceId: service.id,

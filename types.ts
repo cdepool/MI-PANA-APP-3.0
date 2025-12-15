@@ -172,6 +172,8 @@ export interface Ride {
   driverId?: string;
   origin: string;
   destination: string;
+  originCoords?: { lat: number, lng: number };
+  destinationCoords?: { lat: number, lng: number };
   status: 'PENDING' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   serviceId: ServiceId;
   vehicleType: VehicleType;

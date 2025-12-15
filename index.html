@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>MI PANA APP - Siempre Conectado</title>
   <meta name="description"
     content="MI PANA APP es tu copiloto financiero. Gestiona tus ganancias, visualiza estadísticas en tiempo real y conecta con pasajeros de forma segura y eficiente." />
@@ -32,17 +33,25 @@
   <meta name="twitter:image"
     content="https://storage.googleapis.com/msgsndr/u0yeLpwH9qH0cMOrw2KP/media/68f4c7a98a42bd7e9f0909b7.png" />
 
-  <meta name="theme-color" content="#022859" />
-  <link rel="icon" type="image/png"
-    href="https://storage.googleapis.com/msgsndr/u0yeLpwH9qH0cMOrw2KP/media/68f4c7a98a42bd7e9f0909b7.png" />
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#0077B6" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Mi Pana" />
 
+  <!-- Icons -->
+  <link rel="icon" type="image/png" href="/icon.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="mask-icon" href="/icon.png" color="#0077B6" />
+
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    /* Custom scrollbar for webkit */
+    /* Minimalist scrollbar */
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 4px;
+      height: 4px;
     }
 
     ::-webkit-scrollbar-track {
@@ -50,12 +59,29 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      background: #ccc;
-      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 2px;
     }
 
     .dark ::-webkit-scrollbar-thumb {
-      background: #444;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Loading screen */
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: #003366;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    #loading.loaded {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
     }
   </style>
 
@@ -63,18 +89,30 @@
 
 <body
   class="bg-mipana-lightGray text-mipana-black dark:bg-mipana-darkBlue dark:text-white transition-colors duration-200">
+
+  <!-- Loading Screen -->
+  <div id="loading">
+    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" stroke="#ccff00" stroke-width="2" opacity="0.3" />
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="#ccff00" stroke-width="2" stroke-linecap="round">
+        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s"
+          repeatCount="indefinite" />
+      </path>
+    </svg>
+  </div>
+
   <div id="root"></div>
-  <!-- Unregister service workers to clear old PWA cache -->
+
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function (registrations) {
-        for (let registration of registrations) {
-          registration.unregister();
-        }
-      });
-    }
+    // Hide loading screen when app loads
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('loading').classList.add('loaded');
+      }, 500);
+    });
   </script>
-  <!-- Usar ruta relativa ./index.tsx para evitar errores de resolución en Vercel -->
+
+  <!-- App Entry Point -->
   <script type="module" src="./index.tsx"></script>
 </body>
 

@@ -121,6 +121,55 @@ export const authService = {
 
   // 5. Login (Passenger) - Supports Phone OR Email
   loginPassenger: async (identifier: string, pin: string): Promise<User> => {
+    // DEMO USER BYPASS - Allow testing without Supabase
+    if (identifier === 'demo.pasajero@mipana.app' && pin === '123456') {
+      const demoUser: User = {
+        id: 'demo-passenger-001',
+        name: 'Demo Pasajero',
+        email: 'demo.pasajero@mipana.app',
+        phone: '+58 412-0000001',
+        role: UserRole.PASSENGER,
+        avatarUrl: 'https://ui-avatars.com/api/?name=Demo+Pasajero&background=048ABF&color=fff&bold=true',
+        documentId: 'V-12345678',
+        savedPlaces: [
+          {
+            id: '1',
+            name: 'Casa',
+            address: 'Urb. El Pilar, Araure',
+            type: 'HOME',
+            icon: '🏠'
+          },
+          {
+            id: '2',
+            name: 'Trabajo',
+            address: 'Centro Comercial Llano Mall',
+            type: 'WORK',
+            icon: '💼'
+          }
+        ],
+        favoriteDriverIds: ['driver-001', 'driver-002'],
+        wallet: {
+          balance: 50.00,
+          transactions: [
+            {
+              id: 'tx-001',
+              amount: 50.00,
+              currency: 'USD',
+              exchangeRate: 45.50,
+              date: Date.now() - 86400000,
+              type: 'DEPOSIT',
+              description: 'Recarga inicial demo',
+              status: 'COMPLETED'
+            }
+          ]
+        }
+      };
+
+      localStorage.setItem(SESSION_KEY, JSON.stringify(demoUser));
+      return demoUser;
+    }
+
+    // Regular Supabase authentication
     // Assuming 'pin' is used as password for Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({
       email: identifier,
