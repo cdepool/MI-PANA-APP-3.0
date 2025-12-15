@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import { User, Lock, ArrowRight, AlertCircle } from 'lucide-react';
+import { User, Lock, ArrowRight, AlertCircle, Car, Shield } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'sonner';
 import { authService } from '../services/authService';
@@ -84,48 +84,78 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 
   if (!role) {
     return (
-      <div className="min-h-screen bg-mipana-lightGray dark:bg-[#011836] flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-8 animate-fade-in">
-          <div className="text-center">
-            <img src="https://storage.googleapis.com/msgsndr/u0yeLpwH9qH0cMOrw2KP/media/68f4c7a98a42bd7e9f0909b7.png" alt="Mi Pana App" className="h-24 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-mipana-darkBlue dark:text-white">Bienvenido</h1>
-            <p className="text-gray-500 mt-2">Selecciona tu perfil para ingresar</p>
+      <div className="min-h-screen bg-[#001529] flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-white rounded-[2rem] shadow-2xl p-8 animate-bounce-in relative overflow-hidden">
+
+          {/* Logo Section */}
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg z-10 relative">
+                <img
+                  src="/logo-pin.png"
+                  onError={(e) => e.currentTarget.src = "https://cdn-icons-png.flaticon.com/512/929/929426.png"} // Fallback pin icon
+                  alt="Mi Pana Pin"
+                  className="w-16 h-16 object-contain"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
+          {/* Title Section */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-[900] text-[#002855] tracking-tight mb-1">¡HOLA MI PANA!</h1>
+            <p className="text-[#0099CC] font-bold tracking-[0.15em] text-xs">SIEMPRE CONECTADO</p>
+          </div>
+
+          {/* Action Text */}
+          <p className="text-center text-gray-500 mb-6 text-sm">
+            Selecciona tu perfil para ingresar
+          </p>
+
+          {/* Buttons Stack */}
+          <div className="space-y-4">
             <button
               onClick={() => setRole(UserRole.PASSENGER)}
-              className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-mipana-mediumBlue flex items-center justify-between group"
+              className="w-full py-3.5 px-4 bg-[#0088CC] hover:bg-[#0077b5] text-white rounded-xl font-bold text-lg shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
-              <div className="text-left">
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Pasajero</h3>
-                <p className="text-sm text-gray-500">Solicita viajes y envíos</p>
-              </div>
-              <ArrowRight className="text-mipana-mediumBlue opacity-0 group-hover:opacity-100 transition-opacity" />
+              <User size={20} />
+              Soy Pasajero
             </button>
 
             <button
               onClick={() => setRole(UserRole.DRIVER)}
-              className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-mipana-yellow flex items-center justify-between group"
+              className="w-full py-3.5 px-4 bg-white border-2 border-[#0088CC] text-[#0088CC] hover:bg-blue-50 rounded-xl font-bold text-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
-              <div className="text-left">
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Conductor</h3>
-                <p className="text-sm text-gray-500">Gana dinero conduciendo</p>
-              </div>
-              <ArrowRight className="text-mipana-yellow opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Car size={20} />
+              Soy Conductor (Pana)
             </button>
 
             <button
               onClick={() => setRole(UserRole.ADMIN)}
-              className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-red-500 flex items-center justify-between group"
+              className="w-full py-3.5 px-4 bg-[#506679] hover:bg-[#405261] text-white rounded-xl font-bold text-lg shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
-              <div className="text-left">
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Administrador</h3>
-                <p className="text-sm text-gray-500">Gestión de flota y usuarios</p>
-              </div>
-              <ArrowRight className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Shield size={20} /> // Using Shield temporarily, need to import if not present or verify imports
+              Administrador
             </button>
           </div>
+
+          {/* Footer */}
+          <div className="mt-8 text-center space-y-4">
+            <div className="text-sm text-gray-500">
+              ¿No tienes cuenta?
+            </div>
+            <button
+              onClick={onNavigateRegister}
+              className="text-[#0088CC] font-bold text-lg hover:underline flex items-center justify-center gap-1 mx-auto"
+            >
+              Crear Cuenta Nueva <ArrowRight size={18} />
+            </button>
+
+            <div className="pt-8 text-[10px] text-gray-400">
+              © 2025 Mi Pana App. Acarigua - Araure.
+            </div>
+          </div>
+
         </div>
       </div>
     );
