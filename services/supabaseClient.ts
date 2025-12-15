@@ -13,5 +13,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
     );
 }
 
-// Initialize with fallback to prevent crash, requests will fail gracefully
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+// Initialize with fallback to prevent crash (WSOD) if env vars are missing
+// This allows the app to load and show a proper error UI instead of a blank screen
+export const supabase = createClient(
+    supabaseUrl || 'https://placeholder.supabase.co',
+    supabaseAnonKey || 'placeholder-key'
+);
