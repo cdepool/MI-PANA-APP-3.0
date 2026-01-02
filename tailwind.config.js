@@ -14,6 +14,7 @@ export default {
         mipana: {
           navy: "#001F3F",
           cyan: "#00BCD4",
+          mediumBlue: "#0077B6",
           orange: "#FF9800",
           gray: "#F4F7F6",
           dark: "#1A1A1A",
