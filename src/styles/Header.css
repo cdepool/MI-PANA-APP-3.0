@@ -1,0 +1,244 @@
+/* Header Styles */
+
+.app-header {
+  background-color: var(--color-primary-navy);
+  color: var(--color-neutral-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+/* Left Section */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.menu-button {
+  background: transparent;
+  border: none;
+  color: var(--color-neutral-white);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.menu-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-neutral-white);
+  letter-spacing: 0.5px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Center Section */
+.header-center {
+  flex: 1;
+  text-align: center;
+  padding: 0 2rem;
+}
+
+.header-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-neutral-white);
+}
+
+.header-subtitle {
+  font-size: 0.875rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Right Section */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Exchange Rate Display */
+.exchange-rate {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.exchange-rate-icon {
+  font-size: 1.25rem;
+}
+
+.exchange-rate-label {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.exchange-rate-value {
+  font-weight: 700;
+  color: var(--color-secondary-green);
+  font-size: 1rem;
+}
+
+.exchange-rate-value.loading {
+  color: rgba(255, 255, 255, 0.6);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.exchange-rate-value.error {
+  color: var(--color-secondary-red);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Icon Buttons */
+.icon-button {
+  position: relative;
+  background: transparent;
+  border: none;
+  color: var(--color-neutral-white);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.notification-badge {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  background-color: var(--color-secondary-red);
+  color: var(--color-neutral-white);
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.125rem 0.375rem;
+  border-radius: 9999px;
+  min-width: 1.25rem;
+  text-align: center;
+}
+
+/* Exchange Rate Bar Mobile */
+.exchange-rate-bar-mobile {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-container {
+    padding: 0.75rem 1rem;
+  }
+
+  .header-center {
+    display: none;
+  }
+
+  .exchange-rate {
+    display: none;
+  }
+
+  .exchange-rate-bar-mobile {
+    display: flex;
+  }
+
+  .header-right {
+    gap: 0.75rem;
+  }
+
+  .logo {
+    height: 32px;
+  }
+
+  .logo-title {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-container {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .header-left {
+    gap: 0.5rem;
+  }
+
+  .header-right {
+    gap: 0.5rem;
+  }
+
+  .icon-button {
+    padding: 0.375rem;
+  }
+
+  .exchange-rate-bar-mobile {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+/* Dark Mode Support */
+body.dark-mode .app-header {
+  background-color: #001a33;
+}
+
+body.dark-mode .menu-button:hover,
+body.dark-mode .icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
