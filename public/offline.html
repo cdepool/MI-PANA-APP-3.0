@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin Conexión - MI PANA APP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #003366 0%, #0066cc 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 48px 32px;
+            max-width: 480px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 24px;
+            background: #f0f0f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+        }
+
+        h1 {
+            color: #003366;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        p {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .retry-button {
+            background: #003366;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .retry-button:hover {
+            background: #0066cc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 51, 102, 0.3);
+        }
+
+        .retry-button:active {
+            transform: translateY(0);
+        }
+
+        .tips {
+            margin-top: 32px;
+            padding-top: 32px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .tips h2 {
+            color: #003366;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .tips ul {
+            text-align: left;
+            list-style: none;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .tips li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .tips li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #0066cc;
+            font-weight: bold;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 32px 24px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .icon {
+                width: 100px;
+                height: 100px;
+                font-size: 48px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📡</div>
+        <h1>Sin Conexión a Internet</h1>
+        <p>
+            No pudimos conectarnos a los servidores de MI PANA APP. 
+            Por favor, verifica tu conexión a internet e intenta nuevamente.
+        </p>
+        <button class="retry-button" onclick="window.location.reload()">
+            Reintentar Conexión
+        </button>
+
+        <div class="tips">
+            <h2>Consejos para Conectarte</h2>
+            <ul>
+                <li>Verifica que el WiFi o los datos móviles estén activados</li>
+                <li>Intenta moverte a un área con mejor señal</li>
+                <li>Reinicia tu router o dispositivo</li>
+                <li>Desactiva y reactiva el modo avión</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Auto-retry when connection is restored
+        window.addEventListener('online', () => {
+            console.log('Connection restored');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        });
+
+        // Check connection status
+        if (navigator.onLine) {
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>

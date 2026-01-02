@@ -1,0 +1,119 @@
+{
+    "name": "MI PANA APP - Tu compañero de viaje en Venezuela",
+    "short_name": "Mi Pana",
+    "description": "Plataforma de transporte seguro y confiable en Venezuela. Conecta con conductores verificados y viaja con tranquilidad.",
+    "theme_color": "#003366",
+    "background_color": "#ffffff",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "start_url": "/",
+    "id": "com.mipana.app",
+    "categories": ["travel", "transportation", "navigation"],
+    "lang": "es-VE",
+    "dir": "ltr",
+    "icons": [
+        {
+            "src": "/pwa-64x64.png",
+            "sizes": "64x64",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa-maskable-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/pwa-maskable-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/screenshot-mobile-1.png",
+            "sizes": "750x1334",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Pantalla principal de pasajero"
+        },
+        {
+            "src": "/screenshot-mobile-2.png",
+            "sizes": "750x1334",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Selección de servicio y destino"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Solicitar Viaje",
+            "short_name": "Viaje",
+            "description": "Solicita un viaje rápidamente",
+            "url": "/passenger",
+            "icons": [
+                {
+                    "src": "/shortcut-ride.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Mi Billetera",
+            "short_name": "Billetera",
+            "description": "Gestiona tu saldo y pagos",
+            "url": "/wallet",
+            "icons": [
+                {
+                    "src": "/shortcut-wallet.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Historial",
+            "short_name": "Historial",
+            "description": "Ver viajes anteriores",
+            "url": "/history",
+            "icons": [
+                {
+                    "src": "/shortcut-history.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false,
+    "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+    "edge_side_panel": {
+        "preferred_width": 400
+    },
+    "launch_handler": {
+        "client_mode": ["navigate-existing", "auto"]
+    }
+}
