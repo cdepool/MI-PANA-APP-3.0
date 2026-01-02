@@ -2,7 +2,10 @@
 export default {
   content: [
     "./index.html",
+    "./index.tsx",
     "./src/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -13,6 +16,9 @@ export default {
           orange: "#FF9800",
           gray: "#F4F7F6",
           dark: "#1A1A1A",
+          lightGray: "#F4F7F6",
+          darkBlue: "#003366",
+          black: "#1A1A1A",
         }
       },
       fontFamily: {

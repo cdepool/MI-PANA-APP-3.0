@@ -11,7 +11,7 @@ import OnboardingTour from './components/OnboardingTour';
 const Login = React.lazy(() => import('./pages/Login'));
 const PassengerHome = React.lazy(() => import('./pages/PassengerHome'));
 const DriverHome = React.lazy(() => import('./pages/DriverHome'));
-const AdminHome = React.lazy(() => import('./pages/AdminHome'));
+const AdminHome = React.lazy(() => import('./pages/ProfessionalAdminDashboard'));
 const UserProfile = React.lazy(() => import('./pages/UserProfile'));
 const RideHistory = React.lazy(() => import('./pages/RideHistory'));
 const ScheduleRides = React.lazy(() => import('./pages/ScheduleRides'));

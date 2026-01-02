@@ -7,7 +7,7 @@ import DriverHome from '../pages/DriverHome';
 import AdminHome from '../pages/AdminHome';
 import ProfessionalAdminDashboard from '../pages/ProfessionalAdminDashboard';
 import Wallet from '../pages/Wallet';
-import { AuthProvider, useAuth } from './services/AuthContext';
+import { AuthProvider, useAuth } from '../context/AuthContext';
 
 const PrivateRoute = ({ children, role }: { children: React.ReactNode, role?: string }) => {
   const { user, profile, loading } = useAuth();
