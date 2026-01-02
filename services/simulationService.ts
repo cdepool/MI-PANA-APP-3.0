@@ -228,6 +228,11 @@ export const mockRecurringRides: RecurringRide[] = [
     }
 ];
 
+export const getServiceIcon = (serviceId: ServiceId): string => {
+    const service = SERVICE_CATALOG.find(s => s.id === serviceId);
+    return service?.icono || '🚗';
+};
+
 // --- CHAT UTILITIES ---
 
 export const cleanPhoneNumber = (phone?: string): string => {
