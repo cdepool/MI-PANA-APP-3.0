@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { AppView } from '../types';
-import ProfessionalHeader from '../src/components/ProfessionalHeader';
+import ProfessionalHeader from './ProfessionalHeader';
 
 interface LayoutProps {
   children: React.ReactNode;
