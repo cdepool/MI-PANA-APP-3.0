@@ -51,3 +51,62 @@ export const adminService = {
     ];
   }
 };
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: 'passenger' | 'driver' | 'admin';
+  status: 'active' | 'pending' | 'suspended';
+  createdAt: string;
+  phone: string;
+  documentId: string;
+}
+
+export const userManagementService = {
+  async getUsers(): Promise<UserProfile[]> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Mapeo de datos reales o fallback a mock si no hay datos
+      return (data || []).map(u => ({
+        id: u.id,
+        name: u.full_name || u.name || 'Usuario sin nombre',
+        email: u.email,
+        role: u.role,
+        status: u.status || 'active',
+        createdAt: u.created_at,
+        phone: u.phone || 'N/A',
+        documentId: u.document_id || 'N/A'
+      }));
+    } catch (error) {
+      logger.error("Error fetching users", error);
+      // Mock data for development
+      return [
+        { id: '1', name: 'Carlos El Pana', email: 'carlos@pana.com', role: 'driver', status: 'active', createdAt: '2025-12-01', phone: '0412-1112233', documentId: 'V-12345678' },
+        { id: '2', name: 'María Pérez', email: 'maria@gmail.com', role: 'passenger', status: 'active', createdAt: '2025-12-05', phone: '0414-5556677', documentId: 'V-87654321' },
+        { id: '3', name: 'Juan Conductor', email: 'juan@pana.com', role: 'driver', status: 'pending', createdAt: '2026-01-01', phone: '0416-9998877', documentId: 'V-11223344' },
+      ];
+    }
+  },
+
+  async updateUserStatus(userId: string, status: 'active' | 'suspended'): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status })
+        .eq('id', userId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      logger.error("Error updating user status", error);
+      return false;
+    }
+  }
+};

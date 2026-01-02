@@ -1,100 +1,41 @@
-import React, { useState, Suspense } from 'react';
-import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { UserRole, AppView } from './types';
+import React, { useState } from 'react';
+import { useAuth } from './context/AuthContext';
+import { AppView, UserRole } from './types';
 import Layout from './components/Layout';
-import { Toaster } from './components/ui/sonner';
-import ErrorBoundary from './components/ErrorBoundary';
-import OnboardingTour from './components/OnboardingTour';
+import PassengerHome from './pages/PassengerHome';
+import DriverHome from './pages/DriverHome';
+import ProfessionalAdminDashboard from './pages/ProfessionalAdminDashboard';
+import UserManagement from './pages/UserManagement';
+import Wallet from './pages/Wallet';
+import Login from './pages/Login';
 
-// Lazy Load Pages for Performance (Code Splitting)
-const Login = React.lazy(() => import('./pages/Login'));
-const PassengerHome = React.lazy(() => import('./pages/PassengerHome'));
-const DriverHome = React.lazy(() => import('./pages/DriverHome'));
-const AdminHome = React.lazy(() => import('./pages/ProfessionalAdminDashboard'));
-const UserProfile = React.lazy(() => import('./pages/UserProfile'));
-const RideHistory = React.lazy(() => import('./pages/RideHistory'));
-const ScheduleRides = React.lazy(() => import('./pages/ScheduleRides'));
-const Register = React.lazy(() => import('./pages/Register'));
-const Wallet = React.lazy(() => import('./pages/Wallet'));
-const ConductorProfile = React.lazy(() => import('./pages/ConductorProfile'));
-const AdminApprovalDashboard = React.lazy(() => import('./pages/AdminApprovalDashboard'));
-
-const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-mipana-lightGray dark:bg-gray-900">
-    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-mipana-mediumBlue"></div>
-  </div>
-);
-
-const AppContent: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
+const App: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
   const [currentView, setCurrentView] = useState<AppView>('HOME');
 
-  // Special Route: Registration (No auth required)
-  if (currentView === 'REGISTER') {
-    return (
-      <Suspense fallback={<LoadingFallback />}>
-        <Register
-          onNavigateHome={() => setCurrentView('HOME')}
-          onNavigateLogin={() => setCurrentView('HOME')}
-        />
-      </Suspense>
-    );
-  }
-
-  // Default Login State (No auth)
   if (!isAuthenticated) {
-    return (
-      <Suspense fallback={<LoadingFallback />}>
-        <Login onNavigateRegister={() => setCurrentView('REGISTER')} />
-      </Suspense>
-    );
+    return <Login />;
   }
 
-  const renderContent = () => {
-    if (currentView === 'PROFILE') {
-      // Show ConductorProfile for drivers, UserProfile for others
-      return user?.role === UserRole.DRIVER ? <ConductorProfile /> : <UserProfile />;
-    }
-    if (currentView === 'HISTORY') return <RideHistory />;
-    if (currentView === 'SCHEDULE') return <ScheduleRides />;
-    if (currentView === 'WALLET') return <Wallet />;
-    if (currentView === 'SETTINGS') return <UserProfile />;
-    if (currentView === 'APPROVALS') return <AdminApprovalDashboard />; // New admin view
-
-    switch (user?.role) {
-      case UserRole.ADMIN:
-        return <AdminHome />;
-      case UserRole.DRIVER:
-        return <DriverHome />;
-      case UserRole.PASSENGER:
+  const renderView = () => {
+    switch (currentView) {
+      case 'HOME':
+        if (user?.role === UserRole.ADMIN) return <ProfessionalAdminDashboard />;
+        if (user?.role === UserRole.DRIVER) return <DriverHome />;
+        return <PassengerHome />;
+      case 'WALLET':
+        return <Wallet />;
+      case 'APPROVALS':
+        return <UserManagement />;
       default:
-        return <PassengerHome onNavigateWallet={() => setCurrentView('WALLET')} />;
+        return <div className="p-8 text-center font-bold text-mipana-navy">Vista en Desarrollo</div>;
     }
   };
 
   return (
-    <ErrorBoundary>
-      <OnboardingTour />
-      <Layout onNavigate={setCurrentView}>
-        <Suspense fallback={<LoadingFallback />}>
-          {renderContent()}
-        </Suspense>
-      </Layout>
-    </ErrorBoundary>
-  );
-};
-
-const App: React.FC = () => {
-  return (
-    <ThemeProvider>
-      <ErrorBoundary>
-        <AuthProvider>
-          <AppContent />
-          <Toaster />
-        </AuthProvider>
-      </ErrorBoundary>
-    </ThemeProvider>
+    <Layout onNavigate={(view) => setCurrentView(view)}>
+      {renderView()}
+    </Layout>
   );
 };
 
