@@ -68,21 +68,7 @@
     }
 
     /* Loading screen */
-    #loading {
-      position: fixed;
-      inset: 0;
-      background: #003366;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
 
-    #loading.loaded {
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s;
-    }
   </style>
 
 </head>
@@ -91,26 +77,6 @@
   class="bg-mipana-lightGray text-mipana-black dark:bg-mipana-darkBlue dark:text-white transition-colors duration-200">
 
   <!-- Loading Screen -->
-  <div id="loading">
-    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" stroke="#ccff00" stroke-width="2" opacity="0.3" />
-      <path d="M12 2a10 10 0 0 1 10 10" stroke="#ccff00" stroke-width="2" stroke-linecap="round">
-        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s"
-          repeatCount="indefinite" />
-      </path>
-    </svg>
-  </div>
-
-  <div id="root"></div>
-
-  <script>
-    // Hide loading screen when app loads
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        document.getElementById('loading').classList.add('loaded');
-      }, 500);
-    });
-  </script>
 
   <!-- App Entry Point -->
   <script type="module" src="./index.tsx"></script>
