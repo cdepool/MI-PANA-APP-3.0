@@ -14,10 +14,10 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
-  const { login } = useAuth();
+  const { login, loginPassenger } = useAuth();
   const [role, setRole] = useState<UserRole | null>(null);
   const [identifier, setIdentifier] = useState('');
-  const [pin, setPin] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,24 +29,12 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
     setError(null);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      if (role === UserRole.PASSENGER) {
-        // Validate Passenger Credentials (Mock)
-        // In a real app, this would verify against backend
-        if (identifier && pin === '123456') { // Mock PIN check
-          login(role, { email: identifier });
-        } else {
-          throw new Error("Credenciales inválidas. (Usa PIN 123456 para demo)");
-        }
-      } else {
-        // Driver/Admin login
-        login(role);
-      }
+      // Real Login for ALL roles (Passenger, Driver, Admin)
+      // The backend (Supabase) verifies credentials and returns the profile
+      await loginPassenger(identifier, password);
     } catch (err: any) {
-      setError(err.message);
-      toast.error(err.message);
+      setError(err.message || 'Error al iniciar sesión');
+      toast.error(err.message || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +122,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
               onClick={() => setRole(UserRole.ADMIN)}
               className="w-full py-3.5 px-4 bg-[#506679] hover:bg-[#405261] text-white rounded-xl font-bold text-lg shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
-              <Shield size={20} /> // Using Shield temporarily, need to import if not present or verify imports
+              <Shield size={20} />
               Administrador
             </button>
           </div>
@@ -190,12 +178,12 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
             />
 
             <Input
-              label="PIN de Seguridad"
+              label="Contraseña"
               icon={<Lock size={18} />}
               type="password"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="******"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••"
             />
 
             {error && (
@@ -237,7 +225,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
                 type="button"
                 onClick={() => {
                   setIdentifier('demo.pasajero@mipana.app');
-                  setPin('123456');
+                  setPassword('123456');
                   setTimeout(() => {
                     const form = document.querySelector('form');
                     if (form) form.requestSubmit();

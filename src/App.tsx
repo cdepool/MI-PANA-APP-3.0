@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import PassengerHome from '../pages/PassengerHome';
@@ -10,26 +10,28 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 
 const PrivateRoute = ({ children, role }: { children: React.ReactNode, role?: string }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
-  
+
   if (isLoading) return <div className="flex items-center justify-center h-screen bg-mipana-darkBlue text-white">Cargando...</div>;
   if (!isAuthenticated) return <Navigate to="/login" />;
   if (role && user?.role !== role) return <Navigate to="/" />;
-  
+
   return <>{children}</>;
 };
 
 const AppRoutes = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <Routes>
-      <Route path="/login" element={<Login onNavigateRegister={() => {}} />} />
-      <Route path="/register" element={<Register />} />
-      
+      <Route path="/login" element={<Login onNavigateRegister={() => navigate('/register')} />} />
+      <Route path="/register" element={<Register onNavigateHome={() => navigate('/')} onNavigateLogin={() => navigate('/login')} />} />
+
       <Route path="/" element={
         <PrivateRoute>
-          {user?.role === 'ADMIN' ? <Navigate to="/admin" /> : 
-           user?.role === 'DRIVER' ? <Navigate to="/driver" /> : 
-           <Navigate to="/passenger" />}
+          {user?.role === 'ADMIN' ? <Navigate to="/admin" /> :
+            user?.role === 'DRIVER' ? <Navigate to="/driver" /> :
+              <Navigate to="/passenger" />}
         </PrivateRoute>
       } />
       <Route path="/passenger" element={<PrivateRoute role="PASSENGER"><PassengerHome /></PrivateRoute>} />

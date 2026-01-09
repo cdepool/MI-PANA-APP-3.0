@@ -17,7 +17,7 @@ import { UserRole } from '../types';
 const emailSchema = z.string().email("Correo electrónico inválido");
 const phoneSchema = z.string().regex(/^0(4|2)\d{9}$/, "Número válido requerido (Ej: 04121234567)");
 const otpSchema = z.string().length(6, "El código debe tener 6 dígitos");
-const pinSchema = z.string().length(6, "El PIN debe tener 6 dígitos").regex(/^\d+$/, "Solo números");
+const passwordSchema = z.string().min(6, "La contraseña debe tener al menos 6 caracteres");
 const profileSchema = z.object({
   firstName: z.string().min(2, "Mínimo 2 letras"),
   lastName: z.string().min(2, "Mínimo 2 letras"),
@@ -48,8 +48,8 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
   const [idType, setIdType] = useState<'V' | 'E' | 'J'>('V');
   const [idNumber, setIdNumber] = useState('');
   const [age, setAge] = useState('');
-  const [pin, setPin] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // --- HANDLERS ---
 
@@ -158,12 +158,12 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
   const handleFinalSubmit = async () => {
     setError(null);
-    if (pin !== confirmPin) {
-      toast.error("Los PINs no coinciden.");
+    if (password !== confirmPassword) {
+      toast.error("Las contraseñas no coinciden.");
       return;
     }
-    if (!pinSchema.safeParse(pin).success) {
-      toast.error("El PIN debe ser de 6 dígitos numéricos.");
+    if (!passwordSchema.safeParse(password).success) {
+      toast.error("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
 
@@ -176,8 +176,9 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
         lastName,
         idType,
         idNumber,
+        idNumber,
         age: Number(age),
-        pin
+        password
       });
 
       login(UserRole.PASSENGER, user);
@@ -317,24 +318,30 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
           </div>
         );
 
-      case 3: // PIN
+      case 3: // CONTRASEÑA
         return (
           <div className="space-y-6 animate-slide-left">
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">Crea tu PIN</h2>
-              <p className="text-gray-500 text-sm">Para autorizar pagos y seguridad.</p>
+              <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">Crea tu Contraseña</h2>
+              <p className="text-gray-500 text-sm">Para proteger tu cuenta.</p>
             </div>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">PIN de 6 Dígitos</label>
-                <OtpInput value={pin} onChange={setPin} length={6} />
-              </div>
+              <Input
+                label="Contraseña"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">Confirmar PIN</label>
-                <OtpInput value={confirmPin} onChange={setConfirmPin} length={6} />
-              </div>
+              <Input
+                label="Confirmar Contraseña"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repite tu contraseña"
+              />
             </div>
 
             <Button onClick={handleFinalSubmit} fullWidth variant="action" disabled={isLoading}>

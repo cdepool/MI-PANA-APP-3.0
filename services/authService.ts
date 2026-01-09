@@ -72,7 +72,7 @@ export const authService = {
     // 1. Sign up with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
-      password: data.pin, // Using PIN as password for simplicity in migration, or generate a random one
+      password: data.password, // Standard password registration
       options: {
         data: {
           first_name: data.firstName,
@@ -113,9 +113,9 @@ export const authService = {
   },
 
   // 5. Login (Passenger) - Supports Phone OR Email
-  loginPassenger: async (identifier: string, pin: string): Promise<User> => {
+  loginPassenger: async (identifier: string, password: string): Promise<User> => {
     // DEMO USER BYPASS - Allow testing without Supabase
-    if (identifier === 'demo.pasajero@mipana.app' && pin === '123456') {
+    if (identifier === 'demo.pasajero@mipana.app' && password === '123456') {
       const demoUser: User = {
         id: 'demo-passenger-001',
         name: 'Demo Pasajero',
@@ -166,7 +166,7 @@ export const authService = {
     // Assuming 'pin' is used as password for Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({
       email: identifier,
-      password: pin,
+      password: password,
     });
 
     if (error) throw new Error(error.message);

@@ -6,7 +6,7 @@ import { authService } from '../services/authService';
 import logger from '../utils/logger';
 
 interface ExtendedAuthContextType extends AuthContextType {
-  loginPassenger: (phone: string, pin: string) => Promise<void>;
+  loginPassenger: (identifier: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<ExtendedAuthContextType | undefined>(undefined);
@@ -34,9 +34,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     authService.setSession(finalUser);
   };
 
-  const loginPassenger = async (phone: string, pin: string) => {
+  const loginPassenger = async (identifier: string, password: string) => {
     try {
-      const loggedUser = await authService.loginPassenger(phone, pin);
+      const loggedUser = await authService.loginPassenger(identifier, password);
       setUser(loggedUser);
     } catch (error) {
       throw error;

@@ -244,7 +244,7 @@ export interface RegistrationData {
   idType: 'V' | 'E' | 'J';
   idNumber: string;
   age: number;
-  pin: string;
+  password: string;
 }
 
 // --- DRIVER PROFILE EXTENSIONS ---
