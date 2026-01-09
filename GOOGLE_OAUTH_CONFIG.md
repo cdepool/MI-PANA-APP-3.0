@@ -43,3 +43,15 @@ Vercel no lee archivos `.env` locales. Estas variables deben configurarse en **P
 ### Error 400: redirect_uri_mismatch
 - **Causa:** La URL actual del navegador no coincide **exactamente** con ninguna de las "URIs de redireccionamiento autorizados" en GCP.
 - **Solución:** Agregar la URL faltante (ej: `https://.../`) en la consola de Google Cloud.
+
+### Error 403: access_denied (Acceso bloqueado)
+- **Mensaje:** "mipana.app no completó el proceso de verificación de Google".
+- **Causa:** La pantalla de consentimiento OAuth está en modo **"Testing"** (Pruebas) y tu correo no está en la lista de "Test users".
+- **Solución Rápida:**
+    1. Ve a [Google Cloud Console > OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent).
+    2. Baja a la sección **"Test users"**.
+    3. Haz clic en **"ADD USERS"** y agrega tu correo (`ceocanalnext@gmail.com`).
+    4. Guardar. El acceso será inmediato.
+- **Solución Definitiva:**
+    1. En la misma pantalla, haz clic en **"PUBLISH APP"** (Publicar aplicación) para pasar a **"Production"**.
+    2. Esto abrirá el acceso a cualquier cuenta de Google, aunque mostrará una advertencia de "App no verificada" hasta que Google la apruebe (proceso largo).
