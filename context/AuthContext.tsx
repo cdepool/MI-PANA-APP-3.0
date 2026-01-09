@@ -15,13 +15,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load session on mount
+  // Load session on mount & Listen for Auth Changes
   useEffect(() => {
+    // 1. Initial Load from LocalStorage
     const storedUser = authService.getSession();
     if (storedUser) {
       setUser(storedUser);
     }
     setIsLoading(false);
+
+    // 2. Listen for Supabase Auth State Changes (Google Redirects, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      logger.log(`Auth State Change: ${event}`, session);
+
+      if (event === 'SIGNED_IN' && session) {
+        // Fetch full profile and update state
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile) {
+            const fullUser = profile as User;
+            setUser(fullUser);
+            authService.setSession(fullUser);
+          }
+        } catch (e) {
+          console.error("Error fetching profile on auth change", e);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        localStorage.removeItem('mipana_session');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = (role: UserRole, userData?: Partial<User>) => {

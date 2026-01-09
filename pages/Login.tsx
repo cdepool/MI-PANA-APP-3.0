@@ -121,7 +121,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
         {role === UserRole.PASSENGER ? (
           <form onSubmit={handleLogin} className="space-y-6">
             <Input
-              label="Correo o Teléfono"
+              label="Correo Electrónico"
               icon={<User size={18} />}
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
@@ -159,7 +159,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 
             <button
               type="button"
-              onClick={() => googleLogin()}
+              onClick={() => authService.loginWithGoogle()}
               className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-700 text-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

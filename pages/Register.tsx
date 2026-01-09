@@ -194,7 +194,6 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
         lastName,
         idType,
         idNumber,
-        idNumber,
         age: Number(age),
         password: finalPassword
       });
