@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { User, Phone, Mail, MapPin, Lock, Settings, HelpCircle, ChevronDown, Edit2, Check, AlertCircle } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Lock, Settings, HelpCircle, ChevronDown, Edit2, Check, AlertCircle, Save, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabaseClient';
+import { toast } from 'sonner';
 
 interface PassengerProfile {
   id: string;
@@ -20,8 +21,9 @@ interface PassengerProfile {
 export default function PassengerProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<PassengerProfile | null>(null);
+  const [formData, setFormData] = useState<Partial<PassengerProfile>>({});
   const [loading, setLoading] = useState(true);
-  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     personal: true,
     preferences: false,
@@ -45,10 +47,39 @@ export default function PassengerProfile() {
 
       if (error) throw error;
       setProfile(data);
+      setFormData(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast.error('Error al cargar perfil');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof PassengerProfile, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    if (!user || !formData) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: formData.full_name,
+          phone: formData.phone
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? ({ ...prev, ...formData } as PassengerProfile) : null);
+      setIsEditing(false);
+      toast.success('Perfil actualizado correctamente');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Error al actualizar perfil');
     }
   };
 
@@ -90,7 +121,7 @@ export default function PassengerProfile() {
           <div className="flex-1">
             <h1 className="text-3xl font-bold">{profile.full_name}</h1>
             <p className="text-cyan-200">{profile.cedula}</p>
-            
+
             {/* Badges */}
             <div className="flex gap-2 mt-3 flex-wrap">
               <span className="bg-blue-600 px-3 py-1 rounded-full text-sm">Membresía: {profile.membership}</span>
@@ -160,17 +191,47 @@ export default function PassengerProfile() {
 
               {expandedSections.personal && (
                 <div className="border-t border-gray-200 p-6 space-y-4">
+                  <div className="flex justify-end gap-2 mb-4">
+                    {!isEditing ? (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                      >
+                        <Edit2 size={16} /> Editar Información
+                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setIsEditing(false);
+                            setFormData(profile || {});
+                          }}
+                          className="flex items-center gap-1 text-gray-500 hover:text-gray-700 px-3 py-1 bg-gray-100 rounded-md text-sm"
+                        >
+                          <X size={16} /> Cancelar
+                        </button>
+                        <button
+                          onClick={handleSave}
+                          className="flex items-center gap-1 text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-sm shadow-sm"
+                        >
+                          <Save size={16} /> Guardar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Completo</label>
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
-                          value={profile.full_name}
-                          disabled
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                          value={formData.full_name || ''}
+                          onChange={(e) => handleInputChange('full_name', e.target.value)}
+                          disabled={!isEditing}
+                          className={`flex-1 px-3 py-2 border rounded-lg transition-colors ${isEditing ? 'border-blue-300 bg-white' : 'border-gray-300 bg-gray-50'
+                            }`}
                         />
-                        <Edit2 className="w-4 h-4 text-gray-400 cursor-pointer" />
                       </div>
                     </div>
                     <div>
@@ -180,9 +241,9 @@ export default function PassengerProfile() {
                           type="text"
                           value={profile.cedula}
                           disabled
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 opacity-70"
                         />
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">No editable</span>
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">No editable</span>
                       </div>
                     </div>
                   </div>
@@ -194,7 +255,7 @@ export default function PassengerProfile() {
                         type="text"
                         value={profile.birth_date}
                         disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 opacity-70"
                       />
                     </div>
                     <div>
@@ -202,13 +263,17 @@ export default function PassengerProfile() {
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
-                          value={profile.phone}
-                          disabled
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                          value={formData.phone || ''}
+                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                          disabled={!isEditing}
+                          className={`flex-1 px-3 py-2 border rounded-lg transition-colors ${isEditing ? 'border-blue-300 bg-white' : 'border-gray-300 bg-gray-50'
+                            }`}
                         />
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded flex items-center gap-1">
-                          <Check className="w-3 h-3" /> Verificado
-                        </span>
+                        {!isEditing && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Verificado
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -220,7 +285,7 @@ export default function PassengerProfile() {
                         type="email"
                         value={profile.email}
                         disabled
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 opacity-70"
                       />
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded flex items-center gap-1">
                         <Check className="w-3 h-3" /> Verificado

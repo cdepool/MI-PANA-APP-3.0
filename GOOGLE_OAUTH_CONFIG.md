@@ -1,54 +1,45 @@
-# CONFIGURACIÓN OAUTH GOOGLE - MI PANA APP
+# Configuración de Google OAuth 2.0
 
-## Contexto del Proyecto
-- **App**: MI PANA APP (ride-hailing platform)
-- **Proyecto Google Cloud**: modo-ia (ID: 174366307351)
-- **Cliente OAuth**: MODO IA Web Local
-- **Client ID**: 174366307351-5ofo1ia0ve9pegkod7nni0bqo4eajbtf.apps.googleusercontent.com
-- **Deployment**: Vercel (https://mi-pana-app-3-0.vercel.app y v1.mipana.app)
+Este documento detalla la configuración necesaria para que el inicio de sesión con Google funcione correctamente en los entornos de Local y Producción (Vercel).
 
-## Error Común: 400 redirect_uri_mismatch
+## 1. Configuración del Cliente (Google Cloud Console)
 
-### Causa
-Google bloquea el intento porque la URL de redirección no está en la lista blanca del cliente OAuth, incluso si los orígenes JavaScript ya están configurados.
+**Proyecto:** `modo-ia` (u otro si se cambió)
+**Cliente:** "MODO IA Web Local"
 
-### Solución Permanente
+### Orígenes autorizados de JavaScript
+Las URLs desde donde se permite **iniciar** la solicitud de login.
+- `http://localhost:5173` (Desarrollo)
+- `https://mi-pana-app-3-0.vercel.app` (Producción)
+- `https://v1.mipana.app` (Dominio personalizado)
 
-Siempre configurar AMBAS secciones en Google Cloud Console → Credenciales → Cliente OAuth:
+### URIs de redireccionamiento autorizados
+Las URLs a las que Google puede **redirigir** después del login.
+> **Nota:** Es crucial incluir versiones con y sin barra inclinada al final (`/`) para evitar errores `400: redirect_uri_mismatch`.
 
-#### 1. Orígenes JavaScript autorizados (Authorized JavaScript origins)
-```
-http://localhost:5173
-https://mi-pana-app-3-0.vercel.app
-https://v1.mipana.app
-```
+- `http://localhost:5173`
+- `http://localhost:5173/`
+- `https://mi-pana-app-3-0.vercel.app`
+- `https://mi-pana-app-3-0.vercel.app/`
+- `https://v1.mipana.app`
+- `https://v1.mipana.app/`
 
-#### 2. URIs de redireccionamiento autorizados (Authorized redirect URIs)
-```
-http://localhost:5173
-https://mi-pana-app-3-0.vercel.app
-https://mi-pana-app-3-0.vercel.app/
-https://v1.mipana.app
-https://v1.mipana.app/
-http://localhost:5173/
-```
+## 2. Variables de Entorno (Vercel)
 
-**Nota crítica**: Agregar versiones con y sin barra final (/), ya que Google es estricto con esto.
+Vercel no lee archivos `.env` locales. Estas variables deben configurarse en **Project Settings > Environment Variables**.
 
-### Variables de Entorno en Vercel
-```
-VITE_GOOGLE_CLIENT_ID=174366307351-5ofo1ia0ve9pegkod7nni0bqo4eajbtf.apps.googleusercontent.com
-```
+| Variable | Valor | Descripción |
+|----------|-------|-------------|
+| `VITE_GOOGLE_CLIENT_ID` | `174366307351-...` | ID del cliente OAuth. Visible en GCP. |
+| `VITE_GOOGLE_CLIENT_SECRET` | *(Oculto)* | Secreto del cliente (si es necesario por el backend). |
+| `VITE_GOOGLE_REDIRECT_URI` | `https://mi-pana-app-3-0.vercel.app` | URI base de redirección. |
 
-### Checklist Post-Cambio
-- [ ] Guardar cambios en Google Cloud Console
-- [ ] Esperar 1-2 minutos para propagación
-- [ ] Hacer redeploy en Vercel si se cambió variable de entorno
-- [ ] Probar login en incógnito
-- [ ] Si falla, revisar en error de Google qué URL exacta está intentando usar (busca "redirect_uri" en el error)
+## 3. Solución de Problemas Comunes
 
-### Debugging
-Si el error persiste, hacer clic en "Más información" en el error de Google para ver la URL exacta que está intentando usar, copiarla y agregarla exactamente como aparece en URIs de redireccionamiento.
+### Error 401: invalid_client
+- **Causa:** La variable `VITE_GOOGLE_CLIENT_ID` no está definida o es incorrecta en Vercel.
+- **Solución:** Verificar las variables de entorno en Vercel y hacer un Redeploy.
 
----
-Última actualización: 09/01/2026
+### Error 400: redirect_uri_mismatch
+- **Causa:** La URL actual del navegador no coincide **exactamente** con ninguna de las "URIs de redireccionamiento autorizados" en GCP.
+- **Solución:** Agregar la URL faltante (ej: `https://.../`) en la consola de Google Cloud.

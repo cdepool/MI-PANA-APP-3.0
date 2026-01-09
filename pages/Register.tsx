@@ -38,6 +38,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
 
   // Form State
   const [email, setEmail] = useState('');
@@ -65,6 +66,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
         setFirstName(userInfo.given_name);
         setLastName(userInfo.family_name);
         setEmail(userInfo.email);
+        setIsGoogleUser(true);
 
         setCurrentStep(2);
         setError(null);
@@ -108,6 +110,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
   const handleSendCode = async () => {
     setError(null);
+    setIsGoogleUser(false);
     const isAvailable = await checkEmailAvailability();
     if (!isAvailable) return;
 
@@ -153,18 +156,33 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
       toast.error(result.error.errors[0].message);
       return;
     }
-    setCurrentStep(3);
+
+    // If user came from Google, skip password creation and finish registration
+    if (isGoogleUser) {
+      handleFinalSubmit();
+    } else {
+      setCurrentStep(3);
+    }
   };
 
   const handleFinalSubmit = async () => {
     setError(null);
-    if (password !== confirmPassword) {
-      toast.error("Las contraseñas no coinciden.");
-      return;
-    }
-    if (!passwordSchema.safeParse(password).success) {
-      toast.error("La contraseña debe tener al menos 6 caracteres.");
-      return;
+
+    let finalPassword = password;
+
+    // If manual registration, validate passwords
+    if (!isGoogleUser) {
+      if (password !== confirmPassword) {
+        toast.error("Las contraseñas no coinciden.");
+        return;
+      }
+      if (!passwordSchema.safeParse(password).success) {
+        toast.error("La contraseña debe tener al menos 6 caracteres.");
+        return;
+      }
+    } else {
+      // If Google user, generate a secure random password for the backend
+      finalPassword = crypto.randomUUID();
     }
 
     setIsLoading(true);
@@ -178,7 +196,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
         idNumber,
         idNumber,
         age: Number(age),
-        password
+        password: finalPassword
       });
 
       login(UserRole.PASSENGER, user);
@@ -312,8 +330,8 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
               placeholder="Ej: 25"
             />
 
-            <Button onClick={handleProfileSubmit} fullWidth>
-              Siguiente
+            <Button onClick={handleProfileSubmit} fullWidth disabled={isLoading}>
+              {isGoogleUser ? (isLoading ? 'Creando Cuenta...' : 'Finalizar Registro') : 'Siguiente'}
             </Button>
           </div>
         );
