@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthContextType, User, UserRole, SavedPlace, TransactionType } from '../types';
 import { mockLoginUser } from '../services/mockService';
 import { authService } from '../services/authService';
+import { supabase } from '../services/supabaseClient';
 import logger from '../utils/logger';
 
 interface ExtendedAuthContextType extends AuthContextType {
