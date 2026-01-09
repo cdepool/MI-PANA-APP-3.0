@@ -1,15 +1,50 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>MI PANA APP - Siempre Conectado</title>
-  <meta name="description" content="MI PANA APP es tu copiloto financiero. Gestiona tus ganancias, visualiza estadísticas en tiempo real y conecta con pasajeros de forma segura y eficiente." />
-  <link rel="icon" type="image/png" href="/icon.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MI PANA APP - Transporte seguro y confiable en Venezuela">
+  <title>MI PANA APP - Tu transporte de confianza</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Configuración de Tailwind personalizada (opcional) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1E40AF',
+            secondary: '#10B981',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Estilos base -->
+  <style>
+    body { 
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  </style>
 </head>
-<body class="bg-mipana-lightGray text-mipana-black dark:bg-mipana-darkBlue dark:text-white transition-colors duration-200">
+<body class="bg-gray-50">
+  <!-- Contenedor principal de React -->
   <div id="root"></div>
-  <script type="module" src="./index.tsx"></script>
+  
+  <!-- 
+    🚨 LÍNEA CRÍTICA - NO ELIMINAR BAJO NINGUNA CIRCUNSTANCIA 🚨
+    Esta línea carga el punto de entrada de React/Vite.
+    Sin ella, la aplicación mostrará pantalla blanca.
+    Verificada: 09/01/2026 - MI PANA APP
+  -->
+  <script type="module" src="/src/index.tsx"></script>
 </body>
 </html>
