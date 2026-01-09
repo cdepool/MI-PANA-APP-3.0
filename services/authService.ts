@@ -79,6 +79,7 @@ export const authService = {
           last_name: data.lastName,
           phone: data.phone,
           role: UserRole.PASSENGER,
+          documentId: `${data.idType}-${data.idNumber}`, // Pass ID manually to metadata
         }
       }
     });
@@ -86,7 +87,7 @@ export const authService = {
     if (authError) throw new Error(authError.message);
     if (!authData.user) throw new Error('No se pudo crear el usuario');
 
-    // 2. Create Profile in 'profiles' table
+    // 2. Construct User object (Profile creation is handled by DB Trigger handle_new_user)
     const newUser: StoredUser = {
       id: authData.user.id,
       name: `${data.firstName} ${data.lastName}`,
@@ -95,9 +96,8 @@ export const authService = {
       role: UserRole.PASSENGER,
       avatarUrl: `https://ui-avatars.com/api/?name=${data.firstName}+${data.lastName}&background=048ABF&color=fff&bold=true`,
       documentId: `${data.idType}-${data.idNumber}`,
-      // pin: data.pin, // Don't store PIN in plain text in profiles if possible
       created_at: new Date().toISOString(),
-      verified: true,
+      verified: false,
       savedPlaces: [],
       favoriteDriverIds: [],
       wallet: {
@@ -106,15 +106,8 @@ export const authService = {
       }
     };
 
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([newUser]);
-
-    if (profileError) {
-      // If profile creation fails, we might want to rollback auth, but for now just throw
-      logger.error('Error creating profile:', profileError);
-      // Fallback: return the user object anyway so UI can proceed, but data might be desynced
-    }
+    // The trigger automatically creates the profile in 'profiles' table.
+    // We just return the object to the UI.
 
     return newUser;
   },
