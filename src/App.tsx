@@ -27,14 +27,14 @@ const AppRoutes = () => {
       
       <Route path="/" element={
         <PrivateRoute>
-          {user?.role === 'admin' ? <Navigate to="/admin" /> : 
-           user?.role === 'driver' ? <Navigate to="/driver" /> : 
+          {user?.role === 'ADMIN' ? <Navigate to="/admin" /> : 
+           user?.role === 'DRIVER' ? <Navigate to="/driver" /> : 
            <Navigate to="/passenger" />}
         </PrivateRoute>
       } />
-      <Route path="/passenger" element={<PrivateRoute role="passenger"><PassengerHome /></PrivateRoute>} />
-      <Route path="/driver" element={<PrivateRoute role="driver"><DriverHome /></PrivateRoute>} />
-      <Route path="/admin" element={<PrivateRoute role="admin"><ProfessionalAdminDashboard /></PrivateRoute>} />
+      <Route path="/passenger" element={<PrivateRoute role="PASSENGER"><PassengerHome /></PrivateRoute>} />
+      <Route path="/driver" element={<PrivateRoute role="DRIVER"><DriverHome /></PrivateRoute>} />
+      <Route path="/admin" element={<PrivateRoute role="ADMIN"><ProfessionalAdminDashboard /></PrivateRoute>} />
       <Route path="/wallet" element={<PrivateRoute><Wallet /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
