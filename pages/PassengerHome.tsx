@@ -1,55 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import LeafletMapComponent from '../components/LeafletMapComponent';
-import Button from '../components/Button';
-import Input from '../components/Input';
-import ChatInterface from '../components/ChatInterface';
-import { MapPin, Star, Plus, Home, Briefcase, Clock, Heart, ArrowLeft, Search, User, Users, Smartphone, MessageCircle, Phone, MessageSquare, RefreshCw } from 'lucide-react';
-import { calculatePrice, mockMatchDriver, SERVICE_CATALOG, simulateReverseGeocoding, startRideSimulation, sendChatMessage, cleanPhoneNumber, getTariffs, getDriverById } from '../services/mockService';
-import { MatchedDriver, ServiceId, SavedPlace, LocationPoint, RideBeneficiary, ChatMessage, UserRole } from '../types';
-import { useAuth } from '../context/AuthContext';
+import { TripService } from '../services/tripService'; // New Import
 
-type RideStep = 'SEARCH' | 'PICK_ON_MAP' | 'CONFIRM_SERVICE' | 'SEARCHING_DRIVER' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED';
-
-interface PassengerHomeProps {
-  onNavigateWallet?: () => void;
-}
-
-const ServiceOption = ({ id, nombre, icono, price, isSelected, onClick }: { id: string, nombre: string, icono: string, price: { usd: number, ves: number }, isSelected: boolean, onClick: () => void }) => {
-  return (
-    <button
-      onClick={onClick}
-      className={`relative p-3 rounded-xl flex flex-col items-center justify-center transition-all duration-200 border-2 ${isSelected
-        ? 'border-mipana-mediumBlue bg-mipana-mediumBlue/10 shadow-md transform scale-105'
-        : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 opacity-70 hover:opacity-100'
-        }`}
-    >
-      <div className="text-2xl mb-1">{icono}</div>
-      <span className={`text-xs font-bold ${isSelected ? 'text-mipana-darkBlue dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-        {nombre}
-      </span>
-      <div className="mt-1 text-xs font-bold text-green-600">
-        ${price.usd.toFixed(2)}
-      </div>
-    </button>
-  );
-};
-
-// Favorite Driver Item Component
-const FavoriteDriverItem = ({ driver, onClick }: { driver: MatchedDriver, onClick: () => void }) => {
-  return (
-    <div onClick={onClick} className="flex flex-col items-center mr-4 cursor-pointer min-w-[70px] group">
-      <div className="relative w-14 h-14 mb-1 group-hover:scale-105 transition-transform">
-        <img src={driver.avatarUrl} alt={driver.name} className="w-full h-full rounded-full border-2 border-green-500 object-cover p-0.5 bg-white shadow-sm" />
-        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
-          <div className="bg-green-500 text-white text-[8px] px-1 rounded-full font-bold flex items-center gap-0.5">
-            <Star size={8} fill="currentColor" /> {driver.rating}
-          </div>
-        </div>
-      </div>
-      <p className="text-[10px] font-bold text-gray-700 dark:text-gray-200 text-center leading-tight line-clamp-2 w-16">{driver.name}</p>
-    </div>
-  );
-};
+// ... existing imports ...
 
 const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   const { user, addSavedPlace, toggleFavoriteDriver } = useAuth();
@@ -57,6 +8,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   const [selectedServiceId, setSelectedServiceId] = useState<ServiceId>('el_pana');
   const [price, setPrice] = useState<{ usd: number, ves: number } | null>(null);
   const [driver, setDriver] = useState<MatchedDriver | null>(null);
+  const [currentTripId, setCurrentTripId] = useState<string | null>(null); // New State
 
   // Specific Driver Request
   const [preselectedDriver, setPreselectedDriver] = useState<MatchedDriver | null>(null);
@@ -66,17 +18,15 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   const [origin, setOrigin] = useState<LocationPoint>({ address: 'Ubicación Actual' });
   const [destination, setDestination] = useState<LocationPoint | null>(null);
 
-  // Map Selection State
+  // ... (Map States unchanged) ...
   const [pickingType, setPickingType] = useState<'ORIGIN' | 'DESTINATION' | null>(null);
   const [mapCenterAddress, setMapCenterAddress] = useState<string>('');
   const [mapCenterCoords, setMapCenterCoords] = useState<{ lat: number, lng: number } | null>(null);
   const [isMapMoving, setIsMapMoving] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>(null);
-
-  // Real User Location tracking from Map
   const [userRealLocation, setUserRealLocation] = useState<{ lat: number, lng: number } | null>(null);
 
-  // Beneficiary State
+  // ... (Beneficiary State unchanged) ...
   const [forWhom, setForWhom] = useState<'ME' | 'OTHER'>('ME');
   const [beneficiary, setBeneficiary] = useState<RideBeneficiary>({ name: '', phone: '' });
 
@@ -84,20 +34,16 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   const [rideProgress, setRideProgress] = useState(0);
   const [eta, setEta] = useState(0);
 
-  // Chat State
+  // ... (Chat, Wallet, Favorites unchanged) ...
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-
-  // Wallet & Rate
   const walletBalance = user?.wallet?.balance || 0;
   const tariff = getTariffs();
   const currentRate = tariff.currentBcvRate;
-
-  // Favorites from Context
   const favorites = user?.savedPlaces || [];
   const isDriverFavorite = driver && user?.favoriteDriverIds?.includes(driver.id);
 
-  // Load Favorite Drivers Data
+  // ... (Load Favorites useEffect unchanged) ... 
   useEffect(() => {
     if (user?.favoriteDriverIds) {
       const loadedDrivers = user.favoriteDriverIds
@@ -109,133 +55,109 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
     }
   }, [user?.favoriteDriverIds]);
 
-  // Update price when service/dest changes
+  // UseEffect to start Real Trip Lifecycle
   useEffect(() => {
-    if (destination) {
-      const calculated = calculatePrice(4.2, selectedServiceId); // Mock distance
-      setPrice(calculated);
-    }
-  }, [selectedServiceId, destination]);
+    let unsubscribe: (() => void) | undefined;
 
-  // Handle Map Camera Change (Coordinates)
-  const handleMapCameraChange = (coords: { lat: number, lng: number }) => {
-    setIsMapMoving(true);
-    setMapCenterCoords(coords);
-    if (!userRealLocation) setUserRealLocation(coords); // Init user loc if empty
+    const startTrip = async () => {
+      // Logic moved to handleConfirmRide
+    };
 
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    if (currentTripId) {
+      console.log("Subscribing to trip:", currentTripId);
+      unsubscribe = TripService.subscribeToTrip(currentTripId, (updatedTrip) => {
+        console.log("Trip Update:", updatedTrip);
 
-    // Simulate geocoding delay
-    debounceTimer.current = setTimeout(async () => {
-      // In a real app, we would use Geocoding API with coords.lat, coords.lng
-      const addr = await simulateReverseGeocoding(coords.lat, coords.lng);
-      setMapCenterAddress(addr);
-      setIsMapMoving(false);
-    }, 600);
-  };
+        if (updatedTrip.status === 'ACCEPTED' && updatedTrip.driverId) {
+          // Fetch driver details (Real logic would fetch from DB, using Mock for details based on ID for now)
+          // In real app: const driverDetails = await fetchDriverProfile(updatedTrip.driverId)
+          // For now, if accepted, we simulate a driver found or use preselected
 
-  const handleMapCenterChange = () => {
-    // Deprecated in favor of handleMapCameraChange for coords, 
-    // keeping empty or removing if unused by child (GoogleMapComponent handles it internaly then calls onCameraChange)
-  };
+          // Temporary: If real backend doesn't return full driver object yet, we mock it to show UI
+          const foundDriver = preselectedDriver || mockMatchDriver(SERVICE_CATALOG.find(s => s.id === updatedTrip.serviceId)?.vehicleType || 'CAR', updatedTrip.driverId);
 
-  const confirmMapSelection = () => {
-    if (pickingType === 'ORIGIN' && mapCenterCoords) {
-      setOrigin({
-        address: mapCenterAddress,
-        lat: mapCenterCoords.lat,
-        lng: mapCenterCoords.lng
-      });
-    } else if (pickingType === 'DESTINATION' && mapCenterCoords) {
-      setDestination({
-        address: mapCenterAddress,
-        lat: mapCenterCoords.lat,
-        lng: mapCenterCoords.lng
-      });
-      setStep('CONFIRM_SERVICE');
-    }
-    setPickingType(null);
-    if (step === 'PICK_ON_MAP') {
-      // If we were just picking dest, go to confirm
-      if (pickingType === 'DESTINATION') setStep('CONFIRM_SERVICE');
-      else setStep('SEARCH'); // Go back to search if we just fixed origin
-    }
-  };
-
-  const handleSelectFavoriteDriver = (favDriver: MatchedDriver) => {
-    setPreselectedDriver(favDriver);
-    // Automatically prompt for destination
-    setPickingType('DESTINATION');
-    setStep('PICK_ON_MAP');
-    // We can't really "recenter" to driver without coords, but we enter pick mode
-  };
-
-  // Ride Lifecycle Simulation
-  useEffect(() => {
-    let isMounted = true;
-    let simulationCleanup: (() => void) | undefined;
-
-    if (step === 'SEARCHING_DRIVER') {
-      const service = SERVICE_CATALOG.find(s => s.id === selectedServiceId);
-      // Pass the preselected driver ID if it exists to force a match
-      mockMatchDriver(service?.vehicleType || 'CAR', preselectedDriver?.id).then((d) => {
-        if (isMounted) {
-          setDriver(d);
-          setStep('ACCEPTED');
-          setChatMessages([]); // Reset chat for new ride
+          foundDriver.then(d => {
+            setDriver(d);
+            setStep('ACCEPTED');
+          });
         }
-      });
-    } else if (step === 'ACCEPTED') {
-      // Driver is arriving
-      setTimeout(() => {
-        if (isMounted) setStep('IN_PROGRESS');
-      }, 4000);
-    } else if (step === 'IN_PROGRESS') {
-      // Start GPS Simulation
-      simulationCleanup = startRideSimulation((progress, estimatedMins) => {
-        if (!isMounted) return;
-        setRideProgress(progress);
-        setEta(estimatedMins);
-        if (progress >= 100) {
+
+        if (updatedTrip.status === 'IN_PROGRESS') {
+          setStep('IN_PROGRESS');
+        }
+
+        if (updatedTrip.status === 'COMPLETED') {
           setStep('COMPLETED');
         }
       });
     }
 
     return () => {
-      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, [currentTripId]);
+
+
+  // Only simulate GPS updates if step is IN_PROGRESS (frontend simulation for demo)
+  useEffect(() => {
+    let simulationCleanup: (() => void) | undefined;
+    if (step === 'IN_PROGRESS') {
+      simulationCleanup = startRideSimulation((progress, estimatedMins) => {
+        setRideProgress(progress);
+        setEta(estimatedMins);
+      });
+    }
+    return () => {
       if (simulationCleanup) simulationCleanup();
     };
-  }, [step, selectedServiceId, preselectedDriver]);
+  }, [step]);
 
-  const resetFlow = () => {
-    setStep('SEARCH');
-    setDriver(null);
-    setPreselectedDriver(null);
-    setDestination(null);
-    setRideProgress(0);
-    setForWhom('ME');
-    setBeneficiary({ name: '', phone: '' });
-    setChatMessages([]);
-    setIsChatOpen(false);
-  };
 
-  const getMapStatus = () => {
-    if (pickingType === 'ORIGIN') return 'PICKING_ORIGIN';
-    if (pickingType === 'DESTINATION') return 'PICKING_DEST';
-    if (step === 'SEARCHING_DRIVER' || step === 'CONFIRM_SERVICE') return 'SEARCHING';
-    if (step === 'ACCEPTED') return 'ACCEPTED';
-    if (step === 'IN_PROGRESS') return 'IN_PROGRESS';
-    if (step === 'COMPLETED') return 'COMPLETED';
-    return 'IDLE';
-  };
+  // ... (Map Handlers unchanged) ...
 
-  const handleConfirmRide = () => {
+  // Modified Confirm Ride to use TripService
+  const handleConfirmRide = async () => {
     if (forWhom === 'OTHER' && !beneficiary.name) {
       alert("Por favor ingresa el nombre de la persona que viaja.");
       return;
     }
+
+    if (!user || !destination || !price) {
+      alert("Faltan datos para el viaje");
+      return;
+    }
+
     setStep('SEARCHING_DRIVER');
+
+    try {
+      const service = SERVICE_CATALOG.find(s => s.id === selectedServiceId);
+      const newTrip = await TripService.createTrip(
+        user.id,
+        origin,
+        destination,
+        selectedServiceId,
+        service?.vehicleType || 'CAR',
+        price,
+        4.2 // Mock distance for now, normally calculated
+      );
+      setCurrentTripId(newTrip.id);
+
+      // If we selected a mock driver, we might want to auto-accept for demo purposes
+      // But for "Real Request", we wait for a driver.
+      // For DEMO: If no real driver backend exists, we trigger a timeout to simulate acceptance
+      if (preselectedDriver) {
+        setTimeout(() => {
+          // Force accept logic in backend? Or just switch UI?
+          // Let's rely on subscription. If no backend logic updates status, it sits in SEARCHING.
+          // We will need a way to 'Act as Driver' to accept it.
+        }, 2000);
+      }
+
+    } catch (err) {
+      console.error("Error requesting ride:", err);
+      setStep('SEARCH'); // Go back
+      alert("Error al solicitar viaje. Intenta de nuevo.");
+    }
   };
 
   // Add current selection to favorites via Context

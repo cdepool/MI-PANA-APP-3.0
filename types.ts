@@ -168,18 +168,18 @@ export interface ChatMessage {
 
 export interface Ride {
   id: string;
-  passengerId: string;
-  driverId?: string;
+  passengerId: string; // passenger_id in DB
+  driverId?: string;   // driver_id in DB
+  status: 'REQUESTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   origin: string;
   destination: string;
-  originCoords?: { lat: number, lng: number };
-  destinationCoords?: { lat: number, lng: number };
-  status: 'PENDING' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  serviceId: ServiceId;
-  vehicleType: VehicleType;
-  priceUsd: number;
-  priceVes: number;
-  distanceKm: number;
+  originCoords?: { lat: number, lng: number };      // "originCoords"
+  destinationCoords?: { lat: number, lng: number }; // "destinationCoords"
+  priceUsd: number;    // "priceUsd"
+  priceVes: number;    // "priceVes"
+  distanceKm: number;  // "distanceKm"
+  serviceId: ServiceId;       // "serviceId" (Added via migration)
+  vehicleType: VehicleType;   // "vehicleType" (Added via migration)
   createdAt: Date;
   liquidation?: LiquidationResult;
 
