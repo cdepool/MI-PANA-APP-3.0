@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User, Phone, Mail, MapPin, Lock, Settings, HelpCircle, ChevronDown, Edit2, Check, AlertCircle, Save, X } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Lock, Settings, HelpCircle, ChevronDown, Edit2, Check, AlertCircle, Save, X, Clock, ChevronRight, Wallet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
@@ -20,6 +21,7 @@ interface PassengerProfile {
 
 export default function PassengerProfile() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<PassengerProfile | null>(null);
   const [formData, setFormData] = useState<Partial<PassengerProfile>>({});
   const [loading, setLoading] = useState(true);
@@ -173,6 +175,35 @@ export default function PassengerProfile() {
 
           {/* Contenido principal */}
           <div className="col-span-3 space-y-6">
+
+            {/* Sección: Mi Actividad (Viajes y Pagos) */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6">
+                <h3 className="font-bold text-lg text-mipana-darkBlue mb-4">Mi Actividad</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button onClick={() => navigate('/trips')} className="w-full flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group border border-blue-100">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white text-blue-600 rounded-lg shadow-sm group-hover:scale-110 transition-transform">
+                        <Clock size={20} />
+                      </div>
+                      <span className="font-bold text-gray-700">Historial de Viajes</span>
+                    </div>
+                    <ChevronRight size={18} className="text-gray-400 group-hover:text-blue-500" />
+                  </button>
+
+                  <button onClick={() => navigate('/wallet')} className="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors group border border-green-100">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white text-green-600 rounded-lg shadow-sm group-hover:scale-110 transition-transform">
+                        <Wallet size={20} />
+                      </div>
+                      <span className="font-bold text-gray-700">Billetera y Pagos</span>
+                    </div>
+                    <ChevronRight size={18} className="text-gray-400 group-hover:text-green-500" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Sección: Información Personal */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <button
