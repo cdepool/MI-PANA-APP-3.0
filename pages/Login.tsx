@@ -171,23 +171,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
               Google
             </button>
 
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setIdentifier('demo.pasajero@mipana.app');
-                  setPassword('123456');
-                  setTimeout(() => {
-                    const form = document.querySelector('form');
-                    if (form) form.requestSubmit();
-                  }, 100);
-                }}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-lg font-bold hover:from-purple-600 hover:to-pink-600 transition-all shadow-md"
-              >
-                <User size={18} />
-                Probar Demo (Pasajero)
-              </button>
-            </div>
+            {/* Demo Button Removed */}
 
             <p className="text-center text-sm text-gray-500 mt-6">
               ¿No tienes cuenta?{' '}
