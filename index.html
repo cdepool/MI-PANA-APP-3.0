@@ -1,85 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>MI PANA APP - Siempre Conectado</title>
-  <meta name="description"
-    content="MI PANA APP es tu copiloto financiero. Gestiona tus ganancias, visualiza estadísticas en tiempo real y conecta con pasajeros de forma segura y eficiente." />
-  <meta name="keywords"
-    content="taxi, conductor, finanzas, app conductor, venezuela, transporte, gestión de ganancias" />
-  <meta name="author" content="MI PANA APP" />
-  <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://mipana.app/" />
-
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://mipana.app/" />
-  <meta property="og:title" content="MI PANA APP - Siempre Conectado" />
-  <meta property="og:description"
-    content="Gestiona tus ganancias, visualiza estadísticas en tiempo real y conecta con pasajeros de forma segura." />
-  <meta property="og:image"
-    content="https://storage.googleapis.com/msgsndr/u0yeLpwH9qH0cMOrw2KP/media/68f4c7a98a42bd7e9f0909b7.png" />
-  <meta property="og:site_name" content="MI PANA APP" />
-
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:url" content="https://mipana.app/" />
-  <meta name="twitter:title" content="MI PANA APP - Siempre Conectado" />
-  <meta name="twitter:description"
-    content="Gestiona tus ganancias, visualiza estadísticas en tiempo real y conecta con pasajeros de forma segura." />
-  <meta name="twitter:image"
-    content="https://storage.googleapis.com/msgsndr/u0yeLpwH9qH0cMOrw2KP/media/68f4c7a98a42bd7e9f0909b7.png" />
-
-  <!-- PWA Meta Tags -->
-  <meta name="theme-color" content="#0077B6" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Mi Pana" />
-
-  <!-- Icons -->
+  <meta name="description" content="MI PANA APP es tu copiloto financiero. Gestiona tus ganancias, visualiza estadísticas en tiempo real y conecta con pasajeros de forma segura y eficiente." />
   <link rel="icon" type="image/png" href="/icon.png" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  <link rel="mask-icon" href="/icon.png" color="#0077B6" />
-
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    /* Minimalist scrollbar */
-    ::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 2px;
-    }
-
-    .dark ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    /* Loading screen */
-
-  </style>
-
 </head>
-
-<body
-  class="bg-mipana-lightGray text-mipana-black dark:bg-mipana-darkBlue dark:text-white transition-colors duration-200">
-
-  <!-- Loading Screen -->
-
-  <!-- App Entry Point -->
-  <script type="module" src="/index.tsx"></script>
+<body class="bg-mipana-lightGray text-mipana-black dark:bg-mipana-darkBlue dark:text-white transition-colors duration-200">
+  <div id="root"></div>
+  <script type="module" src="./index.tsx"></script>
 </body>
-
 </html>
