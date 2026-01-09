@@ -75,8 +75,7 @@ export const authService = {
       password: data.password, // Standard password registration
       options: {
         data: {
-          first_name: data.firstName,
-          last_name: data.lastName,
+          full_name: `${data.firstName} ${data.lastName}`, // Changed from first_name/last_name to match DB Trigger
           phone: data.phone,
           role: UserRole.PASSENGER,
           documentId: `${data.idType}-${data.idNumber}`, // Pass ID manually to metadata
