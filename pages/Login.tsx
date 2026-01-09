@@ -15,11 +15,32 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
   const { login, loginPassenger } = useAuth();
-  const [role, setRole] = useState<UserRole | null>(null);
+
+  // Auto-detect role based on subdomain or path
+  const getInitialRole = (): UserRole => {
+    const hostname = window.location.hostname;
+    const pathname = window.location.pathname;
+
+    if (hostname.includes('admin') || pathname.startsWith('/admin')) {
+      return UserRole.ADMIN;
+    }
+    if (hostname.includes('driver') || hostname.includes('conductor') || pathname.startsWith('/driver')) {
+      return UserRole.DRIVER;
+    }
+    // Default to PASSENGER for v1.mipana.app and main localhost
+    return UserRole.PASSENGER;
+  };
+
+  const [role, setRole] = useState<UserRole>(getInitialRole());
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Effect to handle browser navigation (optional, if using client-side routing for sub-paths)
+  React.useEffect(() => {
+    setRole(getInitialRole());
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,101 +91,31 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
     scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/tasks.readonly'
   });
 
-  if (!role) {
-    return (
-      <div className="min-h-screen bg-[#001529] flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-white rounded-[2rem] shadow-2xl p-8 animate-bounce-in relative overflow-hidden">
-
-          {/* Logo Section */}
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg z-10 relative">
-                <img
-                  src="/logo-pin.png"
-                  onError={(e) => e.currentTarget.src = "https://cdn-icons-png.flaticon.com/512/929/929426.png"} // Fallback pin icon
-                  alt="Mi Pana Pin"
-                  className="w-16 h-16 object-contain"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Title Section */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-[900] text-[#002855] tracking-tight mb-1">¡HOLA MI PANA!</h1>
-            <p className="text-[#0099CC] font-bold tracking-[0.15em] text-xs">SIEMPRE CONECTADO</p>
-          </div>
-
-          {/* Action Text */}
-          <p className="text-center text-gray-500 mb-6 text-sm">
-            Selecciona tu perfil para ingresar
-          </p>
-
-          {/* Buttons Stack */}
-          <div className="space-y-4">
-            <button
-              onClick={() => setRole(UserRole.PASSENGER)}
-              className="w-full py-3.5 px-4 bg-[#0088CC] hover:bg-[#0077b5] text-white rounded-xl font-bold text-lg shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
-            >
-              <User size={20} />
-              Soy Pasajero
-            </button>
-
-            <button
-              onClick={() => setRole(UserRole.DRIVER)}
-              className="w-full py-3.5 px-4 bg-white border-2 border-[#0088CC] text-[#0088CC] hover:bg-blue-50 rounded-xl font-bold text-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
-            >
-              <Car size={20} />
-              Soy Conductor (Pana)
-            </button>
-
-            <button
-              onClick={() => setRole(UserRole.ADMIN)}
-              className="w-full py-3.5 px-4 bg-[#506679] hover:bg-[#405261] text-white rounded-xl font-bold text-lg shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
-            >
-              <Shield size={20} />
-              Administrador
-            </button>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-8 text-center space-y-4">
-            <div className="text-sm text-gray-500">
-              ¿No tienes cuenta?
-            </div>
-            <button
-              onClick={onNavigateRegister}
-              className="text-[#0088CC] font-bold text-lg hover:underline flex items-center justify-center gap-1 mx-auto"
-            >
-              Crear Cuenta Nueva <ArrowRight size={18} />
-            </button>
-
-            <div className="pt-8 text-[10px] text-gray-400">
-              © 2025 Mi Pana App. Acarigua - Araure.
-            </div>
-          </div>
-
-        </div>
-      </div>
-    );
-  }
+  // No more "if (!role) return ..." block. DIRECT ACCESS.
 
   return (
     <div className="min-h-screen bg-mipana-lightGray dark:bg-[#011836] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 animate-slide-up">
-        <button
-          onClick={() => setRole(null)}
-          className="text-sm text-gray-500 hover:text-mipana-mediumBlue mb-6 flex items-center gap-1"
-        >
-          ← Volver a selección
-        </button>
+
+        {/* Only show "Back" if we are not in the default Passenger view (e.g. debugging) */}
+        {role !== UserRole.PASSENGER && (
+          <div className="mb-4 text-center text-xs text-orange-500 font-bold border border-orange-200 bg-orange-50 p-2 rounded">
+            ⚠️ Modo {role} (Detectado por URL)
+          </div>
+        )}
 
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">
-            {role === UserRole.PASSENGER ? 'Hola, Pasajero 👋' :
-              role === UserRole.DRIVER ? 'Hola, Conductor 🚗' : 'Panel Admin 🛡️'}
-          </h2>
-          <p className="text-gray-500 text-sm">Ingresa tus credenciales</p>
+          {role === UserRole.PASSENGER ? (
+            <>
+              <h1 className="text-3xl font-[900] text-[#002855] tracking-tight mb-1">¡HOLA MI PANA!</h1>
+              <p className="text-[#0099CC] font-bold tracking-[0.15em] text-xs">SIEMPRE CONECTADO</p>
+            </>
+          ) : (
+            <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">
+              {role === UserRole.DRIVER ? 'Hola, Conductor 🚗' : 'Panel Admin 🛡️'}
+            </h2>
+          )}
+          <p className="text-gray-500 text-sm mt-2">Ingresa tus credenciales</p>
         </div>
 
         {role === UserRole.PASSENGER ? (
