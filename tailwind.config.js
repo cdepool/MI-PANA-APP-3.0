@@ -8,6 +8,12 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx}",
     "./pages/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    'border-blue-600',
+    'border-cyan-400',
+    'border-orange-500',
+    'border-gray-400',
+  ],
   theme: {
     extend: {
       colors: {
