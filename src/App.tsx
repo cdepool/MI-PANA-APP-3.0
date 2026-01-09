@@ -6,6 +6,7 @@ import PassengerHome from '../pages/PassengerHome';
 import DriverHome from '../pages/DriverHome';
 import ProfessionalAdminDashboard from '../pages/ProfessionalAdminDashboard';
 import Wallet from '../pages/Wallet';
+import RideHistory from '../pages/RideHistory';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 
 const PrivateRoute = ({ children, role }: { children: React.ReactNode, role?: string }) => {
@@ -38,6 +39,7 @@ const AppRoutes = () => {
       <Route path="/driver" element={<PrivateRoute role="DRIVER"><DriverHome /></PrivateRoute>} />
       <Route path="/admin" element={<PrivateRoute role="ADMIN"><ProfessionalAdminDashboard /></PrivateRoute>} />
       <Route path="/wallet" element={<PrivateRoute><Wallet /></PrivateRoute>} />
+      <Route path="/trips" element={<PrivateRoute><RideHistory /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

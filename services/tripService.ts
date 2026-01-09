@@ -98,6 +98,24 @@ export const TripService = {
             .eq('id', tripId);
 
         if (error) throw error;
+    },
+
+    /**
+     * Fetch trip history for a user (as passenger or driver)
+     */
+    async getTripHistory(userId: string): Promise<Ride[]> {
+        const { data, error } = await supabase
+            .from('trips')
+            .select('*')
+            .or(`passenger_id.eq.${userId},driver_id.eq.${userId}`)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching trip history:', error);
+            throw error;
+        }
+
+        return data.map(mapDbTripToRide);
     }
 };
 
