@@ -8,6 +8,9 @@ import DriverHome from '../pages/DriverHome';
 import ProfessionalAdminDashboard from '../pages/ProfessionalAdminDashboard';
 import Wallet from '../pages/Wallet';
 import RideHistory from '../pages/RideHistory';
+import UserProfile from '../pages/UserProfile';
+import ScheduleRides from '../pages/ScheduleRides';
+import Layout from '../components/Layout';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { Toaster } from 'sonner';
 
@@ -39,11 +42,13 @@ const AppRoutes = () => {
               <Navigate to="/passenger" />}
         </PrivateRoute>
       } />
-      <Route path="/passenger" element={<PrivateRoute role="PASSENGER"><PassengerHome /></PrivateRoute>} />
-      <Route path="/driver" element={<PrivateRoute role="DRIVER"><DriverHome /></PrivateRoute>} />
-      <Route path="/admin" element={<PrivateRoute role="ADMIN"><ProfessionalAdminDashboard /></PrivateRoute>} />
-      <Route path="/wallet" element={<PrivateRoute><Wallet /></PrivateRoute>} />
-      <Route path="/trips" element={<PrivateRoute><RideHistory /></PrivateRoute>} />
+      <Route path="/passenger" element={<PrivateRoute role="PASSENGER"><Layout onNavigate={navigate}><PassengerHome onNavigateWallet={() => navigate('/wallet')} /></Layout></PrivateRoute>} />
+      <Route path="/driver" element={<PrivateRoute role="DRIVER"><Layout onNavigate={navigate}><DriverHome /></Layout></PrivateRoute>} />
+      <Route path="/admin" element={<PrivateRoute role="ADMIN"><Layout onNavigate={navigate}><ProfessionalAdminDashboard /></Layout></PrivateRoute>} />
+      <Route path="/wallet" element={<PrivateRoute><Layout onNavigate={navigate}><Wallet /></Layout></PrivateRoute>} />
+      <Route path="/trips" element={<PrivateRoute><Layout onNavigate={navigate}><RideHistory /></Layout></PrivateRoute>} />
+      <Route path="/profile" element={<PrivateRoute><Layout onNavigate={navigate}><UserProfile /></Layout></PrivateRoute>} />
+      <Route path="/schedule" element={<PrivateRoute><Layout onNavigate={navigate}><ScheduleRides /></Layout></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

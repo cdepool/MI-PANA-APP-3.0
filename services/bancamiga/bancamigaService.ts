@@ -46,11 +46,11 @@ export class BancamigaService {
 
     constructor() {
         this.config = {
-            host: Deno.env.get('BANCAMIGA_HOST') || '',
-            accessToken: Deno.env.get('BANCAMIGA_ACCESS_TOKEN') || '',
-            refreshToken: Deno.env.get('BANCAMIGA_REFRESH_TOKEN') || '',
-            tokenExpires: parseInt(Deno.env.get('BANCAMIGA_TOKEN_EXPIRES') || '0'),
-            dni: Deno.env.get('BANCAMIGA_DNI') || 'J40724274',
+            host: import.meta.env.VITE_BANCAMIGA_HOST || '',
+            accessToken: import.meta.env.VITE_BANCAMIGA_ACCESS_TOKEN || '',
+            refreshToken: import.meta.env.VITE_BANCAMIGA_REFRESH_TOKEN || '',
+            tokenExpires: parseInt(import.meta.env.VITE_BANCAMIGA_TOKEN_EXPIRES || '0'),
+            dni: import.meta.env.VITE_BANCAMIGA_DNI || 'J40724274',
         };
     }
 

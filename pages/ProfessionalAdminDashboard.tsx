@@ -1,36 +1,55 @@
 import React from 'react';
 import { DollarSign, TrendingUp, AlertCircle, Car } from 'lucide-react';
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
 import ProfessionalHeader from '../src/components/ProfessionalHeader';
 
-const stats = [
-  { title: 'Facturación Bruta', value: '$201.04', sub: '≈ Bs 48.566,87', icon: DollarSign, color: 'border-blue-600' },
-  { title: 'Ingreso Neto App', value: '$8.67', sub: 'Libre de impuestos', icon: TrendingUp, color: 'border-cyan-400' },
-  { title: 'Retenciones SENIAT', value: '$7.12', sub: 'IVA + ISLR', icon: AlertCircle, color: 'border-orange-500' },
-  { title: 'Viajes Totales', value: '44', sub: 'Este mes', icon: Car, color: 'border-gray-400' },
-];
+import { adminService, AdminStats } from '../services/adminService';
 
-const pieData = [
-  { name: 'Conductores', value: 75, color: '#00BCD4' },
-  { name: 'Next TV C.A.', value: 15, color: '#001F3F' },
-  { name: 'SENIAT', value: 10, color: '#FF9800' },
-];
-
-const barData = [
-  { name: 'Mototaxi', pago: 25, neto: 2, seniat: 1 },
-  { name: 'El Pana', pago: 65, neto: 3, seniat: 2 },
-  { name: 'El Amigo', pago: 52, neto: 2, seniat: 1 },
-  { name: 'Full Pana', pago: 48, neto: 2, seniat: 2 },
+const statsInitial = [
+  { title: 'Facturación Bruta', value: '---', sub: 'Calculando...', icon: DollarSign, color: 'border-blue-600' },
+  { title: 'Conductores Activos', value: '---', sub: 'Registrados', icon: Car, color: 'border-cyan-400' },
+  { title: 'Aprobaciones', value: '---', sub: 'Pendientes', icon: AlertCircle, color: 'border-orange-500' },
+  { title: 'Usuarios Totales', value: '---', sub: 'Registrados', icon: TrendingUp, color: 'border-gray-400' },
 ];
 
 const ProfessionalAdminDashboard: React.FC = () => {
+  const [statsData, setStatsData] = React.useState<AdminStats | null>(null);
+
+  React.useEffect(() => {
+    const loadStats = async () => {
+      const data = await adminService.getDashboardStats();
+      setStatsData(data);
+    };
+    loadStats();
+  }, []);
+
+  const displayStats = [
+    { ...statsInitial[0], value: statsData ? `$${statsData.totalRevenueUsd.toFixed(2)}` : '...' },
+    { ...statsInitial[1], value: statsData ? statsData.activeDrivers : '...' },
+    { ...statsInitial[2], value: statsData ? statsData.pendingApprovals : '...' },
+    { ...statsInitial[3], value: statsData ? statsData.totalUsers : '...' },
+  ];
+
+  const pieData = [
+    { name: 'Conductores', value: 75, color: '#00BCD4' },
+    { name: 'Next TV C.A.', value: 15, color: '#001F3F' },
+    { name: 'SENIAT', value: 10, color: '#FF9800' },
+  ];
+
+  const barData = [
+    { name: 'Mototaxi', pago: 25, neto: 2, seniat: 1 },
+    { name: 'El Pana', pago: 65, neto: 3, seniat: 2 },
+    { name: 'El Amigo', pago: 52, neto: 2, seniat: 1 },
+    { name: 'Full Pana', pago: 48, neto: 2, seniat: 2 },
+  ];
+
   return (
     <div className="min-h-screen bg-[#F4F7F6] font-sans">
       <ProfessionalHeader />
-      
+
       <main className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
@@ -49,7 +68,7 @@ const ProfessionalAdminDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {stats.map((stat, i) => (
+          {displayStats.map((stat, i) => (
             <div key={i} className={`bg-white p-6 rounded-xl shadow-sm border-l-4 ${stat.color} hover:shadow-md transition-shadow`}>
               <div className="flex justify-between items-start mb-4">
                 <p className="text-sm font-bold text-gray-400 uppercase tracking-tight">{stat.title}</p>

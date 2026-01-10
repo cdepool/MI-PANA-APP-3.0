@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Moon, Sun, Menu } from 'lucide-react';
 
-const ProfessionalHeader: React.FC = () => {
+interface ProfessionalHeaderProps {
+  onMenuClick?: () => void;
+}
+
+const ProfessionalHeader: React.FC<ProfessionalHeaderProps> = ({ onMenuClick }) => {
   const [tasa, setTasa] = useState<string>('---');
   const [isDark, setIsDark] = useState(false);
 
@@ -21,7 +25,10 @@ const ProfessionalHeader: React.FC = () => {
   return (
     <header className="bg-mipana-navy text-white h-16 flex items-center justify-between px-4 md:px-8 shadow-lg sticky top-0 z-50">
       <div className="flex items-center gap-4">
-        <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+        <button
+          onClick={onMenuClick}
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+        >
           <Menu size={24} />
         </button>
         <div className="flex items-center gap-2">
@@ -43,7 +50,7 @@ const ProfessionalHeader: React.FC = () => {
             <Bell size={20} />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-mipana-orange rounded-full border-2 border-mipana-navy"></span>
           </button>
-          <button 
+          <button
             onClick={() => setIsDark(!isDark)}
             className="p-2 hover:bg-white/10 rounded-full transition-colors"
           >

@@ -18,25 +18,28 @@ export interface RevenueData {
 export const adminService = {
   async getDashboardStats(): Promise<AdminStats> {
     try {
-      // En una implementación real, estas serían consultas a Supabase
-      // Por ahora, simulamos la agregación de datos reales
       const { count: userCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-      const { count: driverCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'driver');
-      const { count: pendingCount } = await supabase.from('recharge_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending');
-      
+      const { count: driverCount } = await supabase.from('driver_profiles').select('*', { count: 'exact', head: true }); // Query driver_profiles table
+      const { count: pendingCount } = await supabase.from('recharge_requests').select('*', { count: 'exact', head: true }).eq('status', 'PENDING');
+
+      // Calculate revenue (Mock for now as trips table might be empty)
+      // In real prod: sum(priceUsd) from trips where status = 'COMPLETED'
+      const { data: revenueData } = await supabase.from('trips').select('priceUsd').eq('status', 'COMPLETED');
+      const totalRevenue = revenueData?.reduce((acc, trip) => acc + (trip.priceUsd || 0), 0) || 0;
+
       return {
-        totalUsers: userCount || 1250,
-        activeDrivers: driverCount || 45,
-        totalRevenueUsd: 12450.50, // Esto vendría de una suma en wallet_transactions
-        pendingApprovals: pendingCount || 12
+        totalUsers: userCount || 0,
+        activeDrivers: driverCount || 0,
+        totalRevenueUsd: totalRevenue,
+        pendingApprovals: pendingCount || 0
       };
     } catch (error) {
       logger.error("Error fetching admin stats", error);
       return {
-        totalUsers: 1250,
-        activeDrivers: 45,
-        totalRevenueUsd: 12450.50,
-        pendingApprovals: 12
+        totalUsers: 0,
+        activeDrivers: 0,
+        totalRevenueUsd: 0,
+        pendingApprovals: 0
       };
     }
   },
@@ -72,7 +75,7 @@ export const userManagementService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       // Mapeo de datos reales o fallback a mock si no hay datos
       return (data || []).map(u => ({
         id: u.id,

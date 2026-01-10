@@ -1,4 +1,81 @@
+import React, { useState, useEffect, useRef } from 'react';
 import { TripService } from '../services/tripService'; // New Import
+import { useAuth } from '../context/AuthContext';
+import {
+  Clock,
+  Heart,
+  MessageCircle,
+  MessageSquare,
+  Phone,
+  Star,
+  User,
+  Users,
+  ArrowLeft,
+  Search,
+  MapPin,
+  Smartphone
+} from 'lucide-react';
+import Button from '../components/Button';
+import Input from '../components/Input';
+import LeafletMapComponent from '../components/LeafletMapComponent';
+import ChatInterface from '../components/ChatInterface';
+import { toast } from 'sonner';
+import { SERVICE_CATALOG, getTariffs, getDriverById, mockMatchDriver, startRideSimulation, sendChatMessage } from '../services/mockService';
+import { UserRole, RideStep, ServiceId, LocationPoint, MatchedDriver, RideBeneficiary, ChatMessage, SavedPlace } from '../types';
+
+// --- HELPER COMPONENTS & FUNCTIONS ---
+
+const cleanPhoneNumber = (phone: string) => phone.replace(/\D/g, '');
+
+const calculatePrice = (distanceKm: number, serviceId: string) => {
+  // Mock logic
+  const base = serviceId === 'mototaxi' ? 1.0 : 2.5;
+  const rate = serviceId === 'mototaxi' ? 0.5 : 0.8;
+  const usd = base + (distanceKm * rate);
+  return {
+    usd,
+    ves: usd * (getTariffs().currentBcvRate || 60)
+  };
+};
+
+interface ServiceOptionProps {
+  id: string;
+  nombre: string;
+  icono: string;
+  price: { usd: number; ves: number };
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+const ServiceOption: React.FC<ServiceOptionProps> = ({ id, nombre, icono, price, isSelected, onClick }) => (
+  <div
+    onClick={onClick}
+    className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center gap-2 ${isSelected ? 'border-mipana-orange bg-orange-50' : 'border-gray-100 hover:border-gray-200'
+      }`}
+  >
+    <span className="text-2xl">{icono}</span>
+    <div className="text-center">
+      <p className="text-xs font-bold text-gray-700 uppercase">{nombre}</p>
+      <p className="text-sm font-bold text-mipana-darkBlue">${price.usd.toFixed(2)}</p>
+    </div>
+  </div>
+);
+
+interface FavoriteDriverItemProps {
+  driver: MatchedDriver;
+  onClick: () => void;
+}
+
+const FavoriteDriverItem: React.FC<FavoriteDriverItemProps> = ({ driver, onClick }) => (
+  <div onClick={onClick} className="flex flex-col items-center mr-4 cursor-pointer min-w-[60px]">
+    <img src={driver.avatarUrl} alt={driver.name} className="w-12 h-12 rounded-full border-2 border-mipana-mediumBlue p-0.5" />
+    <span className="text-[10px] font-bold text-gray-600 mt-1 truncate w-full text-center">{driver.name.split(' ')[0]}</span>
+  </div>
+);
+
+interface PassengerHomeProps {
+  onNavigateWallet: () => void;
+}
 
 // ... existing imports ...
 
@@ -74,7 +151,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
           // For now, if accepted, we simulate a driver found or use preselected
 
           // Temporary: If real backend doesn't return full driver object yet, we mock it to show UI
-          const foundDriver = preselectedDriver || mockMatchDriver(SERVICE_CATALOG.find(s => s.id === updatedTrip.serviceId)?.vehicleType || 'CAR', updatedTrip.driverId);
+          const foundDriver = Promise.resolve(preselectedDriver || mockMatchDriver(SERVICE_CATALOG.find(s => s.id === updatedTrip.serviceId)?.vehicleType || 'CAR', updatedTrip.driverId));
 
           foundDriver.then(d => {
             setDriver(d);
@@ -114,6 +191,43 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
 
 
   // ... (Map Handlers unchanged) ...
+
+  const resetFlow = () => {
+    setStep('SEARCH');
+    setDriver(null);
+    setCurrentTripId(null);
+    setPreselectedDriver(null);
+    setPrice(null);
+    setDestination(null);
+    setPickingType(null);
+    setRideProgress(0);
+  };
+
+  const handleSelectFavoriteDriver = (d: MatchedDriver) => {
+    setPreselectedDriver(d);
+    // Auto-set destination if they have a "favorite" destination associated?
+    // For now just select the driver and maybe open map to pick dest
+    setStep('PICK_ON_MAP');
+    setPickingType('DESTINATION');
+    toast.info(`Solicitando a ${d.name}. Selecciona destino.`);
+  };
+
+  const confirmMapSelection = () => {
+    if (pickingType === 'ORIGIN') {
+      setOrigin({ ...origin, address: mapCenterAddress, lat: mapCenterCoords?.lat, lng: mapCenterCoords?.lng });
+      setPickingType(null);
+      setStep('SEARCH');
+    } else if (pickingType === 'DESTINATION') {
+      const dest = { address: mapCenterAddress, lat: mapCenterCoords?.lat, lng: mapCenterCoords?.lng };
+      setDestination(dest);
+      setPickingType(null);
+
+      // Auto calculate price
+      const calculated = calculatePrice(4.2, selectedServiceId);
+      setPrice(calculated);
+      setStep('CONFIRM_SERVICE');
+    }
+  };
 
   // Modified Confirm Ride to use TripService
   const handleConfirmRide = async () => {

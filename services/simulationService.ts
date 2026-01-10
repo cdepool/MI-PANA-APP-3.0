@@ -149,8 +149,8 @@ const generateMockRide = (id: string, serviceId: ServiceId, distance: number, st
 };
 
 export const mockRides: Ride[] = [
-    generateMockRide('ride-001', 'el_pana', 4.2, 'PENDING'),
-    generateMockRide('ride-002', 'mototaxi', 2.5, 'PENDING', { name: 'Mi Mamá', phone: '0414-5550000' }),
+    generateMockRide('ride-001', 'el_pana', 4.2, 'REQUESTED'),
+    generateMockRide('ride-002', 'mototaxi', 2.5, 'REQUESTED', { name: 'Mi Mamá', phone: '0414-5550000' }),
     generateMockRide('ride-003', 'full_pana', 8.0, 'COMPLETED')
 ];
 

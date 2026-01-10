@@ -172,7 +172,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addSavedPlace,
       removeSavedPlace,
       connectGoogle,
-      disconnectGoogle
+      disconnectGoogle,
+      isLoading
     }}>
       {children}
     </AuthContext.Provider>

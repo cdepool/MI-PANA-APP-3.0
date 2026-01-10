@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Navigation, 
-  ShieldCheck, 
-  Activity, 
-  MapPin, 
-  Users, 
-  Clock, 
-  Phone, 
-  MessageCircle, 
+import {
+  Navigation,
+  ShieldCheck,
+  Activity,
+  MapPin,
+  Users,
+  Clock,
+  Phone,
+  MessageCircle,
   XCircle,
   Power,
   TrendingUp,
@@ -28,7 +28,7 @@ const DriverHome: React.FC = () => {
 
   useEffect(() => {
     if (isOnline && !activeRide) {
-      setAvailableRides(mockRides.filter(r => r.status === 'PENDING'));
+      setAvailableRides(mockRides.filter(r => r.status === 'REQUESTED'));
     } else {
       setAvailableRides([]);
     }
@@ -80,20 +80,20 @@ const DriverHome: React.FC = () => {
 
       {/* Map Section */}
       <div className="flex-1 relative rounded-2xl overflow-hidden shadow-lg border border-gray-200">
-        <UnifiedMapComponent 
+        <UnifiedMapComponent
           status={status === 'IDLE' ? 'IDLE' : status === 'ACCEPTED' ? 'ACCEPTED' : 'IN_PROGRESS'}
           origin={activeRide?.originCoords}
           destination={activeRide?.destinationCoords}
         />
-        
+
         {/* Online/Offline Toggle Overlay */}
         <div className="absolute top-4 left-4 right-4 flex justify-between items-center pointer-events-none">
           <div className={`px-4 py-2 rounded-full shadow-lg flex items-center gap-2 pointer-events-auto transition-colors ${isOnline ? 'bg-green-500 text-white' : 'bg-white text-gray-400 border border-gray-100'}`}>
             <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-white animate-pulse' : 'bg-gray-300'}`}></div>
             <span className="text-xs font-bold uppercase tracking-wider">{isOnline ? 'En Línea' : 'Desconectado'}</span>
           </div>
-          
-          <button 
+
+          <button
             onClick={toggleOnline}
             className={`w-12 h-12 rounded-full shadow-xl flex items-center justify-center pointer-events-auto transition-all active:scale-90 ${isOnline ? 'bg-red-500 text-white' : 'bg-mipana-navy text-white'}`}
           >
@@ -108,12 +108,12 @@ const DriverHome: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-mipana-navy flex items-center gap-2">
-                <Activity size={18} className="text-cyan-500" /> 
+                <Activity size={18} className="text-cyan-500" />
                 {isOnline ? 'Solicitudes Cercanas' : 'Sistema en Pausa'}
               </h3>
               {isOnline && <span className="text-[10px] font-bold text-cyan-500 animate-pulse">BUSCANDO...</span>}
             </div>
-            
+
             {!isOnline ? (
               <div className="py-8 text-center">
                 <p className="text-sm text-gray-400">Conéctate para empezar a recibir viajes y ganar dinero.</p>
@@ -146,7 +146,7 @@ const DriverHome: React.FC = () => {
                         <span className="truncate">{ride.destination}</span>
                       </div>
                     </div>
-                    <Button fullWidth size="sm" onClick={() => acceptRide(ride)}>Aceptar Viaje</Button>
+                    <Button fullWidth onClick={() => acceptRide(ride)}>Aceptar Viaje</Button>
                   </div>
                 ))}
               </div>
@@ -174,7 +174,7 @@ const DriverHome: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MapPin size={16} className="text-mipana-navy" />
@@ -187,8 +187,8 @@ const DriverHome: React.FC = () => {
               </span>
             </div>
 
-            <Button 
-              fullWidth 
+            <Button
+              fullWidth
               variant={status === 'ACCEPTED' ? 'action' : 'primary'}
               onClick={status === 'ACCEPTED' ? startRide : completeRide}
             >

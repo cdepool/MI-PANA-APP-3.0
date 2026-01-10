@@ -11,6 +11,8 @@ export type ServiceId = 'mototaxi' | 'el_pana' | 'el_amigo' | 'full_pana';
 
 export type AppView = 'HOME' | 'PROFILE' | 'HISTORY' | 'SETTINGS' | 'SCHEDULE' | 'REGISTER' | 'WALLET' | 'APPROVALS';
 
+export type RideStep = 'SEARCH' | 'PICK_ON_MAP' | 'CONFIRM_SERVICE' | 'SEARCHING_DRIVER' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED';
+
 export interface SavedPlace {
   id: string;
   name: string; // e.g., "Casa", "Trabajo", "Donde la abuela"
@@ -105,6 +107,8 @@ export interface User {
   vehicle?: VehicleInfo; // Driver Vehicle Info
   favoriteDriverIds?: string[]; // List of IDs of favorite drivers
   googleAccessToken?: string; // Access token for Google APIs
+  location?: { lat: number; lng: number }; // Current location
+  rating?: number; // User rating (as passenger or driver)
 }
 
 export interface ServiceConfig {
@@ -233,6 +237,7 @@ export interface AuthContextType {
   removeSavedPlace: (id: string) => void;
   connectGoogle: () => Promise<void>;
   disconnectGoogle: () => void;
+  isLoading: boolean;
 }
 
 // Registration specific types

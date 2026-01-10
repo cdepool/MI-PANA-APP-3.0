@@ -7,7 +7,7 @@ import ProfessionalHeader from './ProfessionalHeader';
 
 interface LayoutProps {
   children: React.ReactNode;
-  onNavigate: (view: AppView) => void;
+  onNavigate: (path: string) => void;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, onNavigate }) => {
@@ -18,15 +18,15 @@ const Layout: React.FC<LayoutProps> = ({ children, onNavigate }) => {
     return <>{children}</>;
   }
 
-  const handleNavigate = (view: AppView) => {
-    onNavigate(view);
+  const handleNavigate = (path: string) => {
+    onNavigate(path);
     setIsMobileSidebarOpen(false);
   };
 
   return (
     <div className="min-h-screen bg-mipana-lightGray dark:bg-[#011836] transition-colors duration-200 flex flex-col">
-      <ProfessionalHeader />
-      
+      <ProfessionalHeader onMenuClick={() => setIsMobileSidebarOpen(true)} />
+
       <main className="flex-1 relative overflow-y-auto overflow-x-hidden">
         {/* Mobile Sidebar Overlay */}
         {isMobileSidebarOpen && (

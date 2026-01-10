@@ -143,5 +143,72 @@ export const authService = {
     if (session && session.id === userId) authService.setSession(updated as User);
 
     return updated as User;
-  }
+  },
+
+  adminCreateUser: async (_payload: any) => {
+    // Mock admin creation
+    return { success: true, message: 'Usuario creado exitosamente' };
+  },
+  connectGoogle: async () => {
+    // Alias for signInWithGoogle logic or separate connect logic
+    return authService.signInWithGoogle();
+  },
+
+  loginWithGoogle: async () => {
+    return authService.signInWithGoogle();
+  },
+
+  registerOrLoginImplicit: async (fullName: string, phone: string) => {
+    // Mock implementation for implicit login/register
+    // In real app, this would call Supabase Edge Function or auth endpoint
+    const mockUser: User = {
+      id: 'user-' + Date.now(),
+      name: fullName,
+      email: `${phone}@mipana.app`, // Provisional email
+      phone: phone,
+      role: UserRole.PASSENGER,
+      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + fullName,
+    };
+
+    // Check if user exists (mock check) - In real app, verify phone
+    authService.setSession(mockUser);
+    return mockUser;
+  },
+
+  loginPassenger: async (identifier: string, _password: string) => {
+    // Mock passenger login
+    // In real app, verify credentials
+    const user: User = {
+      id: 'passenger-123',
+      name: 'Passenger User',
+      email: identifier.includes('@') ? identifier : `${identifier}@mipana.app`,
+      role: UserRole.PASSENGER,
+      phone: identifier.includes('@') ? '04140000000' : identifier,
+    };
+    authService.setSession(user);
+    return user;
+  },
+
+  updateUser: async (userId: string, data: Partial<User>) => {
+    const { data: updated, error } = await supabase
+      .from('profiles')
+      .update(data)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.warn("Update profile failed (maybe loose schema), falling back to local update");
+      const current = authService.getSession();
+      if (current && current.id === userId) {
+        const newSession = { ...current, ...data };
+        authService.setSession(newSession);
+        return newSession;
+      }
+      throw error;
+    }
+
+    authService.setSession(updated as User);
+    return updated as User;
+  },
 };

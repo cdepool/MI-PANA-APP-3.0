@@ -27,13 +27,13 @@ export async function registerServiceWorker(config?: ServiceWorkerConfig): Promi
       // Check for updates
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
-        
+
         if (!newWorker) return;
 
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
             console.log('[PWA] New content is available; please refresh.');
-            
+
             if (config?.onUpdate) {
               config.onUpdate(registration);
             } else {
@@ -230,7 +230,7 @@ export async function showNotification(
       badge: '/pwa-64x64.png',
       vibrate: [200, 100, 200],
       ...options
-    });
+    } as any);
   } catch (error) {
     console.error('[PWA] Failed to show notification:', error);
   }
@@ -253,7 +253,7 @@ export async function promptInstall(): Promise<boolean> {
 
   deferredPrompt.prompt();
   const { outcome } = await deferredPrompt.userChoice;
-  
+
   console.log('[PWA] Install prompt outcome:', outcome);
   deferredPrompt = null;
 
@@ -262,7 +262,7 @@ export async function promptInstall(): Promise<boolean> {
 
 export function isInstalled(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches ||
-         (window.navigator as any).standalone === true;
+    (window.navigator as any).standalone === true;
 }
 
 // Export all functions

@@ -1,12 +1,12 @@
 import React from 'react';
-import { 
-  Home, 
-  Wallet, 
-  History, 
-  User, 
-  Settings, 
-  LogOut, 
-  Car, 
+import {
+  Home,
+  Wallet,
+  History,
+  User,
+  Settings,
+  LogOut,
+  Car,
   FileCheck,
   X
 } from 'lucide-react';
@@ -16,7 +16,7 @@ import { AppView, UserRole } from '../types';
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onNavigate: (view: AppView) => void;
+  onNavigate: (path: string) => void;
   isDesktop?: boolean;
 }
 
@@ -24,14 +24,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, isDeskto
   const { user, logout } = useAuth();
 
   const menuItems = [
-    { label: 'Inicio', icon: <Home size={20} />, view: 'HOME' as AppView },
-    { label: 'Billetera', icon: <Wallet size={20} />, view: 'WALLET' as AppView },
-    { label: 'Historial', icon: <History size={20} />, view: 'HISTORY' as AppView },
-    { label: 'Perfil', icon: <User size={20} />, view: 'PROFILE' as AppView },
+    { label: 'Inicio', icon: <Home size={20} />, path: '/' },
+    { label: 'Billetera', icon: <Wallet size={20} />, path: '/wallet' },
+    { label: 'Historial', icon: <History size={20} />, path: '/trips' },
+    { label: 'Perfil', icon: <User size={20} />, path: '/profile' },
+    { label: 'Agenda', icon: <FileCheck size={20} />, path: '/schedule' },
   ];
 
-  const handleNavigation = (view: AppView) => {
-    onNavigate(view);
+  const handleNavigation = (path: string) => {
+    onNavigate(path);
     if (!isDesktop) onClose();
   };
 
@@ -55,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, isDeskto
         {menuItems.map((item, idx) => (
           <button
             key={idx}
-            onClick={() => handleNavigation(item.view)}
+            onClick={() => handleNavigation(item.path)}
             className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
           >
             <span className="text-mipana-navy dark:text-cyan-400">{item.icon}</span>
@@ -65,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, isDeskto
 
         {user?.role === UserRole.DRIVER && (
           <button
-            onClick={() => handleNavigation('PROFILE')}
+            onClick={() => handleNavigation('/profile')}
             className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
           >
             <span className="text-mipana-navy dark:text-cyan-400"><Car size={20} /></span>
@@ -75,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, isDeskto
 
         {user?.role === UserRole.ADMIN && (
           <button
-            onClick={() => handleNavigation('APPROVALS' as AppView)}
+            onClick={() => handleNavigation('/admin')}
             className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
           >
             <span className="text-mipana-navy dark:text-cyan-400"><FileCheck size={20} /></span>
@@ -86,7 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, isDeskto
         <div className="h-px bg-gray-200 dark:bg-gray-700 my-4" />
 
         <button
-          onClick={() => handleNavigation('SETTINGS')}
+          onClick={() => handleNavigation('/profile')}
           className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
         >
           <span className="text-gray-400"><Settings size={20} /></span>
