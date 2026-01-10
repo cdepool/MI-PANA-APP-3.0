@@ -116,7 +116,11 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
     setIsLoading(true);
     try {
-      await authService.sendOtp(email);
+      const response = await authService.sendOtp(email);
+      if (!response.success) {
+        toast.error(response.message || "No se pudo enviar el código.");
+        return;
+      }
       setCurrentStep(1);
       toast.success(`Código enviado a ${email}`);
     } catch (err) {
@@ -271,9 +275,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
               className="mb-4"
             />
 
-            <p className="text-xs text-center text-gray-400 bg-gray-100 dark:bg-gray-700 p-2 rounded">
-              ⚠️ Simulación Gmail: Revisa la alerta del navegador o usa <b>000000</b>
-            </p>
+
             <Button onClick={handleOtpSubmit} fullWidth disabled={isLoading}>
               {isLoading ? 'Validando...' : 'Verificar Código'}
             </Button>
