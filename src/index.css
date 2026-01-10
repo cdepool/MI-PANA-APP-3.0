@@ -57,23 +57,29 @@
    BASE STYLES
    ======================================== */
 
+html,
 body {
   margin: 0;
-  min-width: 320px;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  /* CRITICAL: Prevent horizontal scroll globally */
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f3f4f6; /* bg-gray-100 */
+  background-color: #f3f4f6;
 }
 
 /* App Container constraint */
 #root {
-  max-width: 480px; /* Mobile width constraint */
+  max-width: 480px;
+  /* Mobile width constraint */
   margin: 0 auto;
   min-height: 100vh;
   background-color: white;
   position: relative;
-  box-shadow: 0 0 25px rgba(0,0,0,0.1);
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
   overflow-x: hidden;
 }
 
@@ -302,4 +308,9 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}.mesh-gradient { background: radial-gradient(at top left, rgba(255, 107, 0, 0.4), transparent 50%), radial-gradient(at bottom right, rgba(26, 46, 86, 0.4), transparent 50%); filter: blur(40px); }
+}
+
+.mesh-gradient {
+  background: radial-gradient(at top left, rgba(255, 107, 0, 0.4), transparent 50%), radial-gradient(at bottom right, rgba(26, 46, 86, 0.4), transparent 50%);
+  filter: blur(40px);
+}
