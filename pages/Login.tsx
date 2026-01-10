@@ -115,15 +115,8 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
             <img
               src="/login-logo.png"
               alt="Mi Pana Logo"
-              className="w-32 h-32 object-contain drop-shadow-xl"
+              className="w-40 h-40 object-contain drop-shadow-xl"
             />
-          </div>
-
-          <div className="text-center">
-            <h1 className="text-4xl font-black tracking-tight text-[#1A2E56] dark:text-white leading-none">
-              MI PANA
-            </h1>
-            <div className="text-xl font-extrabold text-[#FF6B00] tracking-[0.2em] mt-1">APP</div>
           </div>
         </div>
 
@@ -176,13 +169,6 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
       </main>
 
       <footer className="mt-auto pt-8 pb-4 text-center">
-        <p className="text-slate-400 dark:text-slate-500 text-sm font-medium tracking-wide mb-2">
-          <img
-            src="/login-text.png"
-            alt="Siempre Conectado"
-            className="h-8 mx-auto object-contain opacity-80"
-          />
-        </p>
         {/* Native Home Indicator simulation */}
         <div className="mt-6 mx-auto w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
       </footer>
