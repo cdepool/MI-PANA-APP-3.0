@@ -186,4 +186,3 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 };
 
 export default Login;
-```
