@@ -60,10 +60,6 @@ const DriverHome: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] gap-4">
-      {/* Header Logo */}
-      <div className="flex items-center pl-2 pt-1">
-        <img src="/logo-app.png" alt="Logo" className="h-8 w-auto" />
-      </div>
       {/* Top Stats Bar */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
@@ -127,107 +123,108 @@ const DriverHome: React.FC = () => {
                 <p className="text-sm text-gray-400">No hay solicitudes en tu zona ahora mismo.</p>
               </div>
             ) : (
-              <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
+            ): (
+                <div className = "grid grid-cols-1 md:grid-cols-2 gap-4 pb-2">
                 {availableRides.map(ride => (
-                  <div key={ride.id} className="min-w-[280px] bg-gray-50 rounded-xl p-4 border border-gray-100 snap-center">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">{getServiceIcon(ride.serviceId)}</span>
-                        <div>
-                          <p className="font-bold text-green-600">${ride.liquidation?.conductor.deposito_neto_usd.toFixed(2)}</p>
-                          <p className="text-[10px] text-gray-400 uppercase font-bold">Ganancia Neta</p>
-                        </div>
-                      </div>
-                      <span className="bg-mipana-navy text-white text-[10px] font-bold px-2 py-1 rounded-full">{ride.distanceKm} km</span>
-                    </div>
-                    <div className="space-y-1 mb-4">
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                        <span className="truncate">{ride.origin}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
-                        <span className="truncate">{ride.destination}</span>
-                      </div>
-                    </div>
-                    <Button fullWidth onClick={() => acceptRide(ride)}>Aceptar Viaje</Button>
+            <div key={ride.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-mipana-mediumBlue transition-colors shadow-sm">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{getServiceIcon(ride.serviceId)}</span>
+                  <div>
+                    <p className="font-bold text-green-600">${ride.liquidation?.conductor.deposito_neto_usd.toFixed(2)}</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-bold">Ganancia Neta</p>
                   </div>
+                </div>
+                <span className="bg-mipana-navy text-white text-[10px] font-bold px-2 py-1 rounded-full">{ride.distanceKm} km</span>
+              </div>
+              <div className="space-y-1 mb-4">
+                <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                  <span className="truncate">{ride.origin}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-600">
+                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
+                  <span className="truncate">{ride.destination}</span>
+                </div>
+              </div>
+              <Button fullWidth onClick={() => acceptRide(ride)}>Aceptar Viaje</Button>
+            </div>
                 ))}
-              </div>
-            )}
-          </div>
-        ) : status === 'ACCEPTED' || status === 'IN_PROGRESS' ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <img src="https://ui-avatars.com/api/?name=Pasajero&background=00BCD4&color=fff" className="w-12 h-12 rounded-full border-2 border-mipana-navy" alt="User" />
-                  <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white"></div>
-                </div>
-                <div>
-                  <p className="font-bold text-mipana-navy">{activeRide?.beneficiary?.name || 'Pasajero'}</p>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">En camino al origen</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    // WhatsApp Logic
-                    const phone = activeRide?.beneficiary?.phone || '';
-                    if (phone) window.open(`https://wa.me/${phone.replace(/\D/g, '')}`, '_blank');
-                    else window.open(`https://wa.me/?text=Hola, soy tu conductor de Mi Pana App`, '_blank');
-                  }}
-                  className="p-3 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-colors"
-                >
-                  <MessageCircle size={20} />
-                </button>
-                <button
-                  onClick={() => {
-                    // Call Logic
-                    const phone = activeRide?.beneficiary?.phone || '';
-                    if (phone) window.open(`tel:${phone}`);
-                  }}
-                  className="p-3 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"
-                >
-                  <Phone size={20} />
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin size={16} className="text-mipana-navy" />
-                <p className="text-xs font-medium text-gray-600 truncate max-w-[200px]">
-                  {status === 'ACCEPTED' ? activeRide?.origin : activeRide?.destination}
-                </p>
-              </div>
-              <span className="text-[10px] font-bold text-mipana-navy bg-white px-2 py-1 rounded-lg shadow-sm">
-                {status === 'ACCEPTED' ? 'RECOGER' : 'DESTINO'}
-              </span>
-            </div>
-
-            <Button
-              fullWidth
-              variant={status === 'ACCEPTED' ? 'action' : 'primary'}
-              onClick={status === 'ACCEPTED' ? startRide : completeRide}
-            >
-              {status === 'ACCEPTED' ? 'Iniciar Viaje' : 'Finalizar Viaje'}
-            </Button>
-          </div>
-        ) : (
-          <div className="text-center py-4 space-y-4">
-            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
-              <ShieldCheck size={32} />
-            </div>
-            <div>
-              <h3 className="font-bold text-mipana-navy text-lg">¡Viaje Completado!</h3>
-              <p className="text-sm text-gray-500">Has ganado <span className="font-bold text-green-600">${activeRide?.liquidation?.conductor.deposito_neto_usd.toFixed(2)}</span></p>
-            </div>
-            <Button fullWidth onClick={resetFlow}>Listo para el siguiente</Button>
           </div>
         )}
       </div>
+      ) : status === 'ACCEPTED' || status === 'IN_PROGRESS' ? (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <img src="https://ui-avatars.com/api/?name=Pasajero&background=00BCD4&color=fff" className="w-12 h-12 rounded-full border-2 border-mipana-navy" alt="User" />
+              <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white"></div>
+            </div>
+            <div>
+              <p className="font-bold text-mipana-navy">{activeRide?.beneficiary?.name || 'Pasajero'}</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">En camino al origen</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                // WhatsApp Logic
+                const phone = activeRide?.beneficiary?.phone || '';
+                if (phone) window.open(`https://wa.me/${phone.replace(/\D/g, '')}`, '_blank');
+                else window.open(`https://wa.me/?text=Hola, soy tu conductor de Mi Pana App`, '_blank');
+              }}
+              className="p-3 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-colors"
+            >
+              <MessageCircle size={20} />
+            </button>
+            <button
+              onClick={() => {
+                // Call Logic
+                const phone = activeRide?.beneficiary?.phone || '';
+                if (phone) window.open(`tel:${phone}`);
+              }}
+              className="p-3 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"
+            >
+              <Phone size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MapPin size={16} className="text-mipana-navy" />
+            <p className="text-xs font-medium text-gray-600 truncate max-w-[200px]">
+              {status === 'ACCEPTED' ? activeRide?.origin : activeRide?.destination}
+            </p>
+          </div>
+          <span className="text-[10px] font-bold text-mipana-navy bg-white px-2 py-1 rounded-lg shadow-sm">
+            {status === 'ACCEPTED' ? 'RECOGER' : 'DESTINO'}
+          </span>
+        </div>
+
+        <Button
+          fullWidth
+          variant={status === 'ACCEPTED' ? 'action' : 'primary'}
+          onClick={status === 'ACCEPTED' ? startRide : completeRide}
+        >
+          {status === 'ACCEPTED' ? 'Iniciar Viaje' : 'Finalizar Viaje'}
+        </Button>
+      </div>
+      ) : (
+      <div className="text-center py-4 space-y-4">
+        <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
+          <ShieldCheck size={32} />
+        </div>
+        <div>
+          <h3 className="font-bold text-mipana-navy text-lg">¡Viaje Completado!</h3>
+          <p className="text-sm text-gray-500">Has ganado <span className="font-bold text-green-600">${activeRide?.liquidation?.conductor.deposito_neto_usd.toFixed(2)}</span></p>
+        </div>
+        <Button fullWidth onClick={resetFlow}>Listo para el siguiente</Button>
+      </div>
+        )}
     </div>
+    </div >
   );
 };
 
