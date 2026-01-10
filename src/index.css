@@ -302,4 +302,4 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
+}.mesh-gradient { background: radial-gradient(at top left, rgba(255, 107, 0, 0.4), transparent 50%), radial-gradient(at bottom right, rgba(26, 46, 86, 0.4), transparent 50%); filter: blur(40px); }

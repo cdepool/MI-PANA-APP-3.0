@@ -162,7 +162,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
         <div className="mt-8 text-center">
           <p className="text-slate-500 dark:text-slate-400 text-sm">
             ¿No tienes cuenta?
-            <span className="text-[#1A2E56] dark:text-[#FF6B00] font-bold cursor-pointer ml-1" onClick={handleImplicitLogin}>Regístrate aquí</span>
+            <span className="text-[#1A2E56] dark:text-[#FF6B00] font-bold cursor-pointer ml-1" onClick={onNavigateRegister}>Regístrate aquí</span>
           </p>
         </div>
 

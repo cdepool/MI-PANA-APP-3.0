@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
+import Onboarding from '../pages/Onboarding';
 import PassengerHome from '../pages/PassengerHome';
 import DriverHome from '../pages/DriverHome';
 import ProfessionalAdminDashboard from '../pages/ProfessionalAdminDashboard';
@@ -26,8 +27,10 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={<Login onNavigateRegister={() => navigate('/register')} />} />
+      <Route path="/login" element={<Login onNavigateRegister={() => navigate('/onboarding')} />} />
+      <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/register" element={<Register onNavigateHome={() => navigate('/')} onNavigateLogin={() => navigate('/login')} />} />
+
 
       <Route path="/" element={
         <PrivateRoute>
