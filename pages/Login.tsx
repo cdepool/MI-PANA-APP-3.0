@@ -122,7 +122,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 
         {/* Welcome Text */}
         <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold mb-2 text-[#1A2E56] dark:text-white">Bienvenido</h2>
+          <h2 className="text-2xl font-bold mb-2 text-[#1A2E56] dark:text-white">¡Pídete un Pana!</h2>
           <p className="text-slate-500 dark:text-slate-400">Inicia sesión para continuar</p>
         </div>
 
