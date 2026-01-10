@@ -16,123 +16,96 @@ interface RegisterProps {
 
 const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) => {
   const { login } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
 
-  // Form State
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-
-  const handleImplicitSubmit = async () => {
-    // Basic Validation
-    if (!firstName.trim() || !lastName.trim()) {
-      toast.error("Por favor completa tu nombre y apellido");
+  const handleSmartSubmit = async () => {
+    if (!email.includes('@')) {
+      toast.error("Por favor ingresa un email válido");
       return;
     }
-    if (phone.length < 10) {
-      toast.error("Número de teléfono inválido");
+    if (password.length < 6) {
+      toast.error("La contraseña debe tener al menos 6 caracteres");
       return;
     }
 
     setIsLoading(true);
-    const fullName = `${firstName} ${lastName}`.trim();
-
     try {
-      // Call the new Implicit Auth Service
-      const user = await authService.registerOrLoginImplicit(fullName, phone);
+      // Call Smart Service (Login or Signup)
+      const user = await authService.registerOrLoginImplicit(email.trim(), password, name);
 
-      // Update Context & Navigate
-      login(UserRole.PASSENGER, user);
-      toast.success(`¡Bienvenido, ${firstName}!`);
+      login(user.role as UserRole, user);
+      toast.success(user.role === 'ADMIN' ? `¡Bienvenido Admin ${user.name}!` : `¡Bienvenido ${user.name}!`);
       onNavigateHome();
 
     } catch (err: any) {
-      console.error('Implicit Auth Error:', err);
-      toast.error(err.message || "Hubo un problema al ingresar. Intenta nuevamente.");
+      console.error('Auth Error:', err);
+      toast.error(err.message || "Error de autenticación");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-mipana-lightGray dark:bg-[#011836] flex flex-col">
-      {/* Header Simplified */}
-      <div className="p-4 flex items-center">
-        <button onClick={onNavigateLogin} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors">
-          <ArrowLeft className="text-mipana-darkBlue dark:text-white" />
+    <div className="min-h-screen bg-mipana-lightGray dark:bg-[#011836] flex flex-col items-center justify-center p-6">
+
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-gray-100 dark:border-gray-700">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-mipana-navy rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span className="text-white font-bold text-2xl">MP</span>
+          </div>
+          <h1 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">Acceso Rápido</h1>
+          <p className="text-gray-400 text-sm mt-1">Ingresa tu correo para Continuar</p>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Correo Electrónico</label>
+            <Input
+              placeholder="ejemplo@email.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-gray-700"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Contraseña</label>
+            <Input
+              type="password"
+              placeholder="********"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-gray-700 font-mono"
+            />
+          </div>
+
+          {/* Optional Name for new users */}
+          <div>
+            <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Nombre (Opcional si eres nuevo)</label>
+            <Input
+              placeholder="Tu Nombre"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-gray-700"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleSmartSubmit}
+          isLoading={isLoading}
+          fullWidth
+          variant="action"
+          className="mt-8 h-14 text-lg shadow-mipana"
+        >
+          Continuar
+        </Button>
+
+        <button onClick={onNavigateLogin} className="w-full text-center mt-6 text-gray-400 hover:text-mipana-mediumBlue text-xs font-bold">
+          ← Volver al inicio
         </button>
-        <div className="ml-4">
-          <h1 className="font-bold text-mipana-darkBlue dark:text-white text-lg">Ingreso Rápido</h1>
-        </div>
-      </div>
-
-      <div className="flex-1 max-w-md mx-auto w-full p-6 flex flex-col justify-center">
-
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 space-y-6">
-
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white mb-2">¡Hola Pana! 👋</h2>
-            <p className="text-gray-500 text-sm">Ingresa tu nombre y teléfono para comenzar.</p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label>
-                <Input
-                  value={firstName}
-                  onChange={e => setFirstName(e.target.value)}
-                  placeholder="Carlos"
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellido</label>
-                <Input
-                  value={lastName}
-                  onChange={e => setLastName(e.target.value)}
-                  placeholder="Depool"
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono Móvil</label>
-              <div className="relative">
-                <Smartphone className="absolute left-3 top-3 text-gray-400" size={20} />
-                <Input
-                  value={phone}
-                  onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="0412 123 4567"
-                  className="pl-10 w-full font-mono text-lg"
-                  type="tel"
-                  inputMode="numeric"
-                />
-              </div>
-              <p className="text-xs text-gray-400 mt-1 pl-1">Sin códigos, sin espera.</p>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleImplicitSubmit}
-            fullWidth
-            disabled={isLoading}
-            variant="action"
-            className="mt-4 h-12 text-lg"
-          >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="animate-spin" /> Ingresando...
-              </div>
-            ) : 'Entrar'}
-          </Button>
-
-          <p className="text-center text-xs text-gray-400 mt-4">
-            Al entrar aceptas nuestros <a href="#" className="underline text-mipana-mediumBlue">Términos de Servicio</a>.
-          </p>
-
-        </div>
       </div>
     </div>
   );

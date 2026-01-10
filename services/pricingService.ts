@@ -6,7 +6,7 @@ import logger from '../utils/logger';
 const BCV_API_URL = 'https://ve.dolarapi.com/v1/dolares/oficial';
 
 // Variable global para la tasa (Estado simple)
-export let currentBcvRate = 46.23; // Valor fallback inicial seguro
+export let currentBcvRate = 330.38; // Valor fallback actualizado
 export let lastBcvUpdate = new Date();
 
 // Función Crítica: Obtener Tasa Oficial

@@ -59,7 +59,7 @@ const ProfessionalAdminDashboard: React.FC = () => {
           <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-100 flex items-center gap-3">
             <div className="text-right">
               <p className="text-[10px] font-bold text-gray-400 uppercase">Tasa Oficial BCV</p>
-              <p className="text-lg font-bold text-green-600">Bs 241.58</p>
+              <p className="text-lg font-bold text-green-600">Bs 330.38</p>
             </div>
             <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
               <TrendingUp size={20} />

@@ -344,36 +344,40 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
       {/* SEARCH STEP UI: Redesigned with Wallet & Inputs */}
       {step === 'SEARCH' && (
         <>
-          <div className="absolute top-0 left-0 right-0 z-20 p-4 space-y-3 bg-gradient-to-b from-black/5 to-transparent pb-8">
+          <div className="absolute top-0 left-0 right-0 z-20 p-2 md:p-4 space-y-2 md:space-y-3 bg-gradient-to-b from-black/20 to-transparent pb-8 pointer-events-none">
+            {/* Pointer events handled by children */}
 
-            {/* HEADER: GREETING & RATE */}
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md p-2 pr-4 rounded-full shadow-lg border border-white/50">
-                <div className="w-10 h-10 rounded-full bg-mipana-mediumBlue/10 flex items-center justify-center border border-mipana-mediumBlue/20 overflow-hidden">
-                  {user?.avatarUrl ? <img src={user.avatarUrl} alt="User" className="w-full h-full object-cover" /> : <User className="text-mipana-mediumBlue" size={20} />}
+            {/* HEADER: GREETING & RATE & WALLET (Mobile Compact) */}
+            <div className="flex justify-between items-start pointer-events-auto">
+              <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md p-1.5 pr-3 rounded-full shadow-lg border border-white/50">
+                <div className="w-8 h-8 rounded-full bg-mipana-mediumBlue/10 flex items-center justify-center border border-mipana-mediumBlue/20 overflow-hidden">
+                  {user?.avatarUrl ? <img src={user.avatarUrl} alt="User" className="w-full h-full object-cover" /> : <User className="text-mipana-mediumBlue" size={16} />}
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-bold flex items-center gap-1">
-                    Hola, {user?.name?.split(' ')[0]} <span className="text-lg">👋</span>
+                  <p className="text-[10px] text-gray-500 font-bold flex items-center gap-1">
+                    Hola, {user?.name?.split(' ')[0]}
                   </p>
-                  <div className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full">
-                    <span className="text-[10px] font-bold text-mipana-darkBlue">$1 ↔ Bs {currentRate.toFixed(2)}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9px] font-bold text-mipana-darkBlue bg-gray-100 px-1.5 rounded-full">$1 ≈ Bs {currentRate.toFixed(2)}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Mobile Wallet Pill */}
+              <div
+                className="md:hidden bg-white/95 backdrop-blur-md p-1.5 px-3 rounded-full shadow-lg border border-white/50 flex flex-col items-end cursor-pointer active:scale-95 transition-transform"
+                onClick={onNavigateWallet}
+              >
+                <p className="text-[9px] font-bold text-gray-400 uppercase">Saldo</p>
+                <span className="text-xs font-extrabold text-mipana-darkBlue">${walletBalance.toFixed(2)}</span>
               </div>
             </div>
 
             {/* SEARCH INPUTS CARD */}
-            <div className="bg-white rounded-2xl shadow-xl p-4 animate-slide-up border border-gray-100">
-              <div className="flex justify-between items-center mb-3">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">¿A dónde vamos?</p>
-              </div>
-
+            <div className="bg-white rounded-2xl shadow-xl p-3 md:p-4 animate-slide-up border border-gray-100 pointer-events-auto">
               {/* Origin Field */}
-              <div className="flex items-center gap-3 mb-3 relative group">
-                {/* Connecting line */}
+              <div className="flex items-center gap-3 mb-2 relative group">
                 <div className="absolute left-[9px] top-6 h-6 w-0.5 bg-gray-200 z-0"></div>
-
                 <div className="relative z-10 w-5 h-5 flex items-center justify-center">
                   <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.15)]"></div>
                 </div>
@@ -381,8 +385,8 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                   className="flex-1 border-b border-gray-100 pb-2 cursor-pointer hover:bg-gray-50 transition-colors rounded px-2 -ml-2"
                   onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); }}
                 >
-                  <p className="text-[10px] text-green-600 font-bold uppercase">Desde</p>
-                  <p className="text-sm font-medium text-gray-900 truncate">{origin.address}</p>
+                  <p className="text-[9px] text-green-600 font-bold uppercase">Desde</p>
+                  <p className="text-xs md:text-sm font-medium text-gray-900 truncate">{origin.address}</p>
                 </div>
               </div>
 
@@ -391,31 +395,28 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                 <div className="relative z-10 w-5 h-5 flex items-center justify-center">
                   <div className="w-2 h-2 rounded-full bg-mipana-orange shadow-[0_0_0_3px_rgba(242,98,15,0.15)]"></div>
                 </div>
-                <div className="flex-1 bg-gray-50 rounded-xl px-3 py-3 flex items-center justify-between border border-gray-200 cursor-pointer hover:border-mipana-mediumBlue transition-colors shadow-inner">
-                  <span className="text-gray-400 text-sm font-medium">Ingresar destino...</span>
-                  <Search size={18} className="text-mipana-mediumBlue" />
+                <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2.5 flex items-center justify-between border border-gray-200 cursor-pointer hover:border-mipana-mediumBlue transition-colors shadow-inner">
+                  <span className="text-gray-400 text-sm font-medium">¿A dónde vas?</span>
+                  <Search size={16} className="text-mipana-mediumBlue" />
                 </div>
               </div>
 
-              {/* FAVORITE DRIVERS SECTION */}
+              {/* FAVORITE DRIVERS PROMO (Simplified for Mobile) */}
               {favoriteDriversList.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-gray-100">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Mis Panas (Favoritos)</p>
-                  <div className="flex overflow-x-auto pb-2 scrollbar-hide">
-                    {favoriteDriversList.map(fd => (
-                      <FavoriteDriverItem
-                        key={fd.id}
-                        driver={fd}
-                        onClick={() => handleSelectFavoriteDriver(fd)}
-                      />
-                    ))}
-                  </div>
+                <div className="mt-3 pt-2 border-t border-gray-100 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                  {favoriteDriversList.map(fd => (
+                    <div key={fd.id} onClick={() => handleSelectFavoriteDriver(fd)} className="flex-shrink-0 relative">
+                      <img src={fd.avatarUrl} className="w-8 h-8 rounded-full border border-gray-200" />
+                      <div className="absolute -bottom-1 -right-1 bg-green-500 w-2.5 h-2.5 rounded-full border border-white"></div>
+                    </div>
+                  ))}
+                  <span className="text-[10px] text-gray-400 font-bold ml-1">Tus Panas</span>
                 </div>
               )}
             </div>
 
-            {/* WALLET WIDGET CARD */}
-            <div className="bg-white rounded-2xl shadow-xl p-4 animate-slide-up border border-gray-100 relative overflow-hidden flex items-center justify-between" style={{ animationDelay: '0.1s' }}>
+            {/* WALLET WIDGET CARD (Desktop Only) */}
+            <div className="hidden md:flex bg-white rounded-2xl shadow-xl p-4 animate-slide-up border border-gray-100 relative overflow-hidden items-center justify-between pointer-events-auto" style={{ animationDelay: '0.1s' }}>
               {/* Decorative BG */}
               <div className="absolute -right-4 -top-4 w-20 h-20 bg-yellow-400/20 rounded-full blur-xl"></div>
 

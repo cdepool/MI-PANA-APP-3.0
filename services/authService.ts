@@ -158,21 +158,78 @@ export const authService = {
     return authService.signInWithGoogle();
   },
 
-  registerOrLoginImplicit: async (fullName: string, phone: string) => {
-    // Mock implementation for implicit login/register
-    // In real app, this would call Supabase Edge Function or auth endpoint
-    const mockUser: User = {
-      id: 'user-' + Date.now(),
-      name: fullName,
-      email: `${phone}@mipana.app`, // Provisional email
-      phone: phone,
-      role: UserRole.PASSENGER,
-      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + fullName,
-    };
+  // Smart Auth: Try Login, if fails (and not specific error), Try Register
+  registerOrLoginImplicit: async (email: string, password: string = '123456', name?: string) => {
+    // 1. Try Login first
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    // Check if user exists (mock check) - In real app, verify phone
-    authService.setSession(mockUser);
-    return mockUser;
+    if (!loginError && loginData.user) {
+      // ✅ Login Successful
+      // Fetch profile to return full user object
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', loginData.user.id).single();
+
+      const user: User = {
+        id: loginData.user.id,
+        email: loginData.user.email || email,
+        phone: profile?.phone,
+        name: profile?.name || name || email.split('@')[0],
+        role: profile?.role || UserRole.PASSENGER,
+        avatarUrl: profile?.avatarUrl,
+        wallet: { balance: 0, transactions: [] } // Mock wallet for now
+      };
+      authService.setSession(user);
+      return user;
+    }
+
+    // 2. If Login failed, try Registering
+    // We assume the error was "Invalid login credentials", implying user might not exist.
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: name || email.split('@')[0],
+          role: 'PASSENGER',
+        }
+      }
+    });
+
+    if (signUpError) {
+      if (signUpError.message.includes('already registered')) {
+        throw new Error('El usuario ya existe pero la contraseña es incorrecta.');
+      }
+      throw signUpError;
+    }
+
+    if (signUpData.user) {
+      // ✅ Registration Successful
+      const newProfile = {
+        id: signUpData.user.id,
+        email: email,
+        name: name || email.split('@')[0],
+        role: 'PASSENGER',
+        created_at: new Date().toISOString()
+      };
+
+      // Try Insert Profile
+      await supabase.from('profiles').insert(newProfile).select();
+
+      const user: User = {
+        id: newProfile.id,
+        email: newProfile.email,
+        phone: undefined,
+        name: newProfile.name,
+        role: UserRole.PASSENGER,
+        wallet: { balance: 0, transactions: [] }
+      };
+      authService.setSession(user);
+      return user;
+    }
+
+    throw new Error('No se pudo iniciar sesión ni registrar.');
   },
 
   loginPassenger: async (identifier: string, _password: string) => {

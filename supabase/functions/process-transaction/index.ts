@@ -95,7 +95,7 @@ serve(async (req) => {
         // Get BCV rate for conversion
         const bcvResponse = await fetch('https://ve.dolarapi.com/v1/dolares/oficial')
         const bcvData = await bcvResponse.json()
-        const bcvRate = bcvData.promedio || bcvData.price || 46.23
+        const bcvRate = bcvData.promedio || bcvData.price || 330.38
 
         // Create transaction record
         const transaction = {
