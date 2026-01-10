@@ -166,7 +166,7 @@ const ConductorProfile: React.FC = () => {
                     onSave={() => handleSave('vehicle', vehicleForm)}
                     pendingChanges={profile?.pendingChanges.some(c => c.field === 'vehicle')}
                 >
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs text-gray-500 font-bold uppercase">Marca</label>
                             <input

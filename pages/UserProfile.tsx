@@ -155,8 +155,8 @@ const UserProfile: React.FC = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
 
-        <div className="relative flex items-center gap-6">
-          <div className="relative">
+        <div className="relative flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+          <div className="relative shrink-0">
             <img
               src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.name}&background=048ABF&color=fff`}
               alt={user.name}
@@ -178,7 +178,7 @@ const UserProfile: React.FC = () => {
             <p className="text-blue-100 mb-3">
               {user.role === UserRole.PASSENGER ? '🎒 Pasajero' : user.role === UserRole.DRIVER ? '🚗 Conductor' : '👑 Administrador'}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap justify-center md:justify-start gap-2">
               <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm">
                 📧 {user.email}
               </span>
