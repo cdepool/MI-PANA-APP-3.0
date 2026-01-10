@@ -125,36 +125,64 @@ const Onboarding = () => {
 
             {/* --- STEP 1: Welcome & Google Auth --- */}
             {step === 1 && (
-                <div className="w-full h-full flex flex-col">
-                    {/* Hero Image */}
-                    <div className="relative w-full h-[60vh] bg-[#1A2E56]">
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white dark:to-[#0F172A] z-10" />
+                <div className="w-full h-full relative flex flex-col items-center justify-between overflow-hidden font-inter">
+                    {/* Background */}
+                    <div className="absolute inset-0 z-0">
                         <img
-                            src="/onboarding_hero_car.png"
-                            alt="Mi Pana App"
-                            className="w-full h-full object-cover opacity-90"
-                            onError={(e) => e.currentTarget.src = 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop'}
+                            src="/welcome_bg.png"
+                            alt="Background"
+                            className="w-full h-full object-cover"
                         />
                     </div>
 
-                    <div className="flex-1 flex flex-col px-8 -mt-20 z-20 items-center text-center">
-                        <div className="mb-8">
-                            <h1 className="text-4xl font-bold leading-tight mb-2 tracking-tight">
-                                ¡A donde quieras ir, <span className="text-[#FF6B00]">Mi Pana!</span>
-                            </h1>
-                            <p className="text-slate-500 dark:text-slate-400 text-lg">
-                                Tu transporte seguro en Venezuela. <br /> Inicia sesión para continuar.
-                            </p>
+                    {/* Top Section: Mascot & Logo */}
+                    <div className="relative z-10 w-full flex-1 min-h-[50%]">
+                        {/* Logo Top Right */}
+                        <div className="absolute top-[8%] right-[8%] w-[40%] max-w-[180px] animate-fade-in-down">
+                            <img
+                                src="/logo_full.png"
+                                alt="Mi Pana Logo"
+                                className="w-full h-auto drop-shadow-2xl"
+                            />
                         </div>
 
+                        {/* Mascot Top Left */}
+                        <div className="absolute top-[12%] left-[-5%] w-[55%] max-w-[240px] animate-slide-in-left">
+                            <img
+                                src="/parrot_mascot.png"
+                                alt="Parrot"
+                                className="w-full h-auto drop-shadow-2xl"
+                                style={{ transform: 'rotate(5deg)' }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Bottom Section: Text & Button */}
+                    <div className="relative z-10 w-full flex flex-col items-center pb-10 px-6 text-center">
+                        {/* Main Title */}
+                        <h1 className="text-4xl md:text-5xl font-black text-white leading-[1.1] drop-shadow-lg tracking-tight mb-8 uppercase italic" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+                            ¡A donde quieras ir,<br />
+                            Mi Pana!
+                        </h1>
+
+                        <p className="text-[#1A2E56] font-bold text-xl mb-4 tracking-wide">
+                            Iniciar sesión
+                        </p>
+
+                        {/* Login Button */}
                         <button
                             onClick={handleGoogleLogin}
                             disabled={isLoading}
-                            className="w-full max-w-sm bg-white border border-slate-200 text-[#1A2E56] font-bold py-4 rounded-xl text-lg shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                            className="w-full max-w-sm bg-white hover:bg-gray-50 text-slate-800 font-bold py-4 rounded-full text-lg shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 mb-12"
                         >
                             <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="G" />
                             Continuar con Google
                         </button>
+
+                        {/* Footer */}
+                        <p className="text-[10px] text-[#1A2E56] font-bold tracking-widest uppercase opacity-80">
+                            Next TV, C.A Todos los derechos reservados
+                        </p>
                     </div>
                 </div>
             )}
