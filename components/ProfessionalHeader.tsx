@@ -32,10 +32,10 @@ const ProfessionalHeader: React.FC<ProfessionalHeaderProps> = ({ onMenuClick }) 
           <Menu size={24} />
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center">
-            <span className="text-mipana-navy font-bold text-xs">MP</span>
+          <div className="flex items-center gap-2">
+            <img src="/logo-app.png" alt="Mi Pana App" className="h-10 w-auto" />
+            <span className="font-bold text-lg tracking-tight hidden sm:block">MI PANA APP</span>
           </div>
-          <span className="font-bold text-lg tracking-tight hidden sm:block">MI PANA APP</span>
         </div>
       </div>
 

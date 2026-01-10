@@ -57,9 +57,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
       <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-gray-100 dark:border-gray-700">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-mipana-navy rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-white font-bold text-2xl">MP</span>
-          </div>
+          <img src="/logo-app.png" alt="Mi Pana App" className="h-20 w-auto mx-auto mb-4 drop-shadow-xl" />
           <h1 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">Acceso Rápido</h1>
           <p className="text-gray-400 text-sm mt-1">Ingresa tu correo para Continuar</p>
         </div>

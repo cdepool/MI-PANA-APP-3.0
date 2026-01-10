@@ -60,6 +60,11 @@ const DriverHome: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] gap-4">
+      {/* Header Logo */}
+      <div className="flex items-center pl-2 pt-1">
+        <img src="/logo-app.png" alt="Logo" className="h-8 w-auto" />
+        <span className="font-bold text-mipana-navy ml-2">MI PANA</span>
+      </div>
       {/* Top Stats Bar */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">

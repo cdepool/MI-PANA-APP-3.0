@@ -347,18 +347,21 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
           <div className="absolute top-0 left-0 right-0 z-20 p-2 md:p-4 space-y-2 md:space-y-3 bg-gradient-to-b from-black/20 to-transparent pb-8 pointer-events-none">
             {/* Pointer events handled by children */}
 
-            {/* HEADER: GREETING & RATE & WALLET (Mobile Compact) */}
+            {/* HEADER: LOGO & GREETING & RATE & WALLET (Mobile Compact) */}
             <div className="flex justify-between items-start pointer-events-auto">
-              <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md p-1.5 pr-3 rounded-full shadow-lg border border-white/50">
-                <div className="w-8 h-8 rounded-full bg-mipana-mediumBlue/10 flex items-center justify-center border border-mipana-mediumBlue/20 overflow-hidden">
-                  {user?.avatarUrl ? <img src={user.avatarUrl} alt="User" className="w-full h-full object-cover" /> : <User className="text-mipana-mediumBlue" size={16} />}
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 font-bold flex items-center gap-1">
-                    Hola, {user?.name?.split(' ')[0]}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-bold text-mipana-darkBlue bg-gray-100 px-1.5 rounded-full">$1 ≈ Bs {currentRate.toFixed(2)}</span>
+              <div className="flex items-center gap-2">
+                <img src="/logo-app.png" alt="Logo" className="h-10 w-auto drop-shadow-lg" />
+                <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md p-1.5 pr-3 rounded-full shadow-lg border border-white/50">
+                  <div className="w-8 h-8 rounded-full bg-mipana-mediumBlue/10 flex items-center justify-center border border-mipana-mediumBlue/20 overflow-hidden">
+                    {user?.avatarUrl ? <img src={user.avatarUrl} alt="User" className="w-full h-full object-cover" /> : <User className="text-mipana-mediumBlue" size={16} />}
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-500 font-bold flex items-center gap-1">
+                      Hola, {user?.name?.split(' ')[0]}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] font-bold text-mipana-darkBlue bg-gray-100 px-1.5 rounded-full">$1 ≈ Bs {currentRate.toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               </div>

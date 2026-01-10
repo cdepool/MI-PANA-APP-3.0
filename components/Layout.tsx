@@ -40,10 +40,10 @@ const Layout: React.FC<LayoutProps> = ({ children, onNavigate }) => {
         <aside className={`fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white dark:bg-gray-800 z-50 transform transition-transform duration-300 ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-mipana-navy rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-xs">MP</span>
+              <div className="flex items-center gap-2">
+                <img src="/logo-app.png" alt="Mi Pana App" className="h-10 w-auto" />
+                <span className="font-bold text-lg tracking-tight text-mipana-navy dark:text-white">MI PANA APP</span>
               </div>
-              <span className="font-bold text-lg tracking-tight text-mipana-navy dark:text-white">MI PANA APP</span>
             </div>
             <button
               onClick={() => setIsMobileSidebarOpen(false)}
