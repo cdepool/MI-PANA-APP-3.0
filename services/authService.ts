@@ -159,7 +159,7 @@ export const authService = {
   },
 
   // Smart Auth: Try Login, if fails (and not specific error), Try Register
-  registerOrLoginImplicit: async (email: string, password: string = '123456', name?: string) => {
+  registerOrLoginImplicit: async (email: string, password: string = '123456', name?: string, phone?: string) => {
     // 1. Try Login first
     const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
       email,

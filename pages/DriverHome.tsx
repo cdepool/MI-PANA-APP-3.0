@@ -166,10 +166,25 @@ const DriverHome: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className="p-3 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-colors">
+                <button
+                  onClick={() => {
+                    // WhatsApp Logic
+                    const phone = activeRide?.beneficiary?.phone || '';
+                    if (phone) window.open(`https://wa.me/${phone.replace(/\D/g, '')}`, '_blank');
+                    else window.open(`https://wa.me/?text=Hola, soy tu conductor de Mi Pana App`, '_blank');
+                  }}
+                  className="p-3 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-colors"
+                >
                   <MessageCircle size={20} />
                 </button>
-                <button className="p-3 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors">
+                <button
+                  onClick={() => {
+                    // Call Logic
+                    const phone = activeRide?.beneficiary?.phone || '';
+                    if (phone) window.open(`tel:${phone}`);
+                  }}
+                  className="p-3 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors"
+                >
                   <Phone size={20} />
                 </button>
               </div>
