@@ -140,7 +140,7 @@ const Onboarding = () => {
                     <div className="flex-1 flex flex-col px-8 -mt-20 z-20 items-center text-center">
                         <div className="mb-8">
                             <h1 className="text-4xl font-bold leading-tight mb-2 tracking-tight">
-                                ¡A donde quieras ir, <span className="text-[#FF6B00]">Vamos!</span>
+                                ¡A donde quieras ir, <span className="text-[#FF6B00]">Mi Pana!</span>
                             </h1>
                             <p className="text-slate-500 dark:text-slate-400 text-lg">
                                 Tu transporte seguro en Venezuela. <br /> Inicia sesión para continuar.
