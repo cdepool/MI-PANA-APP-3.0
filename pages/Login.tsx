@@ -136,25 +136,6 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
               </div>
             </Button>
 
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">O</span>
-              </div>
-            </div>
-
-            {/* Google Login Button */}
-            <button
-              type="button"
-              onClick={() => authService.loginWithGoogle()}
-              className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-700 text-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-            >
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="G" />
-              <span>Continuar con Google</span>
-            </button>
-
             <p className="text-center text-xs text-gray-400 mt-6">
               Al ingresar aceptas nuestros <a href="#" className="underline hover:text-mipana-mediumBlue">Términos y Condiciones</a>.
             </p>
