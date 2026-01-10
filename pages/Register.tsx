@@ -149,7 +149,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
     }
   };
 
-  const handleProfileSubmit = () => {
+  const handleProfileSubmit = async () => {
     setError(null);
     const result = profileSchema.safeParse({ firstName, lastName, idNumber, age: Number(age), phone });
     if (result.success === false) {
@@ -159,7 +159,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
     // If user came from Google, skip password creation and finish registration
     if (isGoogleUser) {
-      handleFinalSubmit();
+      await handleFinalSubmit();
     } else {
       setCurrentStep(3);
     }
@@ -182,7 +182,10 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
       }
     } else {
       // If Google user, generate a secure random password for the backend
-      finalPassword = crypto.randomUUID();
+      // Fallback for environments where crypto.randomUUID is not available
+      finalPassword = window.crypto && window.crypto.randomUUID
+        ? window.crypto.randomUUID()
+        : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     }
 
     setIsLoading(true);
