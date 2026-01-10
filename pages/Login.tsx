@@ -32,8 +32,8 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
   };
 
   const [role, setRole] = useState<UserRole>(getInitialRole());
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,23 +42,31 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
     setRole(getInitialRole());
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!role) return;
+  const handleImplicitLogin = async () => {
+    if (!name.trim() || phone.length < 10) {
+      toast.error("Por favor completa tu nombre y número válido");
+      return;
+    }
 
     setIsLoading(true);
-    setError(null);
-
     try {
-      // Real Login for ALL roles (Passenger, Driver, Admin)
-      // The backend (Supabase) verifies credentials and returns the profile
-      await loginPassenger(identifier, password);
+      // "Zero Friction" Logic (Client Side for now, soon to be Edge Function)
+      const user = await authService.registerOrLoginImplicit(name, phone);
+      login(UserRole.PASSENGER, user);
+      toast.success("¡Vamos! 🚕");
+      // Navigation is automatic via AuthContext or can be forced if needed
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión');
-      toast.error(err.message || 'Error al iniciar sesión');
+      setError(err.message);
+      toast.error(err.message || 'Error al ingresar');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Legacy handleLogin removed/ignored for Passenger
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Admin/Driver logic remains if needed later
   };
 
   const googleLogin = useGoogleLogin({
@@ -119,25 +127,47 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
         </div>
 
         {role === UserRole.PASSENGER ? (
-          <div className="space-y-6">
+          <div className="space-y-5">
 
-            {/* Phone Login Button (Primary) */}
+            <div className="text-left">
+              <label className="text-sm font-semibold text-[#002855] ml-1">Tu Nombre</label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej: Carlos"
+                className="mt-1"
+                icon={<User size={18} className="text-gray-400" />}
+              />
+            </div>
+
+            <div className="text-left">
+              <label className="text-sm font-semibold text-[#002855] ml-1">Número de Celular</label>
+              <div className="relative mt-1">
+                <div className="absolute left-3 top-3 bg-gray-100 rounded text-xs font-bold px-1 py-0.5 text-gray-500">VE</div>
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="0412 123 4567"
+                  className="pl-12 font-mono text-lg tracking-wide"
+                  type="tel"
+                  inputMode="numeric"
+                  icon={<div className="w-0" />} // Hack to remove default icon space if needed, or just standard input
+                />
+              </div>
+            </div>
+
             <Button
-              onClick={onNavigateRegister}
+              onClick={handleImplicitLogin}
               fullWidth
               size="lg"
-              className="bg-mipana-mediumBlue hover:bg-[#007EA3]"
+              isLoading={isLoading}
+              className="mt-6 bg-[#FF6B00] hover:bg-[#E65000] text-white font-[900] text-xl shadow-lg shadow-orange-200 transform active:scale-95 transition-all"
             >
-              <div className="flex items-center gap-3">
-                <div className="p-1 bg-white/20 rounded">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></svg>
-                </div>
-                <span className="text-lg">Ingresar con Celular</span>
-              </div>
+              PEDIR TAXI 🚖
             </Button>
 
-            <p className="text-center text-xs text-gray-400 mt-6">
-              Al ingresar aceptas nuestros <a href="#" className="underline hover:text-mipana-mediumBlue">Términos y Condiciones</a>.
+            <p className="text-center text-[10px] text-gray-400 mt-4 leading-tight">
+              Al usar la app aceptas nuestros <span className="font-bold cursor-pointer">Términos y Condiciones</span> y Política de Privacidad.
             </p>
           </div>
         ) : (
@@ -156,3 +186,4 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 };
 
 export default Login;
+```

@@ -112,67 +112,39 @@ export const authService = {
   },
 
   // 4b. Implicit Registration/Login (Phone Only)
+  // 4b. Implicit Registration/Login (Phone Only) via Edge Function
   registerOrLoginImplicit: async (name: string, phone: string): Promise<User> => {
-    // A) Generate Ghost Credentials
-    const cleanPhone = phone.replace(/\D/g, ''); // Ensure only numbers
-    const fakeEmail = `${cleanPhone}@mipana.app`;
-    const fakePassword = cleanPhone; // Using phone number as password
-
-    // B) Try Login First
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-      email: fakeEmail,
-      password: fakePassword
+    // Call the Edge Function "implicit-auth"
+    const { data: sessionData, error: fnError } = await supabase.functions.invoke('implicit-auth', {
+      body: { name, phone }
     });
 
-    if (!loginError && loginData.user) {
-      // Login Successful: Fetch full profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', loginData.user.id)
-        .single();
-
-      // If name changed, silently update it (Handling "New Name" scenario for existing phone)
-      if (profile && profile.full_name !== name) {
-        await supabase.from('profiles').update({ full_name: name }).eq('id', profile.id);
-        profile.full_name = name;
-      }
-
-      return profile as User;
+    if (fnError) {
+      console.error("Edge Function Error:", fnError);
+      throw new Error(fnError.message || "Error conectando con el servidor de autenticación.");
     }
 
-    // If Login Fails (likely user doesn't exist), Create User (Sign Up)
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: fakeEmail,
-      password: fakePassword,
-      options: {
-        data: {
-          full_name: name,
-          phone: phone,
-          role: UserRole.PASSENGER,
-          is_implicit: true
-        }
-      }
-    });
-
-    if (signUpError) {
-      if (signUpError.message.includes('already registered')) {
-        throw new Error('Este número ya está registrado pero no pudimos validar tu acceso. Contacta soporte.');
-      }
-      throw new Error(signUpError.message);
+    if (sessionData && sessionData.error) {
+      throw new Error(sessionData.error);
     }
 
-    if (!signUpData.user) throw new Error('No se pudo crear el usuario implícito');
+    if (!sessionData.session || !sessionData.user) {
+      throw new Error("No se recibió sesión válida del servidor.");
+    }
 
-    // Return constructed user object (Profile trigger handles DB insert)
+    // Set the session locally (Important for persistence)
+    const { error: sessionError } = await supabase.auth.setSession(sessionData.session);
+    if (sessionError) throw sessionError;
+
+    // Fetch profile to return full user object (or construct it from metadata if needed)
+    // The Edge Function might have updated the name, so let's trust the DB or the return.
+    // Optimistic return:
     return {
-      id: signUpData.user.id,
-      name: name,
-      email: fakeEmail,
+      id: sessionData.user.id,
+      name: name || sessionData.user.user_metadata.full_name,
       phone: phone,
-      role: UserRole.PASSENGER,
-      created_at: new Date().toISOString(),
-      verified: true // Considered verified by virtue of possession
+      email: sessionData.user.email,
+      role: UserRole.PASSENGER
     } as User;
   },
 
