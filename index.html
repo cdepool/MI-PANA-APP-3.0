@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="MI PANA APP - Transporte seguro y confiable en Venezuela">
   <title>MI PANA APP - Tu transporte de confianza</title>
-  
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
+
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link rel="preload" as="image" href="/onboarding_skin.png" />
+
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-  
+
   <!-- Configuración de Tailwind personalizada (opcional) -->
   <script>
     tailwind.config = {
@@ -25,20 +30,21 @@
       }
     }
   </script>
-  
+
   <!-- Estilos base -->
   <style>
-    body { 
+    body {
       font-family: 'Inter', sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
   </style>
 </head>
+
 <body class="bg-gray-50">
   <!-- Contenedor principal de React -->
   <div id="root"></div>
-  
+
   <!-- 
     🚨 LÍNEA CRÍTICA - NO ELIMINAR BAJO NINGUNA CIRCUNSTANCIA 🚨
     Esta línea carga el punto de entrada de React/Vite.
@@ -47,4 +53,5 @@
   -->
   <script type="module" src="/src/index.tsx"></script>
 </body>
+
 </html>

@@ -169,24 +169,25 @@ const Onboarding = () => {
                             alt="Background"
                             className="w-full h-full object-cover"
                         />
-                        {/* Gradient Overlay for text readability at bottom */}
-                        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                        {/* Light Overlay for general brightness/contrast if needed, or keeping it clean */}
+                        {/* Removing dark gradient as requested for cleaner look, maybe a very subtle light wash at bottom */}
+                        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-white/40 via-white/10 to-transparent" />
                     </div>
 
                     {/* Content (Bottom Sheet Style) */}
                     <div className="relative z-10 flex-1 flex flex-col justify-end p-8 pb-12">
-                        <div className="mb-6 text-white">
-                            <h2 className="text-3xl font-bold mb-2">Un último paso...</h2>
-                            <p className="text-white/80 text-lg">
+                        <div className="mb-6">
+                            <h2 className="text-3xl font-bold mb-2 text-[#1A2E56]">Un último paso...</h2>
+                            <p className="text-[#1A2E56]/80 text-lg font-medium">
                                 Necesitamos tu número para coordinar los viajes.
                             </p>
                         </div>
 
-                        <div className="space-y-4 w-full bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-2xl">
+                        <div className="space-y-4 w-full bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-white/40 shadow-xl">
                             <div>
-                                <label className="text-sm font-semibold ml-1 mb-2 block text-white">Número de celular</label>
+                                <label className="text-sm font-bold ml-1 mb-2 block text-[#1A2E56]">Número de celular</label>
                                 <div className="flex gap-3">
-                                    <div className="bg-white/90 border-transparent rounded-xl px-4 py-4 flex items-center justify-center font-bold min-w-[80px] text-[#1A2E56]">
+                                    <div className="bg-white/80 border border-white/50 rounded-xl px-4 py-4 flex items-center justify-center font-bold min-w-[80px] text-[#1A2E56]">
                                         🇻🇪 +58
                                     </div>
                                     <input
@@ -194,7 +195,7 @@ const Onboarding = () => {
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
                                         placeholder="412 000 0000"
-                                        className="flex-1 bg-white/90 border-transparent rounded-xl px-4 text-lg font-medium outline-none focus:ring-4 focus:ring-[#FF6B00]/50 transition-all text-[#1A2E56] placeholder:text-gray-400"
+                                        className="flex-1 bg-white/80 border border-white/50 rounded-xl px-4 text-lg font-medium outline-none focus:ring-4 focus:ring-[#FF6B00]/30 transition-all text-[#1A2E56] placeholder:text-gray-500"
                                     />
                                 </div>
                             </div>
@@ -202,7 +203,7 @@ const Onboarding = () => {
                             <button
                                 onClick={handlePhoneSave}
                                 disabled={isLoading || phone.length < 9}
-                                className="w-full bg-[#FF6B00] hover:bg-[#E66000] text-white font-bold py-4 rounded-xl text-lg shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
+                                className="w-full bg-[#1A2E56] hover:bg-[#0F172A] text-white font-bold py-4 rounded-xl text-lg shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
                             >
                                 {isLoading ? "Guardando..." : "Guardar y Continuar"}
                                 <ArrowRight size={20} />
