@@ -160,10 +160,7 @@ const Onboarding = () => {
                     {/* Bottom Section: Text & Button */}
                     <div className="relative z-10 w-full flex flex-col items-center pb-10 px-6 text-center">
                         {/* Main Title */}
-                        <h1 className="text-4xl md:text-5xl font-black text-white leading-[1.1] drop-shadow-lg tracking-tight mb-8 uppercase italic" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-                            ¡A donde quieras ir,<br />
-                            Mi Pana!
-                        </h1>
+
 
                         <p className="text-[#1A2E56] font-bold text-xl mb-4 tracking-wide">
                             Iniciar sesión
