@@ -110,25 +110,21 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
       <main className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full animate-fade-in">
 
         {/* Logo Section */}
-        <div className="mb-12 flex flex-col items-center">
-          <div className="relative mb-6">
-            <div className="flex items-center justify-center relative">
-              {/* Main Logo Circle (Dark Blue) */}
-              <div className="w-16 h-16 rounded-full bg-[#1A2E56] flex items-center justify-center shadow-lg z-20">
-                <MapPin className="text-white transform -rotate-12" size={32} strokeWidth={2.5} />
-              </div>
-              {/* Star Badge (Orange) */}
-              <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-[#FF6B00] flex items-center justify-center shadow-md z-10">
-                <Star className="text-white" size={20} fill="currentColor" />
-              </div>
-            </div>
+        <div className="mb-8 flex flex-col items-center animate-slide-up">
+          <div className="relative mb-4">
+            <img
+              src="/login-logo.png"
+              alt="Mi Pana Logo"
+              className="w-32 h-32 object-contain drop-shadow-xl"
+            />
           </div>
 
           <div className="text-center">
-            <h1 className="text-4xl font-black tracking-tight text-[#1A2E56] dark:text-white leading-none">
-              MI PANA
-            </h1>
-            <div className="text-xl font-extrabold text-[#FF6B00] tracking-[0.2em] mt-1">APP</div>
+            <img
+              src="/login-text.png"
+              alt="MI PANA APP"
+              className="h-12 object-contain filter drop-shadow-sm invert-0 dark:invert"
+            />
           </div>
         </div>
 
