@@ -183,6 +183,8 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
       <footer className="mt-auto pt-8 pb-4 text-center">
         <p className="text-slate-400 dark:text-slate-500 text-sm font-medium tracking-wide">
           Venezuela en <span className="text-[#1A2E56] dark:text-slate-300 font-bold">Movimiento</span>
+          <br />
+          <span className="text-[#FF6B00] font-bold italic">"Siempre Conectado"</span>
         </p>
         {/* Native Home Indicator simulation */}
         <div className="mt-6 mx-auto w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
