@@ -125,18 +125,18 @@ const Onboarding = () => {
 
             {/* --- STEP 1: Welcome & Google Auth --- */}
             {step === 1 && (
-                <div className="w-full h-full relative flex flex-col items-center justify-between overflow-hidden font-inter">
+                <div className="w-full h-screen relative flex flex-col items-center justify-between overflow-hidden font-inter">
                     {/* Background */}
                     <div className="absolute inset-0 z-0">
                         <img
                             src="/welcome_bg.png"
                             alt="Background"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-fill"
                         />
                     </div>
 
                     {/* Top Section: Mascot & Logo */}
-                    <div className="relative z-10 w-full flex-1 min-h-[50%]">
+                    <div className="relative z-10 w-full h-[45%]">
                         {/* Logo Top Right */}
                         <div className="absolute top-[8%] right-[8%] w-[40%] max-w-[180px] animate-fade-in-down">
                             <img
@@ -157,11 +157,16 @@ const Onboarding = () => {
                         </div>
                     </div>
 
+                    {/* Middle Section: Title (Re-added) */}
+                    <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-center px-6 text-center -mt-10">
+                        <h1 className="text-4xl md:text-5xl font-black text-white leading-[1.1] drop-shadow-lg tracking-tight mb-2 uppercase italic" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+                            ¡A donde quieras ir,<br />
+                            Mi Pana!
+                        </h1>
+                    </div>
+
                     {/* Bottom Section: Text & Button */}
                     <div className="relative z-10 w-full flex flex-col items-center pb-10 px-6 text-center">
-                        {/* Main Title */}
-
-
                         <p className="text-[#1A2E56] font-bold text-xl mb-4 tracking-wide">
                             Iniciar sesión
                         </p>
