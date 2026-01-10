@@ -12,7 +12,7 @@ const ProfessionalHeader: React.FC<ProfessionalHeaderProps> = ({ onMenuClick }) 
   useEffect(() => {
     const fetchTasa = async () => {
       try {
-        const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
+        const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
         const data = await response.json();
         setTasa(data.promedio.toLocaleString('es-VE', { minimumFractionDigits: 2 }));
       } catch (error) {

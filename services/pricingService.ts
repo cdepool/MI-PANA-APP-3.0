@@ -9,6 +9,16 @@ const BCV_API_URL = 'https://ve.dolarapi.com/v1/dolares/oficial';
 export let currentBcvRate = 330.38; // Valor fallback actualizado
 export let lastBcvUpdate = new Date();
 
+// Interface based on Strict Rule: docs/BCV_RULE.md
+interface BcvResponse {
+    fuente: string;
+    nombre: string;
+    compra: number;
+    venta: number;
+    promedio: number;
+    fechaActualizacion: string;
+}
+
 // Función Crítica: Obtener Tasa Oficial
 export const fetchBcvRate = async () => {
     try {
@@ -17,14 +27,15 @@ export const fetchBcvRate = async () => {
 
         if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
-        const data = await response.json();
+        const data: BcvResponse = await response.json();
 
-        const rate = data.promedio || data.price;
+        // Strict Rule: Use 'promedio'
+        const rate = data.promedio;
 
         if (typeof rate === 'number' && rate > 0) {
             currentBcvRate = rate;
             lastBcvUpdate = new Date(data.fechaActualizacion || Date.now());
-            logger.log(`✅ Tasa BCV Actualizada: Bs ${currentBcvRate} (Fuente: ${data.fuente || 'BCV'})`);
+            logger.log(`✅ Tasa BCV Actualizada: Bs ${currentBcvRate} (Fuente: ${data.fuente})`);
         } else {
             logger.warn('⚠️ Formato de tasa inválido recibido del API, manteniendo tasa anterior.');
         }
