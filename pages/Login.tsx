@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import { User, Lock, ArrowRight, AlertCircle, Car, Shield } from 'lucide-react';
+import { User, Lock, ArrowRight, AlertCircle, Car, Shield, MapPin, Star, Phone } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'sonner';
 import { authService } from '../services/authService';
@@ -102,78 +102,91 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
   // No more "if (!role) return ..." block. DIRECT ACCESS.
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-between">
+    <div className="min-h-[100dvh] bg-white dark:bg-[#0F172A] text-[#1A2E56] dark:text-slate-100 flex flex-col justify-between p-6">
 
-      {/* 1. Header & Hero Area */}
-      <div className="relative bg-slate-900 pb-16 rounded-b-[40%] shadow-2xl overflow-hidden">
-        {/* Status Bar Indicator (Visual only) */}
-        <div className="flex justify-between items-center px-6 py-3 text-white/50 text-xs">
-          <span>9:41</span>
-          <div className="flex gap-2">
-            <div className="w-4 h-4 bg-current rounded-full opacity-20"></div>
-            <div className="w-4 h-4 bg-current rounded-full opacity-20"></div>
+      {/* Spacer */}
+      <div className="h-4"></div>
+
+      <main className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full animate-fade-in">
+
+        {/* Logo Section */}
+        <div className="mb-12 flex flex-col items-center">
+          <div className="relative mb-6">
+            <div className="flex items-center justify-center relative">
+              {/* Main Logo Circle (Dark Blue) */}
+              <div className="w-16 h-16 rounded-full bg-[#1A2E56] flex items-center justify-center shadow-lg z-20">
+                <MapPin className="text-white transform -rotate-12" size={32} strokeWidth={2.5} />
+              </div>
+              {/* Star Badge (Orange) */}
+              <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-[#FF6B00] flex items-center justify-center shadow-md z-10">
+                <Star className="text-white" size={20} fill="currentColor" />
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <h1 className="text-4xl font-black tracking-tight text-[#1A2E56] dark:text-white leading-none">
+              MI PANA
+            </h1>
+            <div className="text-xl font-extrabold text-[#FF6B00] tracking-[0.2em] mt-1">APP</div>
           </div>
         </div>
 
-        {/* Hero Content */}
-        <div className="flex flex-col items-center pt-4 pm-10">
-          {/* Green Car Placeholder/Icon if image missing */}
-          <div className="w-48 h-32 flex items-center justify-center relative z-10 animate-slide-up">
-            {/* Using SVG or Image. Using a Car Icon for now styled as requested */}
-            <div className="w-32 h-32 bg-lime-500 rounded-full flex items-center justify-center shadow-lg shadow-lime-500/20">
-              <Car size={64} className="text-white transform -scale-x-100" />
-            </div>
-          </div>
+        {/* Welcome Text */}
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-bold mb-2 text-[#1A2E56] dark:text-white">Bienvenido</h2>
+          <p className="text-slate-500 dark:text-slate-400">Inicia sesión para continuar</p>
         </div>
-      </div>
 
-      {/* 2. Main Content */}
-      <div className="flex-1 px-6 pt-12 flex flex-col items-center animate-fade-in text-center">
-        <h1 className="text-2xl text-slate-900 leading-tight">
-          ¡A donde quieras ir<br />
-          <span className="font-bold text-3xl block mt-1">Vamos!</span>
-        </h1>
-
-        <div className="w-full mt-10 space-y-6">
-
-          {/* Phone Input Group */}
-          <div className="relative flex items-center">
-            <div className="absolute left-4 z-10 pointer-events-none">
-              <span className="font-bold text-slate-900 text-lg">+58</span>
+        {/* Form Section */}
+        <div className="w-full space-y-6">
+          <div className="space-y-2">
+            <label className="block text-sm font-bold text-[#1A2E56] dark:text-slate-300 ml-1">Número telefónico</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Phone className="text-[#1A2E56]/40 dark:text-white/40" size={24} />
+              </div>
+              <input
+                className="block w-full pl-12 pr-4 py-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent transition-all outline-none font-medium text-lg"
+                placeholder="0412 000 0000"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                onKeyDown={(e) => e.key === 'Enter' && handleImplicitLogin()}
+              />
             </div>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-              placeholder="Ingrese número de teléfono"
-              className="w-full h-14 pl-16 pr-4 bg-white border border-slate-200 rounded-full text-lg shadow-sm focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-300"
-            />
           </div>
-
-          {/* Optional Name for New Users (Hidden by default in strictly phone-only visual, but useful for logic) */}
-          {/* We will hide it to strictly follow the visual request "Input campo: Ingrese numero de telefono". 
-                Backend handles name update later or we default it. */}
 
           <button
             onClick={handleImplicitLogin}
-            disabled={isLoading || phone.length < 10}
-            className="w-full h-14 bg-slate-900 text-white font-medium rounded-xl shadow-lg hover:bg-slate-800 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            disabled={isLoading}
+            className="w-full bg-[#FF6B00] hover:bg-[#e66000] active:scale-[0.98] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#FF6B00]/20 transition-all flex items-center justify-center text-lg disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              "Verificar número"
+              "Continuar"
             )}
           </button>
         </div>
-      </div>
 
-      {/* 3. Footer */}
-      <div className="p-6 text-center">
-        <p className="text-xs text-slate-400">
-          Al continuar aceptas los <span className="font-bold text-slate-500">Términos y Condiciones</span>
+        {/* Register Link (Optional based on design, user kept it in template) */}
+        <div className="mt-8 text-center">
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
+            ¿No tienes cuenta?
+            <span className="text-[#1A2E56] dark:text-[#FF6B00] font-bold cursor-pointer ml-1" onClick={handleImplicitLogin}>Regístrate aquí</span>
+          </p>
+        </div>
+
+      </main>
+
+      <footer className="mt-auto pt-8 pb-4 text-center">
+        <p className="text-slate-400 dark:text-slate-500 text-sm font-medium tracking-wide">
+          Venezuela en <span className="text-[#1A2E56] dark:text-slate-300 font-bold">Movimiento</span>
         </p>
-      </div>
+        {/* Native Home Indicator simulation */}
+        <div className="mt-6 mx-auto w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+      </footer>
 
     </div>
   );
