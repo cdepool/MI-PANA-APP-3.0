@@ -48,7 +48,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
     } catch (err: any) {
       console.error('Implicit Auth Error:', err);
-      toast.error("Hubo un problema al ingresar. Intenta nuevamente.");
+      toast.error(err.message || "Hubo un problema al ingresar. Intenta nuevamente.");
     } finally {
       setIsLoading(false);
     }
