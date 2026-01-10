@@ -43,8 +43,8 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
   }, []);
 
   const handleImplicitLogin = async () => {
-    if (!name.trim() || phone.length < 10) {
-      toast.error("Por favor completa tu nombre y número válido");
+    if (phone.length < 10) {
+      toast.error("Por favor completa tu número de celular");
       return;
     }
 
@@ -102,85 +102,79 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
   // No more "if (!role) return ..." block. DIRECT ACCESS.
 
   return (
-    <div className="min-h-screen bg-mipana-lightGray dark:bg-[#011836] flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 animate-slide-up">
+    <div className="min-h-screen bg-white flex flex-col justify-between">
 
-        {/* Only show "Back" if we are not in the default Passenger view (e.g. debugging) */}
-        {role !== UserRole.PASSENGER && (
-          <div className="mb-4 text-center text-xs text-orange-500 font-bold border border-orange-200 bg-orange-50 p-2 rounded">
-            ⚠️ Modo {role} (Detectado por URL)
+      {/* 1. Header & Hero Area */}
+      <div className="relative bg-slate-900 pb-16 rounded-b-[40%] shadow-2xl overflow-hidden">
+        {/* Status Bar Indicator (Visual only) */}
+        <div className="flex justify-between items-center px-6 py-3 text-white/50 text-xs">
+          <span>9:41</span>
+          <div className="flex gap-2">
+            <div className="w-4 h-4 bg-current rounded-full opacity-20"></div>
+            <div className="w-4 h-4 bg-current rounded-full opacity-20"></div>
           </div>
-        )}
-
-        <div className="text-center mb-8">
-          {role === UserRole.PASSENGER ? (
-            <>
-              <h1 className="text-3xl font-[900] text-[#002855] tracking-tight mb-1">¡HOLA MI PANA!</h1>
-              <p className="text-[#0099CC] font-bold tracking-[0.15em] text-xs">SIEMPRE CONECTADO</p>
-            </>
-          ) : (
-            <h2 className="text-2xl font-bold text-mipana-darkBlue dark:text-white">
-              {role === UserRole.DRIVER ? 'Hola, Conductor 🚗' : 'Panel Admin 🛡️'}
-            </h2>
-          )}
-          <p className="text-gray-500 text-sm mt-2">Ingresa tus credenciales</p>
         </div>
 
-        {role === UserRole.PASSENGER ? (
-          <div className="space-y-5">
-
-            <div className="text-left">
-              <label className="text-sm font-semibold text-[#002855] ml-1">Tu Nombre</label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ej: Carlos"
-                className="mt-1"
-                icon={<User size={18} className="text-gray-400" />}
-              />
+        {/* Hero Content */}
+        <div className="flex flex-col items-center pt-4 pm-10">
+          {/* Green Car Placeholder/Icon if image missing */}
+          <div className="w-48 h-32 flex items-center justify-center relative z-10 animate-slide-up">
+            {/* Using SVG or Image. Using a Car Icon for now styled as requested */}
+            <div className="w-32 h-32 bg-lime-500 rounded-full flex items-center justify-center shadow-lg shadow-lime-500/20">
+              <Car size={64} className="text-white transform -scale-x-100" />
             </div>
-
-            <div className="text-left">
-              <label className="text-sm font-semibold text-[#002855] ml-1">Número de Celular</label>
-              <div className="relative mt-1">
-                <div className="absolute left-3 top-3 bg-gray-100 rounded text-xs font-bold px-1 py-0.5 text-gray-500">VE</div>
-                <Input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="0412 123 4567"
-                  className="pl-12 font-mono text-lg tracking-wide"
-                  type="tel"
-                  inputMode="numeric"
-                  icon={<div className="w-0" />} // Hack to remove default icon space if needed, or just standard input
-                />
-              </div>
-            </div>
-
-            <Button
-              onClick={handleImplicitLogin}
-              fullWidth
-              size="lg"
-              isLoading={isLoading}
-              className="mt-6 bg-[#FF6B00] hover:bg-[#E65000] text-white font-[900] text-xl shadow-lg shadow-orange-200 transform active:scale-95 transition-all"
-            >
-              PEDIR UN PANA 🚖
-            </Button>
-
-            <p className="text-center text-[10px] text-gray-400 mt-4 leading-tight">
-              Al usar la app aceptas nuestros <span className="font-bold cursor-pointer">Términos y Condiciones</span> y Política de Privacidad.
-            </p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-center text-gray-500 italic">
-              Simulación de acceso para {role}
-            </p>
-            <Button onClick={handleLogin} fullWidth isLoading={isLoading}>
-              Ingresar Demo
-            </Button>
-          </div>
-        )}
+        </div>
       </div>
+
+      {/* 2. Main Content */}
+      <div className="flex-1 px-6 pt-12 flex flex-col items-center animate-fade-in text-center">
+        <h1 className="text-2xl text-slate-900 leading-tight">
+          ¡A donde quieras ir<br />
+          <span className="font-bold text-3xl block mt-1">Vamos!</span>
+        </h1>
+
+        <div className="w-full mt-10 space-y-6">
+
+          {/* Phone Input Group */}
+          <div className="relative flex items-center">
+            <div className="absolute left-4 z-10 pointer-events-none">
+              <span className="font-bold text-slate-900 text-lg">+58</span>
+            </div>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+              placeholder="Ingrese número de teléfono"
+              className="w-full h-14 pl-16 pr-4 bg-white border border-slate-200 rounded-full text-lg shadow-sm focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all placeholder:text-slate-300"
+            />
+          </div>
+
+          {/* Optional Name for New Users (Hidden by default in strictly phone-only visual, but useful for logic) */}
+          {/* We will hide it to strictly follow the visual request "Input campo: Ingrese numero de telefono". 
+                Backend handles name update later or we default it. */}
+
+          <button
+            onClick={handleImplicitLogin}
+            disabled={isLoading || phone.length < 10}
+            className="w-full h-14 bg-slate-900 text-white font-medium rounded-xl shadow-lg hover:bg-slate-800 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              "Verificar número"
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Footer */}
+      <div className="p-6 text-center">
+        <p className="text-xs text-slate-400">
+          Al continuar aceptas los <span className="font-bold text-slate-500">Términos y Condiciones</span>
+        </p>
+      </div>
+
     </div>
   );
 };
