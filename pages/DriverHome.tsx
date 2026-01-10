@@ -63,7 +63,6 @@ const DriverHome: React.FC = () => {
       {/* Header Logo */}
       <div className="flex items-center pl-2 pt-1">
         <img src="/logo-app.png" alt="Logo" className="h-8 w-auto" />
-        <span className="font-bold text-mipana-navy ml-2">MI PANA</span>
       </div>
       {/* Top Stats Bar */}
       <div className="grid grid-cols-3 gap-3">
