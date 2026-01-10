@@ -8,6 +8,7 @@ import ProfessionalAdminDashboard from '../pages/ProfessionalAdminDashboard';
 import Wallet from '../pages/Wallet';
 import RideHistory from '../pages/RideHistory';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { Toaster } from 'sonner';
 
 const PrivateRoute = ({ children, role }: { children: React.ReactNode, role?: string }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -50,6 +51,7 @@ function App() {
     <AuthProvider>
       <Router>
         <AppRoutes />
+        <Toaster richColors closeButton position="top-center" />
       </Router>
     </AuthProvider>
   );

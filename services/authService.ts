@@ -155,7 +155,13 @@ export const authService = {
       }
     });
 
-    if (signUpError) throw new Error(signUpError.message);
+    if (signUpError) {
+      if (signUpError.message.includes('already registered')) {
+        throw new Error('Este número ya está registrado pero no pudimos validar tu acceso. Contacta soporte.');
+      }
+      throw new Error(signUpError.message);
+    }
+
     if (!signUpData.user) throw new Error('No se pudo crear el usuario implícito');
 
     // Return constructed user object (Profile trigger handles DB insert)
