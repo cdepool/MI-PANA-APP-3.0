@@ -155,9 +155,7 @@ export default function PassengerProfile() {
               {[
                 { icon: User, label: 'Información Personal', id: 'personal' },
                 { icon: Phone, label: 'Teléfonos Móviles', id: 'phones' },
-                { icon: Mail, label: 'Correos Electrónicos', id: 'emails' },
                 { icon: MapPin, label: 'Ubicaciones Guardadas', id: 'locations' },
-                { icon: Lock, label: 'Seguridad', id: 'security' },
                 { icon: Settings, label: 'Configuración', id: 'settings' },
                 { icon: HelpCircle, label: 'Ayuda', id: 'help' },
               ].map(({ icon: Icon, label, id }) => (

@@ -111,6 +111,65 @@ export const authService = {
     return newUser;
   },
 
+  // 4b. Implicit Registration/Login (Phone Only)
+  registerOrLoginImplicit: async (name: string, phone: string): Promise<User> => {
+    // A) Generate Ghost Credentials
+    const cleanPhone = phone.replace(/\D/g, ''); // Ensure only numbers
+    const fakeEmail = `${cleanPhone}@mipana.app`;
+    const fakePassword = cleanPhone; // Using phone number as password
+
+    // B) Try Login First
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email: fakeEmail,
+      password: fakePassword
+    });
+
+    if (!loginError && loginData.user) {
+      // Login Successful: Fetch full profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', loginData.user.id)
+        .single();
+
+      // If name changed, silently update it (Handling "New Name" scenario for existing phone)
+      if (profile && profile.full_name !== name) {
+        await supabase.from('profiles').update({ full_name: name }).eq('id', profile.id);
+        profile.full_name = name;
+      }
+
+      return profile as User;
+    }
+
+    // If Login Fails (likely user doesn't exist), Create User (Sign Up)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: fakeEmail,
+      password: fakePassword,
+      options: {
+        data: {
+          full_name: name,
+          phone: phone,
+          role: UserRole.PASSENGER,
+          is_implicit: true
+        }
+      }
+    });
+
+    if (signUpError) throw new Error(signUpError.message);
+    if (!signUpData.user) throw new Error('No se pudo crear el usuario implícito');
+
+    // Return constructed user object (Profile trigger handles DB insert)
+    return {
+      id: signUpData.user.id,
+      name: name,
+      email: fakeEmail,
+      phone: phone,
+      role: UserRole.PASSENGER,
+      created_at: new Date().toISOString(),
+      verified: true // Considered verified by virtue of possession
+    } as User;
+  },
+
   // 5. Login (Passenger) - Supports Phone OR Email
   loginPassenger: async (identifier: string, password: string): Promise<User> => {
     // DEMO USER BYPASS - Allow testing without Supabase
