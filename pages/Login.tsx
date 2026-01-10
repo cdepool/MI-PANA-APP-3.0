@@ -163,7 +163,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
               isLoading={isLoading}
               className="mt-6 bg-[#FF6B00] hover:bg-[#E65000] text-white font-[900] text-xl shadow-lg shadow-orange-200 transform active:scale-95 transition-all"
             >
-              PEDIR TAXI 🚖
+              PEDIR UN PANA 🚖
             </Button>
 
             <p className="text-center text-[10px] text-gray-400 mt-4 leading-tight">
