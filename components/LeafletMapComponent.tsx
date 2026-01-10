@@ -22,6 +22,7 @@ interface LeafletMapProps {
     origin?: { lat: number, lng: number };
     destination?: { lat: number, lng: number };
     onRouteChange?: (summary: { totalDistance: number, totalTime: number }) => void;
+    onCenterChange?: (lat: number, lng: number) => void;
 }
 
 const RoutingControl = ({ origin, destination, onRouteChange }: {
@@ -70,7 +71,22 @@ const RoutingControl = ({ origin, destination, onRouteChange }: {
     return null;
 };
 
-const LeafletMapComponent: React.FC<LeafletMapProps> = ({ className, origin, destination, onRouteChange }) => {
+const MapEvents = ({ onCenterChange }: { onCenterChange?: (lat: number, lng: number) => void }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (!onCenterChange) return;
+        map.on('moveend', () => {
+            const center = map.getCenter();
+            onCenterChange(center.lat, center.lng);
+        });
+        return () => {
+            map.off('moveend');
+        };
+    }, [map, onCenterChange]);
+    return null;
+};
+
+const LeafletMapComponent: React.FC<LeafletMapProps> = ({ className, origin, destination, onRouteChange, onCenterChange }) => {
     // Default center (Venezuela)
     const center = origin ? [origin.lat, origin.lng] : [9.555, -69.213];
 
@@ -85,6 +101,9 @@ const LeafletMapComponent: React.FC<LeafletMapProps> = ({ className, origin, des
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+
+            <MapEvents onCenterChange={onCenterChange} />
+
             {origin && (
                 <Marker position={[origin.lat, origin.lng]}>
                     <Popup>Recogida</Popup>

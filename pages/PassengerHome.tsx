@@ -219,6 +219,11 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
             // Handle route change if needed
             console.log('Route:', summary);
           }}
+          onCenterChange={(lat, lng) => {
+            setMapCenterCoords({ lat, lng });
+            // Simple mock reverse geocode for feedback
+            setMapCenterAddress(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+          }}
         />
       </div>
 
