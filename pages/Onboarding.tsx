@@ -161,39 +161,53 @@ const Onboarding = () => {
 
             {/* --- STEP 2: Phone Collection (Missing Data) --- */}
             {step === 2 && (
-                <div className="w-full h-full flex flex-col p-8 pt-20 animate-fade-in max-w-md mx-auto">
-                    <div className="mb-8 text-center">
-                        <h2 className="text-3xl font-bold mb-2">Un último paso...</h2>
-                        <p className="text-slate-500 dark:text-slate-400">
-                            Necesitamos tu número para coordinar los viajes.
-                        </p>
+                <div className="w-full h-full flex flex-col relative animate-fade-in">
+                    {/* Background Skin */}
+                    <div className="absolute inset-0 z-0">
+                        <img
+                            src="/onboarding_skin.png"
+                            alt="Background"
+                            className="w-full h-full object-cover"
+                        />
+                        {/* Gradient Overlay for text readability at bottom */}
+                        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                     </div>
 
-                    <div className="space-y-6 w-full">
-                        <div>
-                            <label className="text-sm font-semibold ml-1 mb-2 block">Número de celular</label>
-                            <div className="flex gap-3">
-                                <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-4 flex items-center justify-center font-bold min-w-[80px]">
-                                    🇻🇪 +58
-                                </div>
-                                <input
-                                    type="tel"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                                    placeholder="412 000 0000"
-                                    className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 text-lg font-medium outline-none focus:ring-2 focus:ring-[#FF6B00] transition-all"
-                                />
-                            </div>
+                    {/* Content (Bottom Sheet Style) */}
+                    <div className="relative z-10 flex-1 flex flex-col justify-end p-8 pb-12">
+                        <div className="mb-6 text-white">
+                            <h2 className="text-3xl font-bold mb-2">Un último paso...</h2>
+                            <p className="text-white/80 text-lg">
+                                Necesitamos tu número para coordinar los viajes.
+                            </p>
                         </div>
 
-                        <button
-                            onClick={handlePhoneSave}
-                            disabled={isLoading || phone.length < 9}
-                            className="w-full bg-[#1A2E56] dark:bg-white dark:text-[#1A2E56] text-white font-bold py-4 rounded-xl text-lg shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                        >
-                            {isLoading ? "Guardando..." : "Guardar y Continuar"}
-                            <ArrowRight size={20} />
-                        </button>
+                        <div className="space-y-4 w-full bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-2xl">
+                            <div>
+                                <label className="text-sm font-semibold ml-1 mb-2 block text-white">Número de celular</label>
+                                <div className="flex gap-3">
+                                    <div className="bg-white/90 border-transparent rounded-xl px-4 py-4 flex items-center justify-center font-bold min-w-[80px] text-[#1A2E56]">
+                                        🇻🇪 +58
+                                    </div>
+                                    <input
+                                        type="tel"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                                        placeholder="412 000 0000"
+                                        className="flex-1 bg-white/90 border-transparent rounded-xl px-4 text-lg font-medium outline-none focus:ring-4 focus:ring-[#FF6B00]/50 transition-all text-[#1A2E56] placeholder:text-gray-400"
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handlePhoneSave}
+                                disabled={isLoading || phone.length < 9}
+                                className="w-full bg-[#FF6B00] hover:bg-[#E66000] text-white font-bold py-4 rounded-xl text-lg shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
+                            >
+                                {isLoading ? "Guardando..." : "Guardar y Continuar"}
+                                <ArrowRight size={20} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
