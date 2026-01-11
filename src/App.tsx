@@ -12,7 +12,7 @@ const Wallet = lazy(() => import('./pages/Wallet'));
 const RideHistory = lazy(() => import('./pages/RideHistory'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
 const ScheduleRides = lazy(() => import('./pages/ScheduleRides'));
-const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+import AdminLogin from './pages/AdminLogin';
 
 import Layout from './components/Layout';
 import { AuthProvider, useAuth } from './context/AuthContext';

@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logger.warn("Auth initialization timed out. Unblocking UI.");
         setIsLoading(false);
       }
-    }, 5000);
+    }, 2500);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.log(`Auth event: ${event}`, { userId: session?.user?.id });
