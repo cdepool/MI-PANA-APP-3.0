@@ -10,7 +10,8 @@ import ProfessionalHeader from '../components/ProfessionalHeader';
 
 import { adminService, AdminStats } from '../services/adminService';
 import { useAuth } from '../context/AuthContext';
-import { AdminRole } from '../types';
+import { AdminRole, UserRole } from '../types';
+import { SimpleErrorBoundary } from '../components/SimpleErrorBoundary'; // Imported Error Boundary
 
 const statsInitial = [
   { title: 'Facturación Bruta', value: '---', sub: 'Calculando...', icon: DollarSign, color: 'border-blue-600' },
@@ -19,7 +20,8 @@ const statsInitial = [
   { title: 'Usuarios Totales', value: '---', sub: 'Registrados', icon: TrendingUp, color: 'border-gray-400' },
 ];
 
-const ProfessionalAdminDashboard: React.FC = () => {
+// Renamed original component to DashboardContent
+const DashboardContent: React.FC = () => {
   const { user, switchView, viewAsRole } = useAuth();
   const navigate = useNavigate();
   const [statsData, setStatsData] = React.useState<AdminStats | null>(null);
@@ -141,8 +143,6 @@ const ProfessionalAdminDashboard: React.FC = () => {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* The original snippet had an empty button with onClick using useAuth inside, which is incorrect.
-                  The DemoButton component below will correctly use the switchView from the parent component. */}
               <DemoButton
                 label="Vista Pasajero"
                 role={UserRole.PASSENGER}
@@ -244,8 +244,8 @@ const DemoButton: React.FC<DemoButtonProps> = ({ label, role, icon, onClick, act
   <button
     onClick={() => onClick(role)}
     className={`flex items-center justify-between p-4 rounded-xl border transition-all ${active
-        ? 'bg-mipana-gold/10 border-mipana-gold shadow-sm'
-        : 'bg-white border-gray-100 hover:border-mipana-gold/50 shadow-sm hover:shadow-md'
+      ? 'bg-mipana-gold/10 border-mipana-gold shadow-sm'
+      : 'bg-white border-gray-100 hover:border-mipana-gold/50 shadow-sm hover:shadow-md'
       }`}
   >
     <div className="flex items-center gap-3">
@@ -259,6 +259,13 @@ const DemoButton: React.FC<DemoButtonProps> = ({ label, role, icon, onClick, act
     </div>
     <ArrowRight size={16} className={active ? 'text-mipana-gold' : 'text-gray-300'} />
   </button>
+);
+
+// New default export that wraps the content in the error boundary
+const ProfessionalAdminDashboard: React.FC = () => (
+  <SimpleErrorBoundary>
+    <DashboardContent />
+  </SimpleErrorBoundary>
 );
 
 export default ProfessionalAdminDashboard;
