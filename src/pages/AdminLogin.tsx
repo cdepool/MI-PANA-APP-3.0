@@ -18,22 +18,29 @@ const DebugStatus = () => {
 
                 // Check if Env Vars are loaded
                 const url = import.meta.env.VITE_SUPABASE_URL;
+                const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
                 if (!url) throw new Error("Falta VITE_SUPABASE_URL");
+                if (!key) throw new Error("Falta VITE_SUPABASE_ANON_KEY");
 
-                // Check Supabase Connectivity
-                const { error } = await supabase.from('profiles').select('count', { count: 'exact', head: true }).limit(1);
+                // Check Supabase Connectivity with a quick fetch to the API
+                // This bypasses SDK cache and checks direct network access
+                const healthCheck = await Promise.race([
+                    fetch(`${url}/rest/v1/`, { method: 'GET', headers: { 'apikey': key } }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de Red (Supabase)")), 8000))
+                ]) as Response;
 
-                if (error) {
-                    if (error.message.includes('fetch')) throw new Error("Error de red al contactar Supabase");
-                    // Postgrest error means we connected but maybe table blocked, which is fine for connectivity check
+                if (!healthCheck.ok && healthCheck.status !== 401 && healthCheck.status !== 404) {
+                    throw new Error(`Error de Red: Status ${healthCheck.status}`);
                 }
 
                 setStatus('ok');
-                setMsg('Sistema Operativo');
-                setDetails(url.substring(0, 15) + '...');
+                setMsg('Sistema Conectado');
+                setDetails(`${url.substring(0, 20)}...`);
             } catch (e: any) {
+                console.error("Debug Check Failed:", e);
                 setStatus('error');
-                setMsg('Error de Sistema');
+                setMsg('Falla de Conexión');
                 setDetails(e.message);
             }
         };
@@ -41,12 +48,13 @@ const DebugStatus = () => {
     }, []);
 
     return (
-        <div className="fixed bottom-4 right-4 bg-black/80 backdrop-blur text-white p-3 rounded-lg text-xs font-mono border border-white/10 max-w-[200px]">
-            <div className="flex items-center gap-2 mb-1">
-                <div className={`w-2 h-2 rounded-full ${status === 'ok' ? 'bg-green-500' : status === 'checking' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} />
-                <span className="font-bold">{msg}</span>
+        <div className="fixed bottom-4 right-4 bg-black/90 backdrop-blur-xl text-white p-4 rounded-xl text-[10px] font-mono border border-white/10 max-w-[240px] shadow-2xl z-[100]">
+            <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2.5 h-2.5 rounded-full ${status === 'ok' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : status === 'checking' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'}`} />
+                <span className="font-bold tracking-tight uppercase">{msg}</span>
             </div>
-            {details && <div className="text-white/50 break-all">{details}</div>}
+            {details && <div className="text-white/40 break-all bg-white/5 p-2 rounded-md border border-white/5">{details}</div>}
+            <div className="mt-2 text-[9px] text-white/20 italic">V4-PROD-DIAGNOSTIC</div>
         </div>
     );
 };
@@ -63,39 +71,43 @@ const AdminLogin: React.FC = () => {
         setIsLoading(true);
         toast.dismiss();
 
-        // Helper to timeout promises
+        // Helper to timeout promises - Increased for production reliability
         const withTimeout = (promise: Promise<any>, ms: number, label: string) => {
             return Promise.race([
                 promise,
-                new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} excedió el tiempo de espera (${ms}ms)`)), ms))
+                new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} excedió el tiempo de espera (${ms}ms). Verifique su conexión.`)), ms))
             ]);
         };
 
         try {
-            toast.loading("Verificando credenciales...");
-            console.log("Iniciando signInWithPassword...");
+            toast.loading("Verificando credenciales corporativas...");
+            console.log("Iniciando signInWithPassword a 20s timeout...");
 
             const { data, error } = await withTimeout(
                 supabase.auth.signInWithPassword({ email, password }),
-                10000,
+                20000,
                 "Autenticación"
             );
 
-            if (error) throw error;
+            if (error) {
+                console.error("Auth Error:", error);
+                throw error;
+            }
+
             console.log("SignIn exitoso:", data.user?.id);
 
             toast.dismiss();
-            toast.loading("Datos correctos. Verificando permisos...");
+            toast.loading("Permisos encontrados. Verificando rol...");
 
             if (data.user) {
-                console.log("Consultando perfil...");
+                console.log("Consultando perfil con 15s timeout...");
                 const { data: profile, error: profileError } = await withTimeout(
                     supabase
                         .from('profiles')
                         .select('role, admin_role')
                         .eq('id', data.user.id)
                         .single(),
-                    10000,
+                    15000,
                     "Consulta de Perfil"
                 );
 
