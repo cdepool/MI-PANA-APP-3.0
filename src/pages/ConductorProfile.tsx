@@ -112,7 +112,7 @@ const ConductorProfile: React.FC = () => {
                 </div>
             </div>
 
-            <div className="max-w-3xl mx-auto px-4 -mt-16 relative z-10">
+            <div className="max-w-5xl mx-auto px-4 -mt-16 relative z-10">
 
                 <PendingChangesNotification changes={profile?.pendingChanges || []} />
 

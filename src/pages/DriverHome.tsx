@@ -59,7 +59,7 @@ const DriverHome: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] gap-4">
+    <div className="flex flex-col min-h-[calc(100dvh-120px)] gap-4 pb-4">
       {/* Top Stats Bar */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">

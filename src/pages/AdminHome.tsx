@@ -137,29 +137,28 @@ const AdminHome: React.FC = () => {
       <AdminUserCreationModal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} />
 
       {/* Dashboard Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
         <div>
-          <h1 className="text-xl font-bold text-mipana-darkBlue dark:text-white">Dashboard Administrativo</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-mipana-darkBlue dark:text-white">Dashboard Administrativo</h1>
           <p className="text-xs text-gray-500">Next TV C.A. | Sistema de Gestión Financiera</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <button
             onClick={() => setIsUserModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-mipana-mediumBlue text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-bold shadow-md"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-mipana-mediumBlue text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-bold shadow-md"
           >
             <Users size={16} />
-            Crear Usuario
+            <span className="whitespace-nowrap">Crear Usuario</span>
           </button>
 
-          <div className="text-right px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 relative overflow-hidden">
+          <div className="flex-1 sm:flex-none text-right px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 relative overflow-hidden min-w-[140px]">
             <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
             <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider flex items-center justify-end gap-1">
-              <RefreshCw size={10} className="animate-spin-slow" /> Tasa Oficial BCV
+              <RefreshCw size={10} className="animate-spin-slow" /> BCV
             </p>
             <div className="flex items-center justify-end gap-2">
-              <span className="font-mono font-bold text-xl text-green-600 dark:text-green-400">Bs {currentViewRate.toFixed(2)}</span>
+              <span className="font-mono font-bold text-lg md:text-xl text-green-600 dark:text-green-400">Bs {currentViewRate.toFixed(2)}</span>
             </div>
-            <p className="text-[9px] text-gray-400">Fuente: DolarAPI (BCV)</p>
           </div>
         </div>
       </div>

@@ -321,7 +321,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   };
 
   return (
-    <main className="h-[calc(100vh-5rem)] flex flex-col relative overflow-hidden">
+    <main className="h-[calc(100dvh-4rem)] flex flex-col relative overflow-hidden">
 
       {/* Mapa Interactivo (Leaflet/OpenStreetMap) */}
       <div className="absolute inset-0 z-0">
