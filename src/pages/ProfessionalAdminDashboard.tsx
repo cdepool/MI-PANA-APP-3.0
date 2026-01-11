@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
-import ProfessionalHeader from '../src/components/ProfessionalHeader';
+import ProfessionalHeader from '../components/ProfessionalHeader';
 
 import { adminService, AdminStats } from '../services/adminService';
 

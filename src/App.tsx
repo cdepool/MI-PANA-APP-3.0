@@ -1,17 +1,17 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import Login from '../pages/Login';
-import Register from '../pages/Register';
-import Onboarding from '../pages/Onboarding';
-import PassengerHome from '../pages/PassengerHome';
-import DriverHome from '../pages/DriverHome';
-import ProfessionalAdminDashboard from '../pages/ProfessionalAdminDashboard';
-import Wallet from '../pages/Wallet';
-import RideHistory from '../pages/RideHistory';
-import UserProfile from '../pages/UserProfile';
-import ScheduleRides from '../pages/ScheduleRides';
-import Layout from '../components/Layout';
-import { AuthProvider, useAuth } from '../context/AuthContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Onboarding from './pages/Onboarding';
+import PassengerHome from './pages/PassengerHome';
+import DriverHome from './pages/DriverHome';
+import ProfessionalAdminDashboard from './pages/ProfessionalAdminDashboard';
+import Wallet from './pages/Wallet';
+import RideHistory from './pages/RideHistory';
+import UserProfile from './pages/UserProfile';
+import ScheduleRides from './pages/ScheduleRides';
+import Layout from './components/Layout';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Toaster } from 'sonner';
 
 const PrivateRoute = ({ children, role }: { children: React.ReactNode, role?: string }) => {

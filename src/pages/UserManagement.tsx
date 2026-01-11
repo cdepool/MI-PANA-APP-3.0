@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Users,
+  Search,
+  Filter,
+  MoreVertical,
+  CheckCircle2,
+  XCircle,
   AlertTriangle,
   UserCheck,
   UserMinus,
@@ -13,7 +13,7 @@ import {
   Phone,
   Calendar
 } from 'lucide-react';
-import ProfessionalHeader from '../src/components/ProfessionalHeader';
+import ProfessionalHeader from '../components/ProfessionalHeader';
 import { userManagementService, UserProfile } from '../services/adminService';
 import Button from '../components/Button';
 
@@ -31,8 +31,8 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     let result = users;
     if (searchTerm) {
-      result = result.filter(u => 
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      result = result.filter(u =>
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.phone.includes(searchTerm)
       );
@@ -60,7 +60,7 @@ const UserManagement: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F4F7F6] font-sans">
       <ProfessionalHeader />
-      
+
       <main className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -79,16 +79,16 @@ const UserManagement: React.FC = () => {
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar por nombre, email o teléfono..." 
+            <input
+              type="text"
+              placeholder="Buscar por nombre, email o teléfono..."
               className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-mipana-navy/10 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="flex gap-2">
-            <select 
+            <select
               className="px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-mipana-navy focus:outline-none"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as any)}
@@ -159,9 +159,8 @@ const UserManagement: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${
-                          user.role === 'driver' ? 'bg-cyan-50 text-cyan-600' : 'bg-orange-50 text-orange-600'
-                        }`}>
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${user.role === 'driver' ? 'bg-cyan-50 text-cyan-600' : 'bg-orange-50 text-orange-600'
+                          }`}>
                           {user.role === 'driver' ? 'Conductor' : 'Pasajero'}
                         </span>
                       </td>
@@ -185,7 +184,7 @@ const UserManagement: React.FC = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
                           {user.status === 'suspended' ? (
-                            <button 
+                            <button
                               onClick={() => handleStatusUpdate(user.id, 'active')}
                               className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                               title="Activar Usuario"
@@ -193,7 +192,7 @@ const UserManagement: React.FC = () => {
                               <UserCheck size={18} />
                             </button>
                           ) : (
-                            <button 
+                            <button
                               onClick={() => handleStatusUpdate(user.id, 'suspended')}
                               className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                               title="Suspender Usuario"
