@@ -72,8 +72,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = (role: UserRole, userData?: Partial<User>) => {
+  const login = async (role: UserRole, userData?: Partial<User>) => {
     // Legacy/Mock login for Driver/Admin - Should be replaced by real auth eventually
+    // For now, if we are in development, we might still allow this, 
+    // but the goal is to use REAL AUTH.
+    // If userData has an ID and we are authenticated, we should fetch the real profile.
+    if (userData?.id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userData.id)
+        .single();
+
+      if (profile) {
+        setUser(profile as User);
+        return;
+      }
+    }
+
     const baseUser = mockLoginUser(role);
     const finalUser = userData ? { ...baseUser, ...userData } : baseUser;
     setUser(finalUser);

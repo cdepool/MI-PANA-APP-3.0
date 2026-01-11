@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { getTariffs } from '../services/mockService';
+import { notificationService } from '../services/notificationService';
 
 const Wallet: React.FC = () => {
    const { user, walletTransaction, refreshBalance } = useAuth();
@@ -49,6 +50,7 @@ const Wallet: React.FC = () => {
          setShowRecharge(false);
          setAmount('');
          setReference('');
+         notificationService.sendLocalNotification('Recarga Exitosa', `Has recargado Bs ${amountBs} ($${amountUsd.toFixed(2)}) a tu cuenta.`);
          toast.success(`✅ Recarga de Bs ${amountBs} ($${amountUsd.toFixed(2)}) exitosa.`);
       } catch (e) {
          toast.error("Error procesando recarga.");

@@ -1,23 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Navigation,
-  ShieldCheck,
-  Activity,
-  MapPin,
-  Users,
-  Clock,
-  Phone,
-  MessageCircle,
-  XCircle,
-  Power,
-  TrendingUp,
-  Star
-} from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
+import { Ride, ServiceId } from '../types';
+import { getServiceIcon } from '../services/simulationService';
 import UnifiedMapComponent from '../components/UnifiedMapComponent';
 import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
-import { mockRides, getServiceIcon } from '../services/simulationService';
-import { Ride } from '../types';
+import { TripService } from '../services/tripService';
+import { notificationService } from '../services/notificationService';
 
 const DriverHome: React.FC = () => {
   const { user } = useAuth();
@@ -27,30 +16,84 @@ const DriverHome: React.FC = () => {
   const [status, setStatus] = useState<'IDLE' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED'>('IDLE');
 
   useEffect(() => {
+    let unsubscribe: any;
+
     if (isOnline && !activeRide) {
-      setAvailableRides(mockRides.filter(r => r.status === 'REQUESTED'));
+      // In a real app, we'd subscribe to "REQUESTED" trips nearby
+      // For now, let's fetch all requested trips
+      const fetchAvailable = async () => {
+        const { data } = await supabase
+          .from('trips')
+          .select('*')
+          .eq('status', 'REQUESTED');
+        if (data) setAvailableRides(data.map(r => ({ ...r, serviceId: r.serviceId as ServiceId })));
+      };
+
+      fetchAvailable();
+
+      // Real-time subscription for new requests
+      const channel = supabase
+        .channel('new-trips')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trips', filter: 'status=eq.REQUESTED' }, (payload) => {
+          notificationService.sendLocalNotification('Nueva Solicitud', 'Hay un Pana cerca necesitando un viaje.');
+          setAvailableRides(prev => [...prev, payload.new as Ride]);
+        })
+        .subscribe();
+
+      unsubscribe = () => supabase.removeChannel(channel);
     } else {
       setAvailableRides([]);
     }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [isOnline, activeRide]);
 
   const toggleOnline = () => setIsOnline(!isOnline);
 
-  const acceptRide = (ride: Ride) => {
-    setActiveRide({ ...ride, status: 'ACCEPTED' });
-    setStatus('ACCEPTED');
-    setAvailableRides([]);
+  const acceptRide = async (ride: Ride) => {
+    try {
+      const { error } = await supabase
+        .from('trips')
+        .update({ status: 'ACCEPTED', driver_id: user?.id })
+        .eq('id', ride.id);
+
+      if (error) throw error;
+
+      setActiveRide({ ...ride, status: 'ACCEPTED', driverId: user?.id });
+      setStatus('ACCEPTED');
+      setAvailableRides([]);
+    } catch (err) {
+      console.error("Error accepting ride", err);
+    }
   };
 
-  const startRide = () => {
+  const startRide = async () => {
     if (activeRide) {
+      const { error } = await supabase
+        .from('trips')
+        .update({ status: 'IN_PROGRESS' })
+        .eq('id', activeRide.id);
+
+      if (error) throw error;
+
       setActiveRide({ ...activeRide, status: 'IN_PROGRESS' });
       setStatus('IN_PROGRESS');
     }
   };
 
-  const completeRide = () => {
-    setStatus('COMPLETED');
+  const completeRide = async () => {
+    if (activeRide) {
+      const { error } = await supabase
+        .from('trips')
+        .update({ status: 'COMPLETED' })
+        .eq('id', activeRide.id);
+
+      if (error) throw error;
+
+      setStatus('COMPLETED');
+    }
   };
 
   const resetFlow = () => {

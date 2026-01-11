@@ -17,11 +17,11 @@ import {
 } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import LeafletMapComponent from '../components/LeafletMapComponent';
+import UnifiedMapComponent from '../components/UnifiedMapComponent';
 import ChatInterface from '../components/ChatInterface';
 import { toast } from 'sonner';
 import { SERVICE_CATALOG, getTariffs, getDriverById, mockMatchDriver, startRideSimulation, sendChatMessage } from '../services/mockService';
-import { UserRole, RideStep, ServiceId, LocationPoint, MatchedDriver, RideBeneficiary, ChatMessage, SavedPlace } from '../types';
+import { notificationService } from '../services/notificationService';
 
 // --- HELPER COMPONENTS & FUNCTIONS ---
 
@@ -146,11 +146,8 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
         console.log("Trip Update:", updatedTrip);
 
         if (updatedTrip.status === 'ACCEPTED' && updatedTrip.driverId) {
-          // Fetch driver details (Real logic would fetch from DB, using Mock for details based on ID for now)
-          // In real app: const driverDetails = await fetchDriverProfile(updatedTrip.driverId)
-          // For now, if accepted, we simulate a driver found or use preselected
-
-          // Temporary: If real backend doesn't return full driver object yet, we mock it to show UI
+          notificationService.sendLocalNotification('¡Pana encontrado!', 'Tu conductor aceptó el viaje y viene en camino.');
+          // ... rest of logic
           const foundDriver = Promise.resolve(preselectedDriver || mockMatchDriver(SERVICE_CATALOG.find(s => s.id === updatedTrip.serviceId)?.vehicleType || 'CAR', updatedTrip.driverId));
 
           foundDriver.then(d => {
@@ -160,10 +157,12 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
         }
 
         if (updatedTrip.status === 'IN_PROGRESS') {
+          notificationService.sendLocalNotification('Viaje en curso', 'Disfruta tu viaje con Mi Pana.');
           setStep('IN_PROGRESS');
         }
 
         if (updatedTrip.status === 'COMPLETED') {
+          notificationService.sendLocalNotification('¡Llegaste!', 'Gracias por viajar con Mi Pana.');
           setStep('COMPLETED');
         }
       });
@@ -323,20 +322,18 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   return (
     <main className="h-[calc(100dvh-4rem)] flex flex-col relative overflow-hidden">
 
-      {/* Mapa Interactivo (Leaflet/OpenStreetMap) */}
-      <div className="absolute inset-0 z-0">
-        <LeafletMapComponent
+      {/* Mapa Interactivo (Google Maps) */}
+      <div className="absolute inset-0 z-0 text-mipana-darkBlue">
+        <UnifiedMapComponent
           className="flex-1"
           origin={getOriginCoords()}
           destination={getDestCoords()}
-          onRouteChange={(summary) => {
-            // Handle route change if needed
-            console.log('Route:', summary);
-          }}
-          onCenterChange={(lat, lng) => {
-            setMapCenterCoords({ lat, lng });
-            // Simple mock reverse geocode for feedback
-            setMapCenterAddress(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+          status={step === 'PICK_ON_MAP' ? (pickingType === 'ORIGIN' ? 'PICKING_ORIGIN' : 'PICKING_DEST') : (step === 'CONFIRM_SERVICE' ? 'CONFIRM_SERVICE' : (step === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'IDLE'))}
+          onCameraChange={(center) => {
+            setMapCenterCoords(center);
+            // In a real app, we would reverse geocode here. 
+            // For now, it updates the visual center address.
+            setMapCenterAddress(`${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`);
           }}
         />
       </div>

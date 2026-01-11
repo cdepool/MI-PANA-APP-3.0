@@ -40,47 +40,44 @@ const generateAdminData = (currentRate: number) => {
   return rides.filter(r => r.status === 'COMPLETED');
 };
 
+import { adminService, AdminStats, RevenueData } from '../services/adminService';
+
 const AdminHome: React.FC = () => {
-  // State to hold current rate for the view
   const [currentViewRate, setCurrentViewRate] = useState<number>(mockBcvRate);
   const [selectedRideLogs, setSelectedRideLogs] = useState<ChatMessage[] | null>(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [revenueByService, setRevenueByService] = useState<RevenueData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Polling for rate updates to keep dashboard live
   useEffect(() => {
-    const interval = setInterval(() => {
-      const latest = getTariffs().currentBcvRate;
-      if (latest !== currentViewRate) {
-        setCurrentViewRate(latest);
+    const loadData = async () => {
+      try {
+        const [dashboardStats, revData] = await Promise.all([
+          adminService.getDashboardStats(),
+          adminService.getRevenueByService()
+        ]);
+        setStats(dashboardStats);
+        setRevenueByService(revData);
+        setCurrentViewRate(getTariffs().currentBcvRate);
+      } catch (err) {
+        console.error("Error loading admin data", err);
+      } finally {
+        setIsLoading(false);
       }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [currentViewRate]);
-
-  const data = useMemo(() => generateAdminData(currentViewRate), [currentViewRate]);
-
-  // KPI Calculations
-  const totalViajes = data.length;
-  const totalFacturado = data.reduce((acc, r) => acc + r.pfs_usd, 0);
-  const totalAppNeto = data.reduce((acc, r) => acc + r.app_neto, 0);
-  const totalSeniat = data.reduce((acc, r) => acc + r.seniat_total, 0);
-  const totalConductor = data.reduce((acc, r) => acc + r.conductor_neto, 0);
-
-  const distributionData = [
-    { name: 'Conductores', value: totalConductor, color: '#04A8BF' }, // Mipana Medium Blue
-    { name: 'Next TV C.A.', value: totalAppNeto, color: '#022859' }, // Mipana Dark Blue
-    { name: 'SENIAT', value: totalSeniat, color: '#F2620F' }, // Mipana Orange
-  ];
-
-  const serviceData = SERVICE_CATALOG.map(s => {
-    const ridesOfService = data.filter(r => r.serviceName === s.nombre);
-    return {
-      name: s.nombre,
-      conductor: ridesOfService.reduce((acc, r) => acc + r.conductor_neto, 0),
-      app: ridesOfService.reduce((acc, r) => acc + r.app_neto, 0),
-      seniat: ridesOfService.reduce((acc, r) => acc + r.seniat_total, 0),
     };
-  });
+
+    loadData();
+    // Refresh every 30 seconds
+    const interval = setInterval(loadData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const distributionData = stats ? [
+    { name: 'Conductores', value: stats.totalRevenueUsd * 0.92, color: '#04A8BF' },
+    { name: 'Next TV C.A.', value: stats.totalRevenueUsd * 0.05, color: '#022859' },
+    { name: 'SENIAT', value: stats.totalRevenueUsd * 0.03, color: '#F2620F' },
+  ] : [];
 
   const StatCard = ({ title, value, subValue, icon, color }: any) => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border-l-4" style={{ borderLeftColor: color }}>
@@ -167,30 +164,30 @@ const AdminHome: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Facturación Bruta"
-          value="$25,000.00"
-          subValue={`≈ Bs ${(25000 * currentViewRate).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`}
+          value={`$${stats?.totalRevenueUsd.toFixed(2) || '0.00'}`}
+          subValue={`≈ Bs ${(stats?.totalRevenueUsd || 0 * currentViewRate).toLocaleString('es-VE', { maximumFractionDigits: 2 })}`}
           icon={<DollarSign />}
           color="#022859"
         />
         <StatCard
           title="Ingreso Neto App"
-          value="$7.18"
+          value={`$${((stats?.totalRevenueUsd || 0) * 0.05).toFixed(2)}`}
           subValue="Libre de impuestos"
           icon={<TrendingUp />}
           color="#04A8BF"
         />
         <StatCard
           title="Retenciones SENIAT"
-          value="$5.90"
+          value={`$${((stats?.totalRevenueUsd || 0) * 0.03).toFixed(2)}`}
           subValue="IVA + ISLR"
           icon={<AlertCircle />}
           color="#F2620F"
         />
         <StatCard
-          title="Viajes Totales"
-          value={33}
-          subValue="Este mes"
-          icon={<Car />}
+          title="Usuarios Totales"
+          value={stats?.totalUsers || 0}
+          subValue="Registrados"
+          icon={<Users />}
           color="#666"
         />
       </div>
@@ -231,7 +228,7 @@ const AdminHome: React.FC = () => {
           <h3 className="font-bold text-gray-800 dark:text-white mb-4">Análisis Financiero por Servicio</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={serviceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={revenueByService} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                 <XAxis dataKey="name" stroke="#888" fontSize={12} />
                 <YAxis stroke="#888" fontSize={12} />
@@ -240,9 +237,9 @@ const AdminHome: React.FC = () => {
                   cursor={{ fill: 'transparent' }}
                 />
                 <Legend />
-                <Bar dataKey="conductor" name="Pago Conductor" stackId="a" fill="#04A8BF" />
-                <Bar dataKey="app" name="Neto App" stackId="a" fill="#022859" />
-                <Bar dataKey="seniat" name="SENIAT" stackId="a" fill="#F2620F" />
+                <Bar dataKey="pago" name="Total Pago" fill="#04A8BF" />
+                <Bar dataKey="neto" name="Neto App" fill="#022859" />
+                <Bar dataKey="seniat" name="SENIAT" fill="#F2620F" />
               </BarChart>
             </ResponsiveContainer>
           </div>

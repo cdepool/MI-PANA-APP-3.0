@@ -45,13 +45,30 @@ export const adminService = {
   },
 
   async getRevenueByService(): Promise<RevenueData[]> {
-    // Simulación de datos que vendrían de una consulta agrupada por servicio
-    return [
-      { name: 'Mototaxi', pago: 25, neto: 2, seniat: 1 },
-      { name: 'El Pana', pago: 65, neto: 3, seniat: 2 },
-      { name: 'El Amigo', pago: 52, neto: 2, seniat: 1 },
-      { name: 'Full Pana', pago: 48, neto: 2, seniat: 2 },
-    ];
+    try {
+      const { data, error } = await supabase
+        .from('trips')
+        .select('serviceId, priceUsd')
+        .eq('status', 'COMPLETED');
+
+      if (error) throw error;
+
+      const grouped = (data || []).reduce((acc: any, trip) => {
+        const serviceId = trip.serviceId || 'unknown';
+        if (!acc[serviceId]) {
+          acc[serviceId] = { name: serviceId, pago: 0, neto: 0, seniat: 0 };
+        }
+        acc[serviceId].pago += trip.priceUsd || 0;
+        acc[serviceId].neto += (trip.priceUsd || 0) * 0.05;
+        acc[serviceId].seniat += (trip.priceUsd || 0) * 0.03;
+        return acc;
+      }, {});
+
+      return Object.values(grouped);
+    } catch (error) {
+      logger.error("Error fetching revenue by service", error);
+      return [];
+    }
   }
 };
 
