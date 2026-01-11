@@ -15,32 +15,49 @@ const AdminLogin: React.FC = () => {
     const handleAdminLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        toast.dismiss(); // Clear previous toasts
+        toast.dismiss();
+
+        // Helper to timeout promises
+        const withTimeout = (promise: Promise<any>, ms: number, label: string) => {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} excedió el tiempo de espera (${ms}ms)`)), ms))
+            ]);
+        };
 
         try {
             toast.loading("Verificando credenciales...");
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
+            console.log("Iniciando signInWithPassword...");
+
+            const { data, error } = await withTimeout(
+                supabase.auth.signInWithPassword({ email, password }),
+                10000,
+                "Autenticación"
+            );
 
             if (error) throw error;
+            console.log("SignIn exitoso:", data.user?.id);
+
             toast.dismiss();
             toast.loading("Datos correctos. Verificando permisos...");
 
             if (data.user) {
-                // Verify role before redirecting
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('role, admin_role')
-                    .eq('id', data.user.id)
-                    .single();
+                console.log("Consultando perfil...");
+                const { data: profile, error: profileError } = await withTimeout(
+                    supabase
+                        .from('profiles')
+                        .select('role, admin_role')
+                        .eq('id', data.user.id)
+                        .single(),
+                    10000,
+                    "Consulta de Perfil"
+                );
 
                 if (profileError) {
                     console.error('Error fetching profile:', profileError);
-                    // attempt to continue if role is in metadata? No, safe to fail.
-                    throw new Error('No se pudo verificar el perfil del administrador.');
+                    throw new Error('No se pudo verificar el perfil del administrador: ' + profileError.message);
                 }
+                console.log("Perfil obtenido:", profile);
 
                 if (profile?.role !== 'ADMIN' && !profile?.admin_role) {
                     await supabase.auth.signOut();
@@ -49,16 +66,14 @@ const AdminLogin: React.FC = () => {
 
                 toast.dismiss();
                 toast.success("Bienvenido al Panel Corporativo");
-                // Small delay to let toast show
                 setTimeout(() => navigate('/admin'), 500);
             }
         } catch (err: any) {
-            console.error('Login Error:', err);
+            console.error('Login Error Trap:', err);
             toast.dismiss();
-            toast.error(err.message || 'Credenciales inválidas');
-            setIsLoading(false); // Stop spinner only on error
+            toast.error(err.message || 'Error desconocido');
+            setIsLoading(false);
         }
-        // removing finally block to keep spinner during redirect
     };
 
     return (
