@@ -42,6 +42,7 @@ export const BancamigaPaymentFlow: React.FC<BancamigaPaymentFlowProps> = ({
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isDomainAllowed, setIsDomainAllowed] = useState(true);
 
   // Datos de pago de MI PANA APP
   const paymentData = {
@@ -52,6 +53,18 @@ export const BancamigaPaymentFlow: React.FC<BancamigaPaymentFlowProps> = ({
     holder: 'NEXT TV, C.A.',
     amount: amount.toFixed(2)
   };
+
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    // Allow localhost for dev, but enforce v1.mipana.app for production
+    const isAllowed = hostname.includes('localhost') || hostname === 'v1.mipana.app';
+    setIsDomainAllowed(isAllowed);
+
+    if (!isAllowed) {
+      setError('Por seguridad bancaria, esta función solo está disponible en v1.mipana.app');
+      setStep('error');
+    }
+  }, []);
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -315,25 +328,43 @@ export const BancamigaPaymentFlow: React.FC<BancamigaPaymentFlowProps> = ({
         {step === 'error' && (
           <div className="text-center py-8 space-y-4">
             <AlertCircle size={64} className="text-red-600 mx-auto" />
-            <h3 className="text-2xl font-bold text-gray-900">Error de Verificación</h3>
-            <p className="text-gray-600 px-4">{error}</p>
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 text-left">
-              <p className="text-sm text-yellow-800">
-                <strong>Verifica que:</strong>
-              </p>
-              <ul className="text-xs text-yellow-700 mt-2 space-y-1 list-disc list-inside">
-                <li>Los últimos 4 dígitos sean correctos</li>
-                <li>Hayas seleccionado el banco correcto</li>
-                <li>El pago se haya realizado en las últimas 24 horas</li>
-                <li>El monto sea exactamente Bs. {paymentData.amount}</li>
-              </ul>
-            </div>
-            <button
-              onClick={handleRetry}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors"
-            >
-              Intentar Nuevamente
-            </button>
+            <h3 className="text-2xl font-bold text-gray-900">
+              {!isDomainAllowed ? "Acceso Restringido" : "Error de Verificación"}
+            </h3>
+            <p className="text-gray-600 px-4">
+              {!isDomainAllowed
+                ? "Por motivos de seguridad bancaria (Whitelist), los pagos solo pueden procesarse desde el dominio autorizado v1.mipana.app."
+                : error}
+            </p>
+
+            {!isDomainAllowed ? (
+              <a
+                href="https://v1.mipana.app/wallet"
+                className="block w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors text-center"
+              >
+                Ir a v1.mipana.app
+              </a>
+            ) : (
+              <>
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 text-left">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Verifica que:</strong>
+                  </p>
+                  <ul className="text-xs text-yellow-700 mt-2 space-y-1 list-disc list-inside">
+                    <li>Los últimos 4 dígitos sean correctos</li>
+                    <li>Hayas seleccionado el banco correcto</li>
+                    <li>El pago se haya realizado en las últimas 24 horas</li>
+                    <li>El monto sea exactamente Bs. {paymentData.amount}</li>
+                  </ul>
+                </div>
+                <button
+                  onClick={handleRetry}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors"
+                >
+                  Intentar Nuevamente
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

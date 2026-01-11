@@ -41,6 +41,8 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [newBalance, setNewBalance] = useState<{ ves: number; usd: number } | null>(null);
 
+  const [isDomainAllowed, setIsDomainAllowed] = useState(true);
+
   // Datos de pago de MI PANA APP
   const paymentData = {
     bank: 'Bancamiga',
@@ -49,6 +51,18 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
     rif: 'J-40724274-1',
     holder: 'NEXT TV, C.A.',
   };
+
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    // Allow localhost for dev, but enforce v1.mipana.app for production
+    const isAllowed = hostname.includes('localhost') || hostname === 'v1.mipana.app';
+    setIsDomainAllowed(isAllowed);
+
+    if (!isAllowed) {
+      setError('Por seguridad bancaria, esta función solo está disponible en v1.mipana.app');
+      setStep('error');
+    }
+  }, []);
 
   useEffect(() => {
     if (prefilledAmount) {
@@ -345,22 +359,37 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
             <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
               <AlertCircle size={48} className="text-red-500" />
             </div>
-            <h3 className="text-xl font-black text-red-600">Algo salió mal</h3>
-            <p className="text-xs text-gray-500 font-bold leading-relaxed px-2">{error}</p>
+            <h3 className="text-xl font-black text-red-600">Acceso Restringido</h3>
+            <p className="text-xs text-gray-500 font-bold leading-relaxed px-2">
+              {!isDomainAllowed
+                ? "Por motivos de seguridad bancaria (Whitelist), los pagos solo pueden procesarse desde el dominio autorizado."
+                : error}
+            </p>
 
             <div className="flex flex-col gap-2 pt-2">
-              <button
-                onClick={handleRetry}
-                className="w-full bg-mipana-darkBlue text-white py-3.5 rounded-2xl font-bold active:scale-95 transition-all"
-              >
-                Intentar con otra referencia
-              </button>
-              <button
-                onClick={() => setStep('amount')}
-                className="w-full text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                Cambiar monto
-              </button>
+              {!isDomainAllowed ? (
+                <a
+                  href="https://v1.mipana.app/wallet"
+                  className="w-full bg-mipana-orange text-white py-3.5 rounded-2xl font-bold active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  Ir a v1.mipana.app <ArrowRight size={18} />
+                </a>
+              ) : (
+                <>
+                  <button
+                    onClick={handleRetry}
+                    className="w-full bg-mipana-darkBlue text-white py-3.5 rounded-2xl font-bold active:scale-95 transition-all"
+                  >
+                    Intentar con otra referencia
+                  </button>
+                  <button
+                    onClick={() => setStep('amount')}
+                    className="w-full text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    Cambiar monto
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}
