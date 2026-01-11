@@ -171,6 +171,26 @@ export const authService = {
     });
 
     if (signUpError) {
+      // If error is related to sending email, it's possible the user WAS created (thanks to our trigger)
+      if (signUpError.message.toLowerCase().includes('email') || signUpError.message.includes('500')) {
+        console.warn("Email confirmation failed, but user might be created. Retrying login...");
+        const { data: retryLogin, error: retryError } = await supabase.auth.signInWithPassword({
+          email,
+          password: securePassword,
+        });
+        if (!retryError && retryLogin.user) {
+          const { data: profile } = await supabase.from('profiles').select('*').eq('id', retryLogin.user.id).single();
+          return {
+            id: retryLogin.user.id,
+            email: retryLogin.user.email || email,
+            phone: profile?.phone || phone,
+            name: profile?.name || name || email.split('@')[0],
+            role: profile?.role || UserRole.PASSENGER,
+            wallet: { balance: 0, transactions: [] }
+          } as User;
+        }
+      }
+
       if (signUpError.message.includes('already registered')) {
         throw new Error('Este número ya está en uso. Por favor verifica tus datos.');
       }
