@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   User, Phone, Mail, MapPin, Lock, Settings, HelpCircle,
   ChevronDown, Edit2, Check, AlertCircle, Save, X,
-  Clock, ChevronRight, Wallet, LogOut, ShieldCheck, WifiOff
+  Clock, ChevronRight, Wallet, LogOut, ShieldCheck, WifiOff, Star
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

@@ -20,6 +20,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSmartSubmit = async () => {
     if (!email.includes('@')) {

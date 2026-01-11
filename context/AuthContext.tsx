@@ -8,6 +8,7 @@ import logger from '../utils/logger';
 
 interface ExtendedAuthContextType extends AuthContextType {
   loginPassenger: (identifier: string, password: string) => Promise<void>;
+  refreshBalance: () => Promise<void>;
 }
 
 const AuthContext = createContext<ExtendedAuthContextType | undefined>(undefined);
@@ -18,22 +19,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Listen for Supabase Auth State Changes
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      logger.log(`Auth State Change: ${event}`, session);
+    logger.log("Initializing AuthProvider...");
 
-      if (session?.user) {
-        // Fetch full profile and update state
-        try {
-          const { data: profile } = await supabase
+    // Safety fallback: Unblock the UI after 5 seconds if auth doesn't resolve
+    const safetyTimeout = setTimeout(() => {
+      if (isLoading) {
+        logger.warn("Auth initialization timed out. Unblocking UI.");
+        setIsLoading(false);
+      }
+    }, 5000);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      logger.log(`Auth event: ${event}`, { userId: session?.user?.id });
+
+      try {
+        if (session?.user) {
+          const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
+          if (error) {
+            logger.error("Error fetching profile on auth change", error);
+          }
+
           if (profile) {
             setUser(profile as User);
           } else {
-            // Fallback for new users without profile yet
+            // Fallback for new users
             setUser({
               id: session.user.id,
               email: session.user.email || '',
@@ -41,17 +55,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
             } as User);
           }
-        } catch (e) {
-          console.error("Error fetching profile on auth change", e);
+        } else {
+          setUser(null);
         }
-      } else {
-        setUser(null);
+      } catch (e) {
+        logger.error("Critical error in onAuthStateChange", e);
+      } finally {
+        setIsLoading(false);
+        clearTimeout(safetyTimeout);
       }
-      setIsLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
+      clearTimeout(safetyTimeout);
     };
   }, []);
 
@@ -144,6 +161,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(rest);
   };
 
+  const refreshBalance = async () => {
+    if (!user?.id) return;
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      if (profile) {
+        // Merge newest profile with existing local user state (to keep temporary UI states if any)
+        setUser(prev => prev ? { ...prev, ...profile } : profile as User);
+        logger.log("Balance refreshed from Supabase", profile);
+      }
+    } catch (e) {
+      logger.error("Error refreshing balance", e);
+      throw e;
+    }
+  };
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-mipana-darkBlue"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white"></div></div>;
   }
@@ -162,6 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       removeSavedPlace,
       connectGoogle,
       disconnectGoogle,
+      refreshBalance,
       isLoading
     }}>
       {children}

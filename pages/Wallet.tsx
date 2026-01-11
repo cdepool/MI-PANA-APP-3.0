@@ -8,11 +8,12 @@ import Input from '../components/Input';
 import { getTariffs } from '../services/mockService';
 
 const Wallet: React.FC = () => {
-   const { user, walletTransaction } = useAuth();
+   const { user, walletTransaction, refreshBalance } = useAuth();
    const [showRecharge, setShowRecharge] = useState(false);
    const [amount, setAmount] = useState('');
    const [reference, setReference] = useState('');
    const [isLoading, setIsLoading] = useState(false);
+   const [isRefreshing, setIsRefreshing] = useState(false);
    const [activeTab, setActiveTab] = useState<'ALL' | 'DEPOSITS' | 'PAYMENTS'>('ALL');
 
    // Mock BCV Rate
@@ -56,6 +57,18 @@ const Wallet: React.FC = () => {
       }
    };
 
+   const handleRefresh = async () => {
+      setIsRefreshing(true);
+      try {
+         await refreshBalance();
+         toast.success("Saldo actualizado");
+      } catch (e) {
+         toast.error("Error al actualizar saldo");
+      } finally {
+         setIsRefreshing(false);
+      }
+   };
+
    const filteredTransactions = wallet.transactions.filter(t => {
       if (activeTab === 'DEPOSITS') return t.type === 'DEPOSIT';
       if (activeTab === 'PAYMENTS') return t.type === 'PAYMENT' || t.type === 'WITHDRAWAL';
@@ -81,7 +94,17 @@ const Wallet: React.FC = () => {
             <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-mipana-orange opacity-10 rounded-full blur-xl"></div>
 
             <div className="relative z-10">
-               <p className="text-sm text-gray-300 mb-1">Saldo Disponible</p>
+               <div className="flex justify-between items-start mb-1">
+                  <p className="text-sm text-gray-300">Saldo Disponible</p>
+                  <button
+                     onClick={handleRefresh}
+                     disabled={isRefreshing}
+                     className="p-1.5 hover:bg-white/10 rounded-full transition-all active:scale-95 disabled:opacity-50"
+                     title="Actualizar saldo"
+                  >
+                     <RefreshCw size={16} className={`${isRefreshing ? 'animate-spin' : ''}`} />
+                  </button>
+               </div>
                <div className="flex items-end gap-2 mb-4">
                   <h1 className="text-4xl font-bold tracking-tight">${wallet.balance.toFixed(2)}</h1>
                   <span className="text-lg text-gray-400 mb-1">USD</span>
