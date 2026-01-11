@@ -21,6 +21,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     logger.log("Initializing AuthProvider...");
 
+    const checkInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        logger.log("Initial session found", { userId: session.user.id });
+        await fetchAndSetUser(session.user);
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    checkInitialSession();
+
     // Safety fallback: Unblock the UI after 5 seconds if auth doesn't resolve
     const safetyTimeout = setTimeout(() => {
       if (isLoading) {
@@ -32,39 +44,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.log(`Auth event: ${event}`, { userId: session?.user?.id });
 
+      if (session?.user) {
+        await fetchAndSetUser(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setIsLoading(false);
+      }
+    });
+
+    async function fetchAndSetUser(supabaseUser: any) {
       try {
-        if (session?.user) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', supabaseUser.id)
+          .single();
 
-          if (error) {
-            logger.error("Error fetching profile on auth change", error);
-          }
+        if (error) {
+          logger.error("Error fetching profile", error);
+        }
 
-          if (profile) {
-            setUser(profile as User);
-          } else {
-            // Fallback for new users
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              role: UserRole.PASSENGER,
-              name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
-            } as User);
-          }
+        if (profile) {
+          setUser(profile as User);
         } else {
-          setUser(null);
+          // Fallback for new users or if profile sync failed
+          setUser({
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            role: UserRole.PASSENGER,
+            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0],
+          } as User);
         }
       } catch (e) {
-        logger.error("Critical error in onAuthStateChange", e);
+        logger.error("Critical error fetching user profile", e);
       } finally {
         setIsLoading(false);
         clearTimeout(safetyTimeout);
       }
-    });
+    }
 
     return () => {
       subscription.unsubscribe();

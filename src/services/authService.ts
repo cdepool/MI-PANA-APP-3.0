@@ -224,18 +224,36 @@ export const authService = {
     throw new Error('No se pudo completar el acceso rápido. Intenta de nuevo.');
   },
 
-  loginPassenger: async (identifier: string, _password: string) => {
-    // Mock passenger login
-    // In real app, verify credentials
-    const user: User = {
-      id: 'passenger-123',
-      name: 'Passenger User',
-      email: identifier.includes('@') ? identifier : `${identifier}@mipana.app`,
-      role: UserRole.PASSENGER,
-      phone: identifier.includes('@') ? '04140000000' : identifier,
-    };
-    authService.setSession(user);
-    return user;
+  loginPassenger: async (identifier: string, password: string) => {
+    // Real Supabase Authentication
+    const email = identifier.includes('@') ? identifier : `${identifier}@mipana.app`;
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      logger.error("Login failed", error);
+      throw error;
+    }
+
+    if (!data.user) {
+      throw new Error("No se pudo iniciar sesión");
+    }
+
+    // Fetch profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    return {
+      id: data.user.id,
+      email: data.user.email || email,
+      ...profile
+    } as User;
   },
 
   updateUser: async (userId: string, data: Partial<User>) => {

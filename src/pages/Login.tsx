@@ -15,7 +15,7 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [mode, setMode] = useState<'LOGIN' | 'REGISTER'>('REGISTER');
@@ -30,6 +30,8 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
       navigate('/');
     }
   }, [isAuthenticated, navigate]);
+
+  if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-mipana-darkBlue"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white"></div></div>;
 
   const handleImplicitLogin = async () => {
     if (phone.length < 10) {
