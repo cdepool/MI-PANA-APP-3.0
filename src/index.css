@@ -71,15 +71,10 @@ body {
   background-color: #f3f4f6;
 }
 
-/* App Container constraint */
+/* App Container */
 #root {
-  max-width: 480px;
-  /* Mobile width constraint */
-  margin: 0 auto;
   min-height: 100vh;
-  background-color: white;
   position: relative;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
   overflow-x: hidden;
 }
 
