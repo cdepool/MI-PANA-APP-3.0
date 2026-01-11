@@ -10,10 +10,19 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     minify: 'esbuild',
-
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html')
+      },
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-maps': ['@react-google-maps/api'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-charts': ['chart.js', 'react-chartjs-2', 'recharts'],
+          'vendor-ui': ['lucide-react', 'sonner'],
+        }
       }
     }
   },
