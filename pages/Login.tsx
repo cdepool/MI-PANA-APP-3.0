@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import { User, Lock, ArrowRight, AlertCircle, Car, Shield, MapPin, Star, Phone } from 'lucide-react';
+import { User, Lock, ArrowRight, AlertCircle, Car, Shield, MapPin, Star, Smartphone } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'sonner';
 import { authService } from '../services/authService';
@@ -125,16 +125,33 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
         {/* Welcome Text */}
         <div className="text-center mb-10">
           <h2 className="text-2xl font-bold mb-2 text-[#1A2E56] dark:text-white">¡Pídete un Pana!</h2>
-          <p className="text-slate-500 dark:text-slate-400">Inicia sesión para continuar</p>
+          <p className="text-slate-500 dark:text-slate-400">Ingresa tus datos para empezar</p>
         </div>
 
         {/* Form Section */}
         <div className="w-full space-y-6">
+          {/* Name Field */}
+          <div className="space-y-2">
+            <label className="block text-sm font-bold text-[#1A2E56] dark:text-slate-300 ml-1">Tu Nombre</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <User className="text-[#1A2E56]/40 dark:text-white/40" size={24} />
+              </div>
+              <input
+                className="block w-full pl-12 pr-4 py-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent transition-all outline-none font-medium text-lg"
+                placeholder="Nombre y Apellido"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <label className="block text-sm font-bold text-[#1A2E56] dark:text-slate-300 ml-1">Número telefónico</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Phone className="text-[#1A2E56]/40 dark:text-white/40" size={24} />
+                <Smartphone className="text-[#1A2E56]/40 dark:text-white/40" size={24} />
               </div>
               <input
                 className="block w-full pl-12 pr-4 py-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent transition-all outline-none font-medium text-lg"
@@ -155,13 +172,13 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              "Continuar"
+              "Empezar a pedir viajes 🚕"
             )}
           </button>
         </div>
 
-        {/* Register Link (Optional based on design, user kept it in template) */}
-        <div className="mt-8 text-center">
+        {/* Register Link Optional Hidden as per request of direct entry */}
+        <div className="mt-8 text-center opacity-0 pointer-events-none">
           <p className="text-slate-500 dark:text-slate-400 text-sm">
             ¿No tienes cuenta?
             <span className="text-[#1A2E56] dark:text-[#FF6B00] font-bold cursor-pointer ml-1" onClick={onNavigateRegister}>Regístrate aquí</span>

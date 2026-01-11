@@ -133,7 +133,6 @@ export const authService = {
 
   registerOrLoginImplicit: async (email: string, password?: string, name?: string, phone?: string) => {
     // Use provided password or fallback to a more "hidden" default for this specific flow
-    // IMPORTANT: This should be replaced by OTP verification for production
     const securePassword = password || `mp_${email.split('@')[0]}_pana`;
 
     // 1. Try Login first
@@ -149,7 +148,7 @@ export const authService = {
       return {
         id: loginData.user.id,
         email: loginData.user.email || email,
-        phone: profile?.phone,
+        phone: profile?.phone || phone,
         name: profile?.name || name || email.split('@')[0],
         role: profile?.role || UserRole.PASSENGER,
         avatarUrl: profile?.avatarUrl,
@@ -158,21 +157,22 @@ export const authService = {
     }
 
     // 2. If Login failed, try Registering
-    // We assume the error was "Invalid login credentials", implying user might not exist.
+    // We assume the error was "Invalid login credentials" or user doesn't exist
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
-      password,
+      password: securePassword,
       options: {
         data: {
           name: name || email.split('@')[0],
           role: 'PASSENGER',
+          phone: phone
         }
       }
     });
 
     if (signUpError) {
       if (signUpError.message.includes('already registered')) {
-        throw new Error('El usuario ya existe pero la contraseña es incorrecta.');
+        throw new Error('Este número ya está en uso. Por favor verifica tus datos.');
       }
       throw signUpError;
     }
@@ -184,12 +184,12 @@ export const authService = {
         email: email,
         name: name || email.split('@')[0],
         role: 'PASSENGER',
-        phone: phone, // Save phone if provided
+        phone: phone,
         created_at: new Date().toISOString()
       };
 
-      // Try Insert Profile
-      await supabase.from('profiles').insert(newProfile).select();
+      // Try Insert Profile (Internal DB)
+      await supabase.from('profiles').upsert(newProfile);
 
       return {
         id: newProfile.id,
@@ -201,7 +201,7 @@ export const authService = {
       } as User;
     }
 
-    throw new Error('No se pudo iniciar sesión ni registrar.');
+    throw new Error('No se pudo completar el acceso rápido. Intenta de nuevo.');
   },
 
   loginPassenger: async (identifier: string, _password: string) => {
