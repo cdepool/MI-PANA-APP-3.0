@@ -1,46 +1,35 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import { User, Lock, ArrowRight, AlertCircle, Car, Shield, MapPin, Star, Smartphone } from 'lucide-react';
+import { User, Lock, ArrowRight, AlertCircle, Car, Shield, MapPin, Star, Smartphone, LogIn, UserPlus } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'sonner';
 import { authService } from '../services/authService';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginProps {
   onNavigateRegister: () => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
-  const { login, loginPassenger } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  // Auto-detect role based on subdomain or path
-  const getInitialRole = (): UserRole => {
-    const hostname = window.location.hostname;
-    const pathname = window.location.pathname;
-
-    if (hostname.includes('admin') || pathname.startsWith('/admin')) {
-      return UserRole.ADMIN;
-    }
-    if (hostname.includes('driver') || hostname.includes('conductor') || pathname.startsWith('/driver')) {
-      return UserRole.DRIVER;
-    }
-    // Default to PASSENGER for v1.mipana.app and main localhost
-    return UserRole.PASSENGER;
-  };
-
-  const [role, setRole] = useState<UserRole>(getInitialRole());
+  const [mode, setMode] = useState<'LOGIN' | 'REGISTER'>('REGISTER');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Effect to handle browser navigation (optional, if using client-side routing for sub-paths)
-  React.useEffect(() => {
-    setRole(getInitialRole());
-  }, []);
+  // Auto-redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleImplicitLogin = async () => {
     if (phone.length < 10) {
@@ -48,15 +37,17 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
       return;
     }
 
+    if (mode === 'REGISTER' && !name) {
+      toast.error("Por favor ingresa tu nombre");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // "Zero Friction" Logic
-      // Since we only have a phone, we derive a temporary email for Supabase Auth
       const derivedEmail = `${phone}@mipana.app`;
       await authService.registerOrLoginImplicit(derivedEmail, undefined, name || 'Usuario Pana', phone);
-
-      toast.success("¡Vamos! 🚕");
-      // Navigation happens automatically via PrivateRoute in App.tsx
+      toast.success(mode === 'REGISTER' ? "¡Registro exitoso! 🚕" : "¡Bienvenido de vuelta! 🚕");
+      // navigate('/') will be handled by useEffect [isAuthenticated]
     } catch (err: any) {
       setError(err.message);
       toast.error(err.message || 'Error al ingresar');
@@ -65,96 +56,72 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
     }
   };
 
-  // Legacy handleLogin removed/ignored for Passenger
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Admin/Driver logic remains if needed later
-  };
-
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setIsLoading(true);
-      try {
-        // Fetch user info using the access token
-        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-        }).then(res => res.json());
-
-        // Log in the user with the Google profile and access token
-        login(UserRole.PASSENGER, {
-          email: userInfo.email,
-          name: `${userInfo.given_name} ${userInfo.family_name}`,
-          googleAccessToken: tokenResponse.access_token // Store token for Calendar/Tasks
-        });
-
-        toast.success(`Bienvenido, ${userInfo.given_name}!`);
-      } catch (error) {
-        console.error(error);
-        toast.error("Error al iniciar sesión con Google");
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    onError: () => {
-      toast.error("Falló el inicio de sesión con Google");
-    },
-    scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/tasks.readonly'
-  });
-
-  // No more "if (!role) return ..." block. DIRECT ACCESS.
-
   return (
     <div className="min-h-[100dvh] bg-white dark:bg-[#0F172A] text-[#1A2E56] dark:text-slate-100 flex flex-col justify-between p-6">
-
-      {/* Spacer */}
       <div className="h-4"></div>
 
       <main className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full animate-fade-in">
-
         {/* Logo Section */}
-        <div className="mb-8 flex flex-col items-center animate-slide-up">
-          <div className="relative mb-4">
-            <img
-              src="/login-logo.png"
-              alt="Mi Pana Logo"
-              className="w-40 h-40 object-contain drop-shadow-xl"
-            />
-          </div>
+        <div className="mb-6 flex flex-col items-center animate-slide-up">
+          <img src="/login-logo.png" alt="Mi Pana Logo" className="w-32 h-32 object-contain drop-shadow-xl" />
+        </div>
+
+        {/* Mode Toggle Tabs */}
+        <div className="flex w-full bg-slate-100 dark:bg-slate-800 rounded-2xl p-1.5 mb-8 shadow-inner">
+          <button
+            onClick={() => setMode('REGISTER')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${mode === 'REGISTER' ? 'bg-white dark:bg-slate-700 shadow-md text-[#FF6B00]' : 'text-slate-400'}`}
+          >
+            <UserPlus size={18} />
+            Registro
+          </button>
+          <button
+            onClick={() => setMode('LOGIN')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${mode === 'LOGIN' ? 'bg-white dark:bg-slate-700 shadow-md text-[#FF6B00]' : 'text-slate-400'}`}
+          >
+            <LogIn size={18} />
+            Entrar
+          </button>
         </div>
 
         {/* Welcome Text */}
-        <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold mb-2 text-[#1A2E56] dark:text-white">¡Pídete un Pana!</h2>
-          <p className="text-slate-500 dark:text-slate-400">Ingresa tus datos para empezar</p>
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold mb-1 text-[#1A2E56] dark:text-white">
+            {mode === 'REGISTER' ? '¡Quiero ser Pana!' : '¡Hola de nuevo!'}
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
+            {mode === 'REGISTER' ? 'Únete a la mejor comunidad de viajes' : 'Ingresa tu número para continuar'}
+          </p>
         </div>
 
         {/* Form Section */}
-        <div className="w-full space-y-6">
-          {/* Name Field */}
-          <div className="space-y-2">
-            <label className="block text-sm font-bold text-[#1A2E56] dark:text-slate-300 ml-1">Tu Nombre</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <User className="text-[#1A2E56]/40 dark:text-white/40" size={24} />
+        <div className="w-full space-y-4">
+          {mode === 'REGISTER' && (
+            <div className="space-y-1 animation-slide-down">
+              <label className="block text-xs font-bold text-[#1A2E56]/60 dark:text-slate-400 ml-1 uppercase">Tu Nombre</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <User className="text-[#1A2E56]/40 dark:text-white/40" size={20} />
+                </div>
+                <input
+                  className="block w-full pl-12 pr-4 py-3.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] outline-none font-medium text-lg transition-all"
+                  placeholder="Ej: Juan Pérez"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
-              <input
-                className="block w-full pl-12 pr-4 py-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent transition-all outline-none font-medium text-lg"
-                placeholder="Nombre y Apellido"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
             </div>
-          </div>
+          )}
 
-          <div className="space-y-2">
-            <label className="block text-sm font-bold text-[#1A2E56] dark:text-slate-300 ml-1">Número telefónico</label>
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-[#1A2E56]/60 dark:text-slate-400 ml-1 uppercase">Teléfono (WhatsApp)</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Smartphone className="text-[#1A2E56]/40 dark:text-white/40" size={24} />
+                <Smartphone className="text-[#1A2E56]/40 dark:text-white/40" size={20} />
               </div>
               <input
-                className="block w-full pl-12 pr-4 py-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent transition-all outline-none font-medium text-lg"
+                className="block w-full pl-12 pr-4 py-3.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] outline-none font-medium text-lg transition-all"
                 placeholder="0412 000 0000"
                 type="tel"
                 value={phone}
@@ -167,31 +134,20 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
           <button
             onClick={handleImplicitLogin}
             disabled={isLoading}
-            className="w-full bg-[#FF6B00] hover:bg-[#e66000] active:scale-[0.98] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#FF6B00]/20 transition-all flex items-center justify-center text-lg disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full bg-[#FF6B00] hover:bg-[#e66000] active:scale-[0.98] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#FF6B00]/20 transition-all flex items-center justify-center text-lg disabled:opacity-70 disabled:cursor-not-allowed mt-4"
           >
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              "Empezar a pedir viajes 🚕"
+              mode === 'REGISTER' ? "Comenzar Registro" : "Acceso Directo"
             )}
           </button>
         </div>
-
-        {/* Register Link Optional Hidden as per request of direct entry */}
-        <div className="mt-8 text-center opacity-0 pointer-events-none">
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
-            ¿No tienes cuenta?
-            <span className="text-[#1A2E56] dark:text-[#FF6B00] font-bold cursor-pointer ml-1" onClick={onNavigateRegister}>Regístrate aquí</span>
-          </p>
-        </div>
-
       </main>
 
       <footer className="mt-auto pt-8 pb-4 text-center">
-        {/* Native Home Indicator simulation */}
         <div className="mt-6 mx-auto w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
       </footer>
-
     </div>
   );
 };
