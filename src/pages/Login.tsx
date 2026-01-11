@@ -9,6 +9,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'sonner';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
+import { isDriverDomain } from '../utils/domain';
 
 interface LoginProps {
   onNavigateRegister: () => void;
@@ -86,13 +87,18 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
           </button>
         </div>
 
+
         {/* Welcome Text */}
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold mb-1 text-[#1A2E56] dark:text-white">
-            {mode === 'REGISTER' ? '¡Quiero ser Pana!' : '¡Hola de nuevo!'}
+            {isDriverDomain()
+              ? (mode === 'REGISTER' ? '¡Únete como Conductor!' : 'Panel de Conductor')
+              : (mode === 'REGISTER' ? '¡Quiero ser Pana!' : '¡Hola de nuevo!')}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
-            {mode === 'REGISTER' ? 'Únete a la mejor comunidad de viajes' : 'Ingresa tu número para continuar'}
+            {isDriverDomain()
+              ? (mode === 'REGISTER' ? 'Regístrate para empezar a generar' : 'Ingresa para gestionar tu jornada')
+              : (mode === 'REGISTER' ? 'Únete a la mejor comunidad de viajes' : 'Ingresa tu número para continuar')}
           </p>
         </div>
 

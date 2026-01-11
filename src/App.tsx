@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
+import { isDriverDomain, isAdminDomain } from './utils/domain';
 
 // Contexts
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -27,6 +28,9 @@ const AppRoutes = () => {
   const { effectiveRole } = useAuth();
   const navigate = useNavigate();
 
+  const isDriver = isDriverDomain();
+  const isAdmin = isAdminDomain();
+
   return (
     <SimpleErrorBoundary>
       <Suspense fallback={
@@ -38,76 +42,116 @@ const AppRoutes = () => {
         </div>
       }>
         <Routes>
-          <Route path="/login" element={<Login onNavigateRegister={() => navigate('/register')} />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
+          {/* Rutas Comunes */}
           <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/register" element={<Register onNavigateHome={() => navigate('/')} onNavigateLogin={() => navigate('/login')} />} />
 
-          <Route path="/" element={
-            <PrivateRoute>
-              {effectiveRole === 'ADMIN' ? <Navigate to="/admin" /> :
-                effectiveRole === 'DRIVER' ? <Navigate to="/driver" /> :
-                  <Navigate to="/passenger" />}
-            </PrivateRoute>
-          } />
+          {/* CONFIGURACIÓN CONDUCTORES (chofer.mipana.app) */}
+          {isDriver && (
+            <>
+              <Route path="/login" element={<Login onNavigateRegister={() => navigate('/register')} />} />
+              <Route path="/register" element={<Register onNavigateHome={() => navigate('/')} onNavigateLogin={() => navigate('/login')} />} />
+              <Route path="/" element={
+                <PrivateRoute role="DRIVER">
+                  <Layout onNavigate={navigate}>
+                    <DriverHome />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="*" element={<Navigate to="/" />} />
+            </>
+          )}
 
-          <Route path="/passenger" element={
-            <PrivateRoute role="PASSENGER">
-              <Layout onNavigate={navigate}>
-                <PassengerHome onNavigateWallet={() => navigate('/wallet')} />
-              </Layout>
-            </PrivateRoute>
-          } />
+          {/* CONFIGURACIÓN ADMIN (admin.mipana.app) */}
+          {isAdmin && (
+            <>
+              <Route path="/login" element={<AdminLogin />} />
+              <Route path="/" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <ProfessionalAdminDashboard />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/admin-login" element={<Navigate to="/login" />} />
+              <Route path="/admin" element={<Navigate to="/" />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </>
+          )}
 
-          <Route path="/driver" element={
-            <PrivateRoute role="DRIVER">
-              <Layout onNavigate={navigate}>
-                <DriverHome />
-              </Layout>
-            </PrivateRoute>
-          } />
+          {/* CONFIGURACIÓN PASAJEROS / DEFAULT (v1.mipana.app) */}
+          {!isDriver && !isAdmin && (
+            <>
+              <Route path="/login" element={<Login onNavigateRegister={() => navigate('/register')} />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/register" element={<Register onNavigateHome={() => navigate('/')} onNavigateLogin={() => navigate('/login')} />} />
 
-          <Route path="/admin" element={
-            <PrivateRoute role="ADMIN">
-              <Layout onNavigate={navigate}>
-                <ProfessionalAdminDashboard />
-              </Layout>
-            </PrivateRoute>
-          } />
+              <Route path="/" element={
+                <PrivateRoute>
+                  {effectiveRole === 'ADMIN' ? <Navigate to="/admin" /> :
+                    effectiveRole === 'DRIVER' ? <Navigate to="/driver" /> :
+                      <Navigate to="/passenger" />}
+                </PrivateRoute>
+              } />
 
-          <Route path="/wallet" element={
-            <PrivateRoute>
-              <Layout onNavigate={navigate}>
-                <Wallet />
-              </Layout>
-            </PrivateRoute>
-          } />
+              <Route path="/passenger" element={
+                <PrivateRoute role="PASSENGER">
+                  <Layout onNavigate={navigate}>
+                    <PassengerHome onNavigateWallet={() => navigate('/wallet')} />
+                  </Layout>
+                </PrivateRoute>
+              } />
 
-          <Route path="/trips" element={
-            <PrivateRoute>
-              <Layout onNavigate={navigate}>
-                <RideHistory />
-              </Layout>
-            </PrivateRoute>
-          } />
+              <Route path="/driver" element={
+                <PrivateRoute role="DRIVER">
+                  <Layout onNavigate={navigate}>
+                    <DriverHome />
+                  </Layout>
+                </PrivateRoute>
+              } />
 
-          <Route path="/profile" element={
-            <PrivateRoute>
-              <Layout onNavigate={navigate}>
-                <UserProfile />
-              </Layout>
-            </PrivateRoute>
-          } />
+              <Route path="/admin" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <ProfessionalAdminDashboard />
+                  </Layout>
+                </PrivateRoute>
+              } />
 
-          <Route path="/schedule" element={
-            <PrivateRoute>
-              <Layout onNavigate={navigate}>
-                <ScheduleRides />
-              </Layout>
-            </PrivateRoute>
-          } />
+              <Route path="/wallet" element={
+                <PrivateRoute>
+                  <Layout onNavigate={navigate}>
+                    <Wallet />
+                  </Layout>
+                </PrivateRoute>
+              } />
 
-          <Route path="*" element={<Navigate to="/" />} />
+              <Route path="/trips" element={
+                <PrivateRoute>
+                  <Layout onNavigate={navigate}>
+                    <RideHistory />
+                  </Layout>
+                </PrivateRoute>
+              } />
+
+              <Route path="/profile" element={
+                <PrivateRoute>
+                  <Layout onNavigate={navigate}>
+                    <UserProfile />
+                  </Layout>
+                </PrivateRoute>
+              } />
+
+              <Route path="/schedule" element={
+                <PrivateRoute>
+                  <Layout onNavigate={navigate}>
+                    <ScheduleRides />
+                  </Layout>
+                </PrivateRoute>
+              } />
+
+              <Route path="*" element={<Navigate to="/" />} />
+            </>
+          )}
         </Routes>
       </Suspense>
     </SimpleErrorBoundary>
