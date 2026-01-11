@@ -149,12 +149,6 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 
       <footer className="mt-auto pt-8 pb-4 text-center">
         <div className="mt-6 mx-auto w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mb-4"></div>
-        <button
-          onClick={() => navigate('/admin-login')}
-          className="text-[10px] text-slate-300 dark:text-slate-600 hover:text-[#FF6B00] transition-colors font-medium uppercase tracking-widest"
-        >
-          Acceso Administrativo
-        </button>
       </footer>
     </div>
   );
