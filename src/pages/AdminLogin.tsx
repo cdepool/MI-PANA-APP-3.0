@@ -15,36 +15,50 @@ const AdminLogin: React.FC = () => {
     const handleAdminLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        toast.dismiss(); // Clear previous toasts
 
         try {
+            toast.loading("Verificando credenciales...");
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password
             });
 
             if (error) throw error;
+            toast.dismiss();
+            toast.loading("Datos correctos. Verificando permisos...");
 
             if (data.user) {
                 // Verify role before redirecting
-                const { data: profile } = await supabase
+                const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('role, admin_role')
                     .eq('id', data.user.id)
                     .single();
+
+                if (profileError) {
+                    console.error('Error fetching profile:', profileError);
+                    // attempt to continue if role is in metadata? No, safe to fail.
+                    throw new Error('No se pudo verificar el perfil del administrador.');
+                }
 
                 if (profile?.role !== 'ADMIN' && !profile?.admin_role) {
                     await supabase.auth.signOut();
                     throw new Error('Esta cuenta no tiene privilegios administrativos.');
                 }
 
+                toast.dismiss();
                 toast.success("Bienvenido al Panel Corporativo");
-                navigate('/admin');
+                // Small delay to let toast show
+                setTimeout(() => navigate('/admin'), 500);
             }
         } catch (err: any) {
+            console.error('Login Error:', err);
+            toast.dismiss();
             toast.error(err.message || 'Credenciales inválidas');
-        } finally {
-            setIsLoading(false);
+            setIsLoading(false); // Stop spinner only on error
         }
+        // removing finally block to keep spinner during redirect
     };
 
     return (
