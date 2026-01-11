@@ -30,7 +30,7 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={<Login onNavigateRegister={() => navigate('/onboarding')} />} />
+      <Route path="/login" element={<Login onNavigateRegister={() => navigate('/register')} />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/register" element={<Register onNavigateHome={() => navigate('/')} onNavigateLogin={() => navigate('/login')} />} />
 

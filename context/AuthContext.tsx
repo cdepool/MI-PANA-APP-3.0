@@ -16,20 +16,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load session on mount & Listen for Auth Changes
+  // Listen for Supabase Auth State Changes
   useEffect(() => {
-    // 1. Initial Load from LocalStorage
-    const storedUser = authService.getSession();
-    if (storedUser) {
-      setUser(storedUser);
-    }
-    setIsLoading(false);
-
-    // 2. Listen for Supabase Auth State Changes (Google Redirects, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.log(`Auth State Change: ${event}`, session);
 
-      if (event === 'SIGNED_IN' && session) {
+      if (session?.user) {
         // Fetch full profile and update state
         try {
           const { data: profile } = await supabase
@@ -39,17 +31,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .single();
 
           if (profile) {
-            const fullUser = profile as User;
-            setUser(fullUser);
-            authService.setSession(fullUser);
+            setUser(profile as User);
+          } else {
+            // Fallback for new users without profile yet
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              role: UserRole.PASSENGER,
+              name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
+            } as User);
           }
         } catch (e) {
           console.error("Error fetching profile on auth change", e);
         }
-      } else if (event === 'SIGNED_OUT') {
+      } else {
         setUser(null);
-        localStorage.removeItem('mipana_session');
       }
+      setIsLoading(false);
     });
 
     return () => {
@@ -58,13 +56,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = (role: UserRole, userData?: Partial<User>) => {
-    // Legacy/Mock login for Driver/Admin
+    // Legacy/Mock login for Driver/Admin - Should be replaced by real auth eventually
     const baseUser = mockLoginUser(role);
     const finalUser = userData ? { ...baseUser, ...userData } : baseUser;
-
     setUser(finalUser);
-    // Persist session for ALL roles (Driver, Admin, Passenger)
-    authService.setSession(finalUser);
   };
 
   const loginPassenger = async (identifier: string, password: string) => {
@@ -108,33 +103,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await authService.logout();
     setUser(null);
-    authService.logout();
   };
 
   const addSavedPlace = (place: SavedPlace) => {
     setUser((currentUser) => {
       if (!currentUser) return null;
-      const updatedUser = {
+      return {
         ...currentUser,
         savedPlaces: [...(currentUser.savedPlaces || []), place]
       };
-      // Update local storage if it's a real session
-      authService.setSession(updatedUser);
-      return updatedUser;
     });
   };
 
   const removeSavedPlace = (id: string) => {
     setUser((currentUser) => {
       if (!currentUser) return null;
-      const updatedUser = {
+      return {
         ...currentUser,
         savedPlaces: (currentUser.savedPlaces || []).filter((p) => p.id !== id)
       };
-      authService.setSession(updatedUser);
-      return updatedUser;
     });
   };
 
@@ -152,7 +142,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     const { googleProfile, ...rest } = user;
     setUser(rest);
-    authService.setSession(rest);
   };
 
   if (isLoading) {

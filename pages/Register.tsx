@@ -38,10 +38,11 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
     setIsLoading(true);
     try {
       // Call Smart Service (Login or Signup)
-      const user = await authService.registerOrLoginImplicit(email.trim(), password, name, phone);
+      await authService.registerOrLoginImplicit(email.trim(), password, name, phone);
 
-      login(user.role as UserRole, user);
-      toast.success(user.role === 'ADMIN' ? `¡Bienvenido Admin ${user.name}!` : `¡Bienvenido ${user.name}!`);
+      // No need to manually call login() anymore, 
+      // AuthContext's onAuthStateChange will handle the state update.
+      toast.success("¡Acceso exitoso!");
       onNavigateHome();
 
     } catch (err: any) {

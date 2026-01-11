@@ -50,11 +50,13 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 
     setIsLoading(true);
     try {
-      // "Zero Friction" Logic (Client Side for now, soon to be Edge Function)
-      const user = await authService.registerOrLoginImplicit(name, phone);
-      login(UserRole.PASSENGER, user);
+      // "Zero Friction" Logic
+      // Since we only have a phone, we derive a temporary email for Supabase Auth
+      const derivedEmail = `${phone}@mipana.app`;
+      await authService.registerOrLoginImplicit(derivedEmail, undefined, name || 'Usuario Pana', phone);
+
       toast.success("¡Vamos! 🚕");
-      // Navigation is automatic via AuthContext or can be forced if needed
+      // Navigation happens automatically via PrivateRoute in App.tsx
     } catch (err: any) {
       setError(err.message);
       toast.error(err.message || 'Error al ingresar');

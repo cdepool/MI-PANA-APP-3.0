@@ -2,9 +2,7 @@ import { User, UserRole, RegistrationData, TransactionType } from '../types';
 import { supabase } from './supabaseClient';
 import logger from '../utils/logger';
 
-// LocalStorage Persistence
-const SESSION_KEY = 'mipana_session';
-
+// LocalStorage Persistence - No longer needed, kept for TS compatibility if imported elsewhere
 export interface StoredUser extends User {
   created_at?: string;
   verified?: boolean;
@@ -27,7 +25,6 @@ export const authService = {
     return { data, error };
   },
 
-  // 2. Update Profile Phone (Data Collection)
   updateUserProfilePhone: async (userId: string, phone: string) => {
     const { data, error } = await supabase
       .from('profiles')
@@ -37,13 +34,6 @@ export const authService = {
       .single();
 
     if (error) throw error;
-
-    // Update local session if needed
-    const session = authService.getSession();
-    if (session && session.id === userId) {
-      authService.setSession({ ...session, phone });
-    }
-
     return data;
   },
 
@@ -64,25 +54,18 @@ export const authService = {
     }
   },
 
-  // --- Session Management (Helper Utils) ---
+  // --- Session Management (Legacy shells, do not use) ---
 
   getSession: (): User | null => {
-    try {
-      const json = localStorage.getItem(SESSION_KEY);
-      if (json) return JSON.parse(json);
-    } catch (e) {
-      localStorage.removeItem(SESSION_KEY);
-    }
     return null;
   },
 
-  setSession: (user: User) => {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  setSession: (_user: User) => {
+    // Session is handled by Supabase natively
   },
 
   logout: async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem(SESSION_KEY);
   },
 
   // --- Legacy / Helper Methods required by UI types (Mocked/Simplified) ---
@@ -97,7 +80,6 @@ export const authService = {
     return { data, error };
   },
 
-  // 4. Wallet Transactions (Preserved)
   processTransaction: async (userId: string, amount: number, type: TransactionType, description: string, reference?: string): Promise<User> => {
     try {
       const { data, error } = await supabase.functions.invoke('process-transaction', {
@@ -107,19 +89,13 @@ export const authService = {
       if (error) throw new Error(error.message || 'Transaction failed');
       if (!data?.success || !data?.profile) throw new Error('Transaction processing failed');
 
-      const updatedUser = data.profile as User;
-      const session = authService.getSession();
-      if (session && session.id === userId) {
-        authService.setSession(updatedUser);
-      }
-      return updatedUser;
+      return data.profile as User;
     } catch (error) {
       logger.error('Transaction processing error:', error);
       throw error;
     }
   },
 
-  // 5. Toggle Favorite Driver (Preserved)
   toggleFavoriteDriver: async (userId: string, driverId: string): Promise<User> => {
     const { data: user, error: fetchError } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (fetchError || !user) throw new Error('Usuario no encontrado');
@@ -139,9 +115,6 @@ export const authService = {
       .select().single();
 
     if (updateError) throw new Error(updateError.message);
-    const session = authService.getSession();
-    if (session && session.id === userId) authService.setSession(updated as User);
-
     return updated as User;
   },
 
@@ -158,30 +131,30 @@ export const authService = {
     return authService.signInWithGoogle();
   },
 
-  // Smart Auth: Try Login, if fails (and not specific error), Try Register
-  registerOrLoginImplicit: async (email: string, password: string = '123456', name?: string, phone?: string) => {
+  registerOrLoginImplicit: async (email: string, password?: string, name?: string, phone?: string) => {
+    // Use provided password or fallback to a more "hidden" default for this specific flow
+    // IMPORTANT: This should be replaced by OTP verification for production
+    const securePassword = password || `mp_${email.split('@')[0]}_pana`;
+
     // 1. Try Login first
     const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
       email,
-      password,
+      password: securePassword,
     });
 
     if (!loginError && loginData.user) {
       // ✅ Login Successful
-      // Fetch profile to return full user object
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', loginData.user.id).single();
 
-      const user: User = {
+      return {
         id: loginData.user.id,
         email: loginData.user.email || email,
         phone: profile?.phone,
         name: profile?.name || name || email.split('@')[0],
         role: profile?.role || UserRole.PASSENGER,
         avatarUrl: profile?.avatarUrl,
-        wallet: { balance: 0, transactions: [] } // Mock wallet for now
-      };
-      authService.setSession(user);
-      return user;
+        wallet: { balance: 0, transactions: [] }
+      } as User;
     }
 
     // 2. If Login failed, try Registering
@@ -211,22 +184,21 @@ export const authService = {
         email: email,
         name: name || email.split('@')[0],
         role: 'PASSENGER',
+        phone: phone, // Save phone if provided
         created_at: new Date().toISOString()
       };
 
       // Try Insert Profile
       await supabase.from('profiles').insert(newProfile).select();
 
-      const user: User = {
+      return {
         id: newProfile.id,
         email: newProfile.email,
-        phone: undefined,
+        phone: phone,
         name: newProfile.name,
         role: UserRole.PASSENGER,
         wallet: { balance: 0, transactions: [] }
-      };
-      authService.setSession(user);
-      return user;
+      } as User;
     }
 
     throw new Error('No se pudo iniciar sesión ni registrar.');
@@ -255,17 +227,10 @@ export const authService = {
       .single();
 
     if (error) {
-      console.warn("Update profile failed (maybe loose schema), falling back to local update");
-      const current = authService.getSession();
-      if (current && current.id === userId) {
-        const newSession = { ...current, ...data };
-        authService.setSession(newSession);
-        return newSession;
-      }
+      console.warn("Update profile failed", error);
       throw error;
     }
 
-    authService.setSession(updated as User);
     return updated as User;
   },
 };
