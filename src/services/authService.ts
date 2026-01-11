@@ -145,6 +145,13 @@ export const authService = {
       // ✅ Login Successful
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', loginData.user.id).single();
 
+      // SECURITY BLOCK: Admins cannot use implicit login
+      if (profile?.role === 'ADMIN' || profile?.admin_role) {
+        // Sign out immediately
+        await supabase.auth.signOut();
+        throw new Error('Por seguridad, los administradores deben usar el Acceso Corporativo.');
+      }
+
       return {
         id: loginData.user.id,
         email: loginData.user.email || email,

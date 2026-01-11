@@ -1,0 +1,43 @@
+
+> mi-pana-app-2.0-|-modo-ia@0.0.0 build
+> vite build
+
+vite v7.3.0 building client environment for production...
+transforming...
+✓ 2448 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/registerSW.js                                    0.13 kB
+dist/manifest.webmanifest                             0.38 kB
+dist/index.html                                       1.71 kB │ gzip:   0.87 kB
+dist/assets/main-BuTuqyDw.css                        75.08 kB │ gzip:  12.40 kB
+dist/assets/vendor-maps-Bn5bXaU9.js                   0.51 kB │ gzip:   0.34 kB
+dist/assets/Input-jI4V3wDT.js                         0.80 kB │ gzip:   0.44 kB
+dist/assets/Button-DloY7_J8.js                        1.16 kB │ gzip:   0.61 kB
+dist/assets/tripService-DuFv0dqL.js                   1.30 kB │ gzip:   0.68 kB
+dist/assets/notificationService-kuZ6QInU.js           2.28 kB │ gzip:   1.15 kB
+dist/assets/Register-B3TJh7Bx.js                      3.05 kB │ gzip:   1.27 kB
+dist/assets/Sidebar-C6Y4n32r.js                       3.50 kB │ gzip:   1.10 kB
+dist/assets/RideHistory-BbJfoTyN.js                   3.62 kB │ gzip:   1.30 kB
+dist/assets/Login-B9jmZ29x.js                         4.96 kB │ gzip:   1.80 kB
+dist/assets/Wallet-D0NrcTme.js                        5.67 kB │ gzip:   2.03 kB
+dist/assets/Onboarding-B7cQYdC6.js                    7.54 kB │ gzip:   2.67 kB
+dist/assets/DriverHome-c8x19J-Z.js                    8.61 kB │ gzip:   2.63 kB
+dist/assets/ScheduleRides-DX8wj0hi.js                 9.33 kB │ gzip:   2.76 kB
+dist/assets/ProfessionalAdminDashboard-B-fnPQRN.js   10.12 kB │ gzip:   3.17 kB
+dist/assets/WalletRecharge-B8fP8K1t.js               10.77 kB │ gzip:   3.51 kB
+dist/assets/PassengerHome-DFatHc0F.js                22.95 kB │ gzip:   6.84 kB
+dist/assets/vendor-react-DVjLOBdU.js                 47.47 kB │ gzip:  16.84 kB
+dist/assets/vendor-ui-sMR--psY.js                    47.78 kB │ gzip:  14.78 kB
+dist/assets/UserProfile-D1uCF3a1.js                 102.25 kB │ gzip:  25.68 kB
+dist/assets/vendor-supabase-DObIQ5fL.js             174.40 kB │ gzip:  45.50 kB
+dist/assets/main-a_GR99me.js                        205.37 kB │ gzip:  65.84 kB
+dist/assets/vendor-charts-Crf7aVe4.js               353.52 kB │ gzip: 104.88 kB
+✓ built in 2.90s
+
+PWA v1.1.0
+mode      generateSW
+precache  48 entries (4549.59 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-d4f8be5c.js

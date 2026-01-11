@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { X } from 'lucide-react';
-import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { AppView } from '../types';
 import ProfessionalHeader from './ProfessionalHeader';
 import DemoViewBanner from './admin/DemoViewBanner';
+
+// Lazy load Sidebar to reduce initial bundle size
+const Sidebar = lazy(() => import('./Sidebar'));
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -49,12 +51,14 @@ const Layout: React.FC<LayoutProps> = ({ children, onNavigate }) => {
               <X size={24} />
             </button>
           </div>
-          <Sidebar
-            isOpen={isMobileSidebarOpen}
-            onClose={() => setIsMobileSidebarOpen(false)}
-            onNavigate={handleNavigate}
-            isDesktop={false}
-          />
+          <Suspense fallback={<div className="p-4 text-center text-gray-500">Cargando menú...</div>}>
+            <Sidebar
+              isOpen={isMobileSidebarOpen}
+              onClose={() => setIsMobileSidebarOpen(false)}
+              onNavigate={handleNavigate}
+              isDesktop={false}
+            />
+          </Suspense>
         </aside>
 
         <div className="max-w-7xl mx-auto p-4 md:p-6 w-full overflow-x-hidden">

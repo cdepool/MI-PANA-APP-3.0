@@ -12,6 +12,7 @@ const Wallet = lazy(() => import('./pages/Wallet'));
 const RideHistory = lazy(() => import('./pages/RideHistory'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
 const ScheduleRides = lazy(() => import('./pages/ScheduleRides'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 
 import Layout from './components/Layout';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -42,6 +43,7 @@ const AppRoutes = () => {
     }>
       <Routes>
         <Route path="/login" element={<Login onNavigateRegister={() => navigate('/register')} />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/register" element={<Register onNavigateHome={() => navigate('/')} onNavigateLogin={() => navigate('/login')} />} />
 
