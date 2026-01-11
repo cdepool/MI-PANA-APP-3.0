@@ -31,10 +31,11 @@ serve(async (req) => {
         const paymentData = await req.json();
 
         console.log('📲 WEBHOOK RECIBIDO:', {
-            monto: paymentData.Amount,
-            referencia: paymentData.NroReferencia,
-            teléfono: paymentData.PhoneOrig,
-            fecha: paymentData.FechaMovimiento,
+            amount: paymentData.Amount,
+            reference: paymentData.NroReferencia,
+            phone: paymentData.PhoneOrig,
+            bank: paymentData.BancoOrig,
+            date: paymentData.FechaMovimiento,
         });
 
         // Guardar en BD
@@ -43,7 +44,7 @@ serve(async (req) => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         );
 
-        const { data: transaction, error } = await supabaseClient
+        const { data: transaction, error: insertError } = await supabaseClient
             .from('bank_transactions')
             .insert({
                 reference: paymentData.NroReferencia,
@@ -59,18 +60,64 @@ serve(async (req) => {
             .select()
             .single();
 
-        if (error) {
-            console.error('❌ Error guardando pago:', error);
-            throw error;
+        if (insertError) {
+            console.error('❌ Error guardando pago:', insertError);
+            // Si el error es duplicado de referencia, podríamos intentar procesarlo igual
+            if (insertError.code !== '23505') {
+                throw insertError;
+            }
         }
 
-        console.log('✅ Pago guardado en BD:', transaction.id);
+        console.log('✅ Pago registrado:', transaction?.id || 'Ya existía');
 
-        // TODO: Aquí puedes agregar lógica adicional:
-        // - Buscar orden pendiente con esta referencia
-        // - Actualizar saldo de wallet del usuario
-        // - Enviar notificación al usuario
-        // - Marcar viaje como pagado
+        // Lógica de Matching Automático para Recargas
+        if (transaction || insertError.code === '23505') {
+            const refForMatch = paymentData.NroReferencia.slice(-4);
+            const amountForMatch = parseFloat(paymentData.Amount);
+            const phoneForMatch = paymentData.PhoneOrig.replace(/\D/g, '').slice(-10); // Últimos 10 dígitos
+
+            console.log(`🔎 Buscando coincidencia para: Tel ${phoneForMatch}, Monto ${amountForMatch}, Ref ${refForMatch}`);
+
+            // Buscar solicitud de recarga pendiente
+            const { data: rechargeRequest } = await supabaseClient
+                .from('recharge_requests')
+                .select('*')
+                .eq('status', 'pending')
+                .eq('last_four_digits', refForMatch)
+                .eq('amount_ves', amountForMatch)
+                .filter('bank_orig', 'eq', paymentData.BancoOrig)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (rechargeRequest) {
+                console.log('🎯 Coincidencia encontrada! Procesando recarga...', rechargeRequest.id);
+
+                // Ejecutar procedimiento almacenado de procesamiento
+                const { data: result, error: processError } = await supabaseClient.rpc('process_recharge', {
+                    p_recharge_request_id: rechargeRequest.id,
+                    p_bank_transaction_id: transaction?.id || (await supabaseClient
+                        .from('bank_transactions')
+                        .select('id')
+                        .eq('reference', paymentData.NroReferencia)
+                        .single()).data?.id
+                });
+
+                if (processError) {
+                    console.error('❌ Error al procesar recarga:', processError);
+                } else {
+                    console.log('🎉 Recarga procesada exitosamente!');
+
+                    // Actualizar status a 'verified' en bank_transactions (si no lo hizo ya el RPC)
+                    await supabaseClient
+                        .from('bank_transactions')
+                        .update({ status: 'verified' })
+                        .eq('id', transaction?.id || result.p_bank_transaction_id);
+                }
+            } else {
+                console.log('ℹ️ No se encontró una solicitud de recarga pendiente que coincida.');
+            }
+        }
 
         // Respuesta OBLIGATORIA a BANCAMIGA
         return new Response(

@@ -18,17 +18,17 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Toaster } from 'sonner';
 
 const PrivateRoute = ({ children, role }: { children: React.ReactNode, role?: string }) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, effectiveRole, isLoading } = useAuth();
 
   if (isLoading) return <div className="flex items-center justify-center h-screen bg-mipana-darkBlue text-white">Cargando...</div>;
   if (!isAuthenticated) return <Navigate to="/login" />;
-  if (role && user?.role !== role) return <Navigate to="/" />;
+  if (role && effectiveRole !== role) return <Navigate to="/" />;
 
   return <>{children}</>;
 };
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { effectiveRole } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -48,8 +48,8 @@ const AppRoutes = () => {
 
         <Route path="/" element={
           <PrivateRoute>
-            {user?.role === 'ADMIN' ? <Navigate to="/admin" /> :
-              user?.role === 'DRIVER' ? <Navigate to="/driver" /> :
+            {effectiveRole === 'ADMIN' ? <Navigate to="/admin" /> :
+              effectiveRole === 'DRIVER' ? <Navigate to="/driver" /> :
                 <Navigate to="/passenger" />}
           </PrivateRoute>
         } />

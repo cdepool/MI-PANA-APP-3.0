@@ -1,41 +1,39 @@
-import React, { useState } from 'react';
-import { Wallet, CheckCircle, AlertCircle, Loader, Copy, Hash, Building2, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Wallet, CheckCircle, AlertCircle, Loader2, Copy, Hash, Building2, DollarSign, ArrowRight, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface WalletRechargeProps {
   userId: string;
   userPhone: string;
-  onSuccess: () => void;
+  prefilledAmount?: number;
+  onSuccess: (newBalance: { ves: number; usd: number }) => void;
   onCancel?: () => void;
 }
 
 // Lista de bancos principales de Venezuela
 const venezuelanBanks = [
   { code: '0102', name: 'Banco de Venezuela' },
-  { code: '0104', name: 'Venezolano de Crédito' },
   { code: '0105', name: 'Mercantil' },
   { code: '0108', name: 'BBVA Provincial' },
   { code: '0114', name: 'Bancaribe' },
-  { code: '0115', name: 'Exterior' },
   { code: '0134', name: 'Banesco' },
   { code: '0151', name: 'BFC Banco Fondo Común' },
-  { code: '0156', name: '100% Banco' },
   { code: '0163', name: 'Banco del Tesoro' },
-  { code: '0166', name: 'Banco Agrícola' },
-  { code: '0171', name: 'Banco Activo' },
   { code: '0172', name: 'Bancamiga' },
   { code: '0174', name: 'Banplus' },
   { code: '0175', name: 'Bicentenario' },
-  { code: '0177', name: 'Banfanb' },
+  { code: '0191', name: 'BNC' },
 ];
 
 export const WalletRecharge: React.FC<WalletRechargeProps> = ({
   userId,
   userPhone,
+  prefilledAmount,
   onSuccess,
   onCancel
 }) => {
   const [step, setStep] = useState<'amount' | 'payment' | 'verification' | 'success' | 'error'>('amount');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(prefilledAmount ? prefilledAmount.toString() : '');
   const [originBank, setOriginBank] = useState('');
   const [lastFourDigits, setLastFourDigits] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -52,9 +50,16 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
     holder: 'NEXT TV, C.A.',
   };
 
+  useEffect(() => {
+    if (prefilledAmount) {
+      setStep('payment');
+    }
+  }, [prefilledAmount]);
+
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
+    toast.success('Copiado al portapapeles');
     setTimeout(() => setCopiedField(null), 2000);
   };
 
@@ -70,7 +75,7 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
 
   const handleContinueToPayment = () => {
     const numAmount = parseFloat(amount);
-    
+
     if (!numAmount || numAmount <= 0) {
       setError('Por favor ingresa un monto válido');
       return;
@@ -87,12 +92,12 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
 
   const handleProcessRecharge = async () => {
     if (!originBank) {
-      setError('Por favor selecciona el banco desde el cual realizaste el pago');
+      setError('Selecciona el banco de origen');
       return;
     }
 
     if (lastFourDigits.length !== 4) {
-      setError('Por favor ingresa los últimos 4 dígitos de la referencia');
+      setError('Ingresa los 4 dígitos finales');
       return;
     }
 
@@ -118,18 +123,22 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setNewBalance(result.wallet);
+        const mappedWallet = {
+          ves: result.wallet.balance_ves,
+          usd: result.wallet.balance_usd
+        };
+        setNewBalance(mappedWallet);
         setStep('success');
         setTimeout(() => {
-          onSuccess();
-        }, 3000);
+          onSuccess(mappedWallet);
+        }, 2000);
       } else {
-        setError(result.error || 'No se pudo procesar la recarga. Intenta nuevamente.');
+        setError(result.error || 'No se pudo verificar el pago. Si ya pagaste, espera unos minutos e intenta de nuevo.');
         setStep('error');
       }
     } catch (err) {
       console.error('Error processing recharge:', err);
-      setError('Error al procesar la recarga. Por favor intenta nuevamente.');
+      setError('Error de conexión. Verifica tu internet e intenta nuevamente.');
       setStep('error');
     } finally {
       setIsProcessing(false);
@@ -139,256 +148,227 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
   const handleRetry = () => {
     setStep('payment');
     setError(null);
-    setOriginBank('');
-    setLastFourDigits('');
   };
 
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('es-VE', {
       style: 'currency',
       currency: 'VES',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
     }).format(value);
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl max-w-md mx-auto overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-sm mx-auto overflow-hidden animate-in fade-in zoom-in duration-300">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-green-800 p-6 text-white">
-        <div className="flex items-center gap-3">
-          <Wallet size={32} />
+      <div className="bg-gradient-to-br from-mipana-darkBlue to-mipana-mediumBlue p-6 text-white relative h-32 flex flex-col justify-end">
+        <div className="absolute top-4 right-4 group">
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors active:scale-95"
+            >
+              <X size={20} />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl">
+            <Wallet size={28} className="text-mipana-orange" />
+          </div>
           <div>
-            <h2 className="text-xl font-bold">Recargar Billetera</h2>
-            <p className="text-sm opacity-90">Agrega fondos vía Pago Móvil</p>
+            <h2 className="text-xl font-bold tracking-tight">Recargar Saldo</h2>
+            <p className="text-xs text-white/70 font-medium">Pago Móvil Bancamiga</p>
           </div>
         </div>
+
+        {/* Glow Effect */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-mipana-orange/20 rounded-full blur-[40px] -mr-10 -mt-10"></div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="flex w-full h-1 bg-gray-100 dark:bg-800">
+        <div
+          className="h-full bg-mipana-orange transition-all duration-500"
+          style={{ width: step === 'amount' ? '25%' : step === 'payment' ? '50%' : step === 'verification' ? '75%' : '100%' }}
+        ></div>
       </div>
 
       {/* Content */}
       <div className="p-6">
-        {/* Step 1: Amount */}
         {step === 'amount' && (
-          <div className="space-y-6">
-            <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-lg">
-              <p className="text-sm text-blue-900 font-medium">
-                💰 Ingresa el monto que deseas recargar a tu billetera
+          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
+            <div className="bg-mipana-mediumBlue/10 p-4 rounded-2xl flex items-start gap-3 border border-mipana-mediumBlue/10">
+              <DollarSign className="text-mipana-mediumBlue mt-0.5" size={18} />
+              <p className="text-sm text-mipana-darkBlue dark:text-gray-300 font-medium leading-tight">
+                Ingresa el monto en Bolívares que deseas añadir a tu billetera.
               </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <DollarSign size={16} className="inline mr-1" />
-                Monto a Recargar (Bolívares)
-              </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <span className="text-2xl font-bold text-gray-400">Bs.</span>
+              </div>
               <input
                 type="text"
+                inputMode="decimal"
                 value={amount}
                 onChange={handleAmountChange}
                 placeholder="0.00"
-                className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg focus:border-green-600 focus:outline-none text-3xl font-bold text-center"
+                className="w-full pl-16 pr-4 py-6 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-mipana-orange dark:focus:border-mipana-orange outline-none rounded-2xl text-4xl font-black text-mipana-darkBlue dark:text-white transition-all shadow-inner"
               />
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                Monto mínimo: Bs. 1.00
-              </p>
             </div>
 
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-lg">
-                <p className="text-sm text-red-900">{error}</p>
+              <div className="text-red-500 text-xs font-bold flex items-center gap-1 animate-pulse">
+                <AlertCircle size={14} /> {error}
               </div>
             )}
 
-            <div className="flex gap-3">
-              {onCancel && (
-                <button
-                  onClick={onCancel}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-colors"
-                >
-                  Cancelar
-                </button>
-              )}
-              <button
-                onClick={handleContinueToPayment}
-                disabled={!amount || parseFloat(amount) <= 0}
-                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Continuar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Payment Instructions */}
-        {step === 'payment' && (
-          <div className="space-y-6">
-            <div className="bg-green-50 border-l-4 border-green-600 p-4 rounded-r-lg">
-              <p className="text-sm text-green-900 font-medium mb-2">
-                📱 <strong>Paso 1:</strong> Realiza el pago móvil con estos datos:
-              </p>
-              <p className="text-2xl font-bold text-green-900 mt-2">
-                {formatCurrency(parseFloat(amount))}
-              </p>
-            </div>
-
-            {/* Payment Details */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="text-xs text-gray-500 font-medium">Banco Destino</p>
-                  <p className="text-base font-bold text-gray-900">{paymentData.bank} ({paymentData.bankCode})</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 font-medium">Teléfono</p>
-                  <p className="text-base font-bold text-gray-900">{paymentData.phone}</p>
-                </div>
-                <button
-                  onClick={() => handleCopy(paymentData.phone.replace(/-/g, ''), 'phone')}
-                  className="ml-2 p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  {copiedField === 'phone' ? <CheckCircle size={20} className="text-green-600" /> : <Copy size={20} className="text-gray-600" />}
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 font-medium">RIF</p>
-                  <p className="text-base font-bold text-gray-900">{paymentData.rif}</p>
-                </div>
-                <button
-                  onClick={() => handleCopy(paymentData.rif.replace(/-/g, ''), 'rif')}
-                  className="ml-2 p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  {copiedField === 'rif' ? <CheckCircle size={20} className="text-green-600" /> : <Copy size={20} className="text-gray-600" />}
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="text-xs text-gray-500 font-medium">Titular</p>
-                  <p className="text-base font-bold text-gray-900">{paymentData.holder}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Verification Form */}
-            <div className="border-t pt-6 space-y-4">
-              <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-lg">
-                <p className="text-sm text-blue-900 font-medium">
-                  ✅ <strong>Paso 2:</strong> Ingresa estos datos después de realizar el pago:
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Building2 size={16} className="inline mr-1" />
-                  Banco desde el cual pagaste
-                </label>
-                <select
-                  value={originBank}
-                  onChange={(e) => setOriginBank(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-600 focus:outline-none text-base"
-                >
-                  <option value="">Selecciona tu banco</option>
-                  {venezuelanBanks.map((bank) => (
-                    <option key={bank.code} value={bank.code}>
-                      {bank.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Hash size={16} className="inline mr-1" />
-                  Últimos 4 dígitos de la referencia
-                </label>
-                <input
-                  type="text"
-                  value={lastFourDigits}
-                  onChange={handleDigitsChange}
-                  placeholder="1234"
-                  maxLength={4}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-600 focus:outline-none text-2xl font-mono text-center tracking-widest"
-                />
-                <p className="text-xs text-gray-500 mt-1 text-center">
-                  {lastFourDigits.length}/4 dígitos
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setStep('amount')}
-                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-colors"
-              >
-                Atrás
-              </button>
-              <button
-                onClick={handleProcessRecharge}
-                disabled={!originBank || lastFourDigits.length !== 4 || isProcessing}
-                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader size={20} className="animate-spin" />
-                    Verificando...
-                  </>
-                ) : (
-                  'Verificar y Recargar'
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Success */}
-        {step === 'success' && (
-          <div className="text-center py-8 space-y-4">
-            <CheckCircle size={64} className="text-green-600 mx-auto animate-bounce" />
-            <h3 className="text-2xl font-bold text-gray-900">¡Recarga Exitosa!</h3>
-            <p className="text-gray-600">
-              Se han agregado {formatCurrency(parseFloat(amount))} a tu billetera
-            </p>
-            {newBalance && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
-                <p className="text-sm text-green-700 mb-2">Nuevo saldo:</p>
-                <p className="text-2xl font-bold text-green-900">
-                  {formatCurrency(newBalance.ves)}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step 4: Error */}
-        {step === 'error' && (
-          <div className="text-center py-8 space-y-4">
-            <AlertCircle size={64} className="text-red-600 mx-auto" />
-            <h3 className="text-2xl font-bold text-gray-900">Error en la Recarga</h3>
-            <p className="text-gray-600 px-4">{error}</p>
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 text-left">
-              <p className="text-sm text-yellow-800">
-                <strong>Verifica que:</strong>
-              </p>
-              <ul className="text-xs text-yellow-700 mt-2 space-y-1 list-disc list-inside">
-                <li>Los últimos 4 dígitos sean correctos</li>
-                <li>Hayas seleccionado el banco correcto</li>
-                <li>El pago se haya realizado en las últimas 72 horas</li>
-                <li>El monto sea exactamente {formatCurrency(parseFloat(amount))}</li>
-              </ul>
-            </div>
             <button
-              onClick={handleRetry}
-              className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors"
+              onClick={handleContinueToPayment}
+              disabled={!amount || parseFloat(amount) <= 0}
+              className="w-full bg-mipana-orange hover:bg-orange-600 active:scale-[0.98] disabled:opacity-50 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2 group"
             >
-              Intentar Nuevamente
+              Siguiente <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
         )}
+
+        {step === 'payment' && (
+          <div className="space-y-5 animate-in slide-in-from-right-4 duration-300">
+            <div className="text-center">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Monto a Pagar</p>
+              <h3 className="text-4xl font-black text-mipana-darkBlue dark:text-white">{formatCurrency(parseFloat(amount))}</h3>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 space-y-3">
+              {[
+                { label: 'Banco', value: paymentData.bank, code: paymentData.bankCode },
+                { label: 'Teléfono', value: paymentData.phone, copy: paymentData.phone.replace(/-/g, '') },
+                { label: 'RIF', value: paymentData.rif, copy: paymentData.rif.replace(/-/g, '') },
+                { label: 'Titular', value: paymentData.holder }
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between pb-2 last:pb-0 last:border-0 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex-1">
+                    <p className="text-[9px] font-bold text-gray-400 uppercase">{item.label}</p>
+                    <p className="text-sm font-bold text-mipana-darkBlue dark:text-white">
+                      {item.value} {item.code && <span className="text-[10px] text-gray-400">({item.code})</span>}
+                    </p>
+                  </div>
+                  {item.copy && (
+                    <button
+                      onClick={() => handleCopy(item.copy!, item.label)}
+                      className="p-2 hover:bg-mipana-mediumBlue/10 rounded-xl transition-colors text-mipana-mediumBlue active:scale-90"
+                    >
+                      {copiedField === item.label ? <CheckCircle size={18} className="text-green-500" /> : <Copy size={18} />}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3">
+                <div className="relative">
+                  <select
+                    value={originBank}
+                    onChange={(e) => setOriginBank(e.target.value)}
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 focus:border-mipana-mediumBlue outline-none rounded-xl text-sm font-bold transition-all appearance-none"
+                  >
+                    <option value="">Banco desde el que pagaste</option>
+                    {venezuelanBanks.map((bank) => (
+                      <option key={bank.code} value={bank.code}>{bank.name}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Building2 size={16} className="text-gray-400" />
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={lastFourDigits}
+                    onChange={handleDigitsChange}
+                    placeholder="Últimos 4 dígitos de Referencia"
+                    maxLength={4}
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 focus:border-mipana-mediumBlue outline-none rounded-xl text-sm font-bold transition-all text-center tracking-[0.5em]"
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Hash size={16} className="text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setStep('amount')}
+                  className="flex-shrink-0 px-6 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+                >
+                  Atrás
+                </button>
+                <button
+                  onClick={handleProcessRecharge}
+                  disabled={!originBank || lastFourDigits.length !== 4 || isProcessing}
+                  className="flex-1 bg-mipana-darkBlue hover:bg-[#001530] active:scale-[0.98] disabled:opacity-50 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-xl"
+                >
+                  {isProcessing ? <Loader2 size={24} className="animate-spin" /> : 'Verificar Pago'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 'success' && (
+          <div className="text-center py-6 space-y-4 animate-in zoom-in-50 duration-500">
+            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+              <CheckCircle size={48} className="text-green-500 animate-bounce-in" />
+            </div>
+            <h3 className="text-2xl font-black text-mipana-darkBlue dark:text-white">¡Listo, Mi Pana!</h3>
+            <p className="text-sm text-gray-500 font-medium px-4">
+              Hemos acreditado <b>{formatCurrency(parseFloat(amount))}</b> a tu billetera exitosamente.
+            </p>
+            {newBalance && (
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-3xl inline-block border border-gray-100 dark:border-gray-700 shadow-inner">
+                <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Nuevo Saldo Disponible</p>
+                <p className="text-2xl font-black text-mipana-darkBlue dark:text-white">
+                  ${newBalance.usd.toFixed(2)} <span className="text-xs text-gray-400 font-bold ml-1">USD</span>
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 'error' && (
+          <div className="text-center py-6 space-y-4 animate-in shake duration-500">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
+              <AlertCircle size={48} className="text-red-500" />
+            </div>
+            <h3 className="text-xl font-black text-red-600">Algo salió mal</h3>
+            <p className="text-xs text-gray-500 font-bold leading-relaxed px-2">{error}</p>
+
+            <div className="flex flex-col gap-2 pt-2">
+              <button
+                onClick={handleRetry}
+                className="w-full bg-mipana-darkBlue text-white py-3.5 rounded-2xl font-bold active:scale-95 transition-all"
+              >
+                Intentar con otra referencia
+              </button>
+              <button
+                onClick={() => setStep('amount')}
+                className="w-full text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                Cambiar monto
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Info */}
+      <div className="p-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-700 text-center">
+        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Tecnología Bancamiga Verificada by SITCA</p>
       </div>
     </div>
   );

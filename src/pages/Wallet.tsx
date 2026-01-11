@@ -7,6 +7,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import { getTariffs } from '../services/mockService';
 import { notificationService } from '../services/notificationService';
+import WalletRecharge from '../components/WalletRecharge';
 
 const Wallet: React.FC = () => {
    const { user, walletTransaction, refreshBalance } = useAuth();
@@ -184,47 +185,17 @@ const Wallet: React.FC = () => {
          {/* RECHARGE MODAL */}
          {showRecharge && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-               <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-                  <div className="bg-mipana-darkBlue p-4 text-white flex justify-between items-center">
-                     <h3 className="font-bold flex items-center gap-2"><Smartphone size={18} /> Recarga Pago Móvil</h3>
-                     <button onClick={() => setShowRecharge(false)} className="hover:bg-white/20 p-1 rounded-full transition-colors"><Clock size={18} /></button>
-                  </div>
-
-                  <div className="p-6 space-y-4">
-                     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-4 rounded-lg text-sm space-y-2 text-blue-800 dark:text-blue-200">
-                        <p className="font-bold uppercase text-xs text-blue-500 mb-1">Datos para realizar el pago:</p>
-                        <p><b>Banco:</b> Bancamiga (0272)</p>
-                        <p><b>Teléfono:</b> 0414-5274111</p>
-                        <p><b>RIF:</b> J-40724274-1</p>
-                     </div>
-
-                     <div>
-                        <Input
-                           label="Monto a Recargar (Bs)"
-                           type="number"
-                           placeholder="100.00"
-                           value={amount}
-                           onChange={(e) => setAmount(e.target.value)}
-                           icon={<span className="text-gray-500 font-bold text-xs">Bs</span>}
-                        />
-                        <p className="text-xs text-right mt-1 text-gray-500">
-                           Equivalente: <b>$ {(Number(amount) / bcvRate).toFixed(2)}</b>
-                        </p>
-                     </div>
-
-                     <Input
-                        label="Últimos 4 dígitos de referencia"
-                        type="text"
-                        maxLength={4}
-                        placeholder="Ej: 1234"
-                        value={reference}
-                        onChange={(e) => setReference(e.target.value.replace(/[^0-9]/g, ''))}
-                     />
-
-                     <Button fullWidth onClick={handleRecharge} disabled={isLoading}>
-                        {isLoading ? 'Verificando...' : 'Confirmar Recarga'}
-                     </Button>
-                  </div>
+               <div className="w-full max-w-md">
+                  <WalletRecharge
+                     userId={user.id}
+                     userPhone={user.phone || ''}
+                     onSuccess={() => {
+                        refreshBalance();
+                        setShowRecharge(false);
+                        toast.success("¡Saldo recargado exitosamente!");
+                     }}
+                     onCancel={() => setShowRecharge(false)}
+                  />
                </div>
             </div>
          )}

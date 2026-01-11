@@ -44,9 +44,9 @@ serve(async (req) => {
     // Validate required fields
     if (!body.userId || !body.userPhone || !body.bancoOrig || !body.lastFourDigits || !body.expectedAmount) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           success: false,
-          error: 'Faltan datos requeridos para la verificación' 
+          error: 'Faltan datos requeridos para la verificación'
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -55,9 +55,9 @@ serve(async (req) => {
     // Validate last 4 digits format
     if (body.lastFourDigits.length !== 4 || !/^\d{4}$/.test(body.lastFourDigits)) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           success: false,
-          error: 'Los últimos 4 dígitos deben ser exactamente 4 números' 
+          error: 'Los últimos 4 dígitos deben ser exactamente 4 números'
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -163,7 +163,7 @@ serve(async (req) => {
           refpk: payment.Refpk,
           phone_orig: payment.PhoneOrig,
           phone_dest: payment.PhoneDest,
-          amount: parseFloat(payment.Amount),
+          amount: payment.Amount,
           bank_orig: payment.BancoOrig,
           transaction_date: transactionDateTime.toISOString(),
           status: 'verified',
@@ -175,7 +175,7 @@ serve(async (req) => {
 
       if (insertError) {
         console.error('[Verify Payment] Database insert error:', insertError);
-        
+
         // Payment found but couldn't save - still return success
         return new Response(
           JSON.stringify({
@@ -203,7 +203,7 @@ serve(async (req) => {
 
     } catch (apiError) {
       console.error('[Verify Payment] Bancamiga API error:', apiError);
-      
+
       return new Response(
         JSON.stringify({
           success: false,
@@ -216,7 +216,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[Verify Payment] Error:', error);
-    
+
     return new Response(
       JSON.stringify({
         success: false,

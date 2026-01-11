@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { AppView } from '../types';
 import ProfessionalHeader from './ProfessionalHeader';
+import DemoViewBanner from './admin/DemoViewBanner';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -25,6 +26,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onNavigate }) => {
 
   return (
     <div className="min-h-screen bg-mipana-lightGray dark:bg-[#011836] transition-colors duration-200 flex flex-col">
+      <DemoViewBanner />
       <ProfessionalHeader onMenuClick={() => setIsMobileSidebarOpen(true)} />
 
       <main className="flex-1 relative overflow-y-auto overflow-x-hidden">

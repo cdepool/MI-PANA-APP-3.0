@@ -22,6 +22,7 @@ import ChatInterface from '../components/ChatInterface';
 import { toast } from 'sonner';
 import { SERVICE_CATALOG, getTariffs, getDriverById, mockMatchDriver, startRideSimulation, sendChatMessage } from '../services/mockService';
 import { notificationService } from '../services/notificationService';
+import WalletRecharge from '../components/WalletRecharge';
 
 // --- HELPER COMPONENTS & FUNCTIONS ---
 
@@ -80,7 +81,7 @@ interface PassengerHomeProps {
 // ... existing imports ...
 
 const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
-  const { user, addSavedPlace, toggleFavoriteDriver } = useAuth();
+  const { user, addSavedPlace, toggleFavoriteDriver, refreshBalance } = useAuth();
   const [step, setStep] = useState<RideStep>('SEARCH');
   const [selectedServiceId, setSelectedServiceId] = useState<ServiceId>('el_pana');
   const [price, setPrice] = useState<{ usd: number, ves: number } | null>(null);
@@ -114,6 +115,8 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   // ... (Chat, Wallet, Favorites unchanged) ...
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [showRechargeModal, setShowRechargeModal] = useState(false);
+  const [rechargeAmountVes, setRechargeAmountVes] = useState<number | undefined>(undefined);
   const walletBalance = user?.wallet?.balance || 0;
   const tariff = getTariffs();
   const currentRate = tariff.currentBcvRate;
@@ -237,6 +240,17 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
 
     if (!user || !destination || !price) {
       alert("Faltan datos para el viaje");
+      return;
+    }
+
+    // Check Balance
+    if (user.wallet && user.wallet.balance < price.usd) {
+      const missingUsd = price.usd - user.wallet.balance;
+      const missingVes = Math.ceil(missingUsd * currentRate);
+
+      toast.error(`Saldo insuficiente. Necesitas Bs. ${missingVes} para este viaje.`);
+      setRechargeAmountVes(missingVes);
+      setShowRechargeModal(true);
       return;
     }
 
@@ -712,6 +726,27 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
         )}
 
       </div>
+
+      {/* RECHARGE MODAL FOR INSUFFICIENT BALANCE */}
+      {showRechargeModal && user && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="w-full max-w-md">
+            <WalletRecharge
+              userId={user.id}
+              userPhone={user.phone || ''}
+              prefilledAmount={rechargeAmountVes}
+              onSuccess={() => {
+                refreshBalance();
+                setShowRechargeModal(false);
+                toast.success("¡Pago verificado! Procesando tu viaje...");
+                // Re-trigger ride confirmation after successful recharge
+                setTimeout(() => handleConfirmRide(), 1500);
+              }}
+              onCancel={() => setShowRechargeModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 };

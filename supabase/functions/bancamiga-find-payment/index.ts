@@ -3,6 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createBancamigaClient } from '../_shared/bancamigaClient.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
@@ -28,41 +29,26 @@ serve(async (req) => {
             );
         }
 
-        const BANCAMIGA_HOST = Deno.env.get('BANCAMIGA_HOST');
-        const BANCAMIGA_ACCESS_TOKEN = Deno.env.get('BANCAMIGA_ACCESS_TOKEN');
-
         console.log('🔎 Buscando pagos móvil:', { phoneOrig, bankOrig, date });
 
-        const response = await fetch(`${BANCAMIGA_HOST}/public/protected/pm/find`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${BANCAMIGA_ACCESS_TOKEN}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                Phone: phoneOrig,
-                Bank: bankOrig,
-                Date: date,
-            }),
+        const bancamigaClient = createBancamigaClient();
+        const payments = await bancamigaClient.searchPayments({
+            phoneOrig,
+            bancoOrig: bankOrig,
+            fechaMovimiento: date,
         });
 
-        const data = await response.json();
-
-        if (data.code !== 200) {
-            console.warn('⚠️ Respuesta con código diferente a 200:', data);
-        }
-
-        console.log(`✅ Encontrados ${data.num || 0} pagos`);
+        console.log(`✅ Encontrados ${payments.length || 0} pagos`);
 
         // Guardar en BD si hay pagos
-        if (data.lista && data.lista.length > 0) {
+        if (payments.length > 0) {
             const supabaseClient = createClient(
                 Deno.env.get('SUPABASE_URL') ?? '',
                 Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
             );
 
-            for (const payment of data.lista) {
-                await supabaseClient.from('bank_transactions').upsert({
+            for (const payment of payments) {
+                const { error: upsertError } = await supabaseClient.from('bank_transactions').upsert({
                     reference: payment.NroReferencia,
                     refpk: payment.Refpk,
                     phone_orig: payment.PhoneOrig,
@@ -75,14 +61,18 @@ serve(async (req) => {
                 }, {
                     onConflict: 'reference',
                 });
+
+                if (upsertError) {
+                    console.error(`❌ Error haciendo upsert de pago ${payment.Refpk}:`, upsertError);
+                }
             }
         }
 
         return new Response(
             JSON.stringify({
                 success: true,
-                totalPayments: data.num || 0,
-                payments: data.lista || [],
+                totalPayments: payments.length,
+                payments: payments,
             }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -9,12 +9,17 @@ import logger from '../utils/logger';
 interface ExtendedAuthContextType extends AuthContextType {
   loginPassenger: (identifier: string, password: string) => Promise<void>;
   refreshBalance: () => Promise<void>;
+  viewAsRole: UserRole | null;
+  switchView: (role: UserRole | null) => void;
+  effectiveRole: UserRole | undefined;
+  isSuperAdmin: boolean;
 }
 
 const AuthContext = createContext<ExtendedAuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [viewAsRole, setViewAsRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Listen for Supabase Auth State Changes
@@ -65,7 +70,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (profile) {
-          setUser(profile as User);
+          setUser({
+            ...profile,
+            adminRole: profile.admin_role
+          } as User);
         } else {
           // Fallback for new users or if profile sync failed
           setUser({
@@ -206,14 +214,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       if (profile) {
         // Merge newest profile with existing local user state (to keep temporary UI states if any)
-        setUser(prev => prev ? { ...prev, ...profile } : profile as User);
-        logger.log("Balance refreshed from Supabase", profile);
+        const updatedProfile = {
+          ...profile,
+          adminRole: profile.admin_role
+        };
+        setUser(prev => prev ? { ...prev, ...updatedProfile } : updatedProfile as User);
+        logger.log("Balance refreshed from Supabase", updatedProfile);
       }
     } catch (e) {
       logger.error("Error refreshing balance", e);
       throw e;
     }
   };
+  const switchView = (role: UserRole | null) => {
+    setViewAsRole(role);
+    logger.log(`Switching view to: ${role || 'DEFAULT'}`);
+  };
+
+  const effectiveRole = viewAsRole || user?.role;
+  const isSuperAdmin = user?.adminRole === 'SUPER_ADMIN';
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-mipana-darkBlue"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white"></div></div>;
@@ -234,7 +253,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       connectGoogle,
       disconnectGoogle,
       refreshBalance,
-      isLoading
+      isLoading,
+      viewAsRole,
+      switchView,
+      effectiveRole,
+      isSuperAdmin
     }}>
       {children}
     </AuthContext.Provider>

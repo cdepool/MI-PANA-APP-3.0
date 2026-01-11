@@ -10,23 +10,33 @@ export interface BancamigaConfig {
 }
 
 export interface BancamigaPayment {
-  Refpk: string;
-  NroReferencia: string;
-  NroReferenciaCorto: string;
-  Amount: string;
-  PhoneOrig: string;
+  ID: string;
+  created_at: string;
+  update_at: string;
+  Dni: string;
   PhoneDest: string;
+  PhoneOrig: string;
+  Amount: number;
   BancoOrig: string;
-  BancoDest: string;
-  FechaMovimiento: string;
+  NroReferenciaCorto: string;
+  NroReferencia: string;
   HoraMovimiento: string;
+  FechaMovimiento: string;
+  Descripcion: string;
+  Status: string;
+  Refpk: string;
+  Ref: number;
 }
 
-export interface BancamigaSearchResponse {
-  Code: number;
-  Data: {
-    payments: BancamigaPayment[];
-  };
+export interface BancamigaResponse {
+  code: number;
+  mensaje?: string;
+  mod?: string;
+  lista?: BancamigaPayment[];
+  num?: number;
+  token?: string;
+  refresToken?: string;
+  expireDate?: number;
 }
 
 export class BancamigaClient {
@@ -91,14 +101,14 @@ export class BancamigaClient {
       throw new Error('Refresh token not available');
     }
 
-    const response = await fetch(`${this.config.host}/public/auth/security/users/token/refresh`, {
+    const response = await fetch(`${this.config.host}/public/re/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.config.refreshToken}`,
+        'Authorization': `Bearer ${this.config.accessToken}`,
       },
       body: JSON.stringify({
-        Dni: this.config.dni,
+        refresh_token: this.config.refreshToken,
       }),
     });
 
@@ -106,14 +116,22 @@ export class BancamigaClient {
       throw new Error(`Failed to refresh token: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    
-    // Update internal config
-    this.config.accessToken = data.token;
-    this.config.refreshToken = data.refresToken;
-    this.config.tokenExpires = data.expireDate;
+    const data: BancamigaResponse = await response.json();
 
-    return data;
+    if (data.code !== 200) {
+      throw new Error(`Bancamiga Refresh Error: ${data.mensaje}`);
+    }
+
+    // Update internal config
+    this.config.accessToken = data.token!;
+    this.config.refreshToken = data.refresToken!;
+    this.config.tokenExpires = data.expireDate!;
+
+    return {
+      token: data.token!,
+      refresToken: data.refresToken!,
+      expireDate: data.expireDate!,
+    };
   }
 
   /**
@@ -126,7 +144,7 @@ export class BancamigaClient {
 
     const now = Date.now();
     const expiresIn = this.config.tokenExpires - now;
-    
+
     // Consider expired if less than 5 minutes remaining
     return expiresIn < 5 * 60 * 1000;
   }
@@ -151,16 +169,21 @@ export class BancamigaClient {
   }): Promise<BancamigaPayment[]> {
     await this.ensureValidToken();
 
-    const response = await fetch(`${this.config.host}/public/p2p/movements/mobile/find`, {
+    // Ensure phone is in format 58XXXXXXXXXX
+    let cleanPhone = params.phoneOrig.replace(/\D/g, '');
+    if (cleanPhone.length === 10) cleanPhone = '58' + cleanPhone;
+    if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) cleanPhone = '58' + cleanPhone.substring(1);
+
+    const response = await fetch(`${this.config.host}/public/protected/pm/find`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.config.accessToken}`,
       },
       body: JSON.stringify({
-        PhoneOrig: params.phoneOrig,
-        BancoOrig: params.bancoOrig,
-        FechaMovimiento: params.fechaMovimiento,
+        Phone: cleanPhone,
+        Bank: params.bancoOrig,
+        Date: params.fechaMovimiento,
       }),
     });
 
@@ -168,33 +191,32 @@ export class BancamigaClient {
       throw new Error(`Failed to search payments: ${response.statusText}`);
     }
 
-    const data: BancamigaSearchResponse = await response.json();
+    const data: BancamigaResponse = await response.json();
 
-    if (data.Code !== 200) {
-      throw new Error(`Bancamiga API error: ${data.Code}`);
+    if (data.code !== 200) {
+      console.warn(`[Bancamiga] searchPayments returned code ${data.code}: ${data.mensaje}`);
+      return [];
     }
 
-    return data.Data?.payments || [];
+    return data.lista || [];
   }
 
   /**
-   * Get payment history for a date range
+   * Get payment history for a specific date
    */
   async getPaymentHistory(params: {
-    fechaInicio: string; // YYYY-MM-DD
-    fechaFin: string; // YYYY-MM-DD
+    date: string; // YYYY-MM-DD
   }): Promise<BancamigaPayment[]> {
     await this.ensureValidToken();
 
-    const response = await fetch(`${this.config.host}/public/p2p/movements/history`, {
+    const response = await fetch(`${this.config.host}/public/protected/pm/history/find`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.config.accessToken}`,
       },
       body: JSON.stringify({
-        FechaInicio: params.fechaInicio,
-        FechaFin: params.fechaFin,
+        Date: params.date,
       }),
     });
 
@@ -202,13 +224,14 @@ export class BancamigaClient {
       throw new Error(`Failed to get payment history: ${response.statusText}`);
     }
 
-    const data: BancamigaSearchResponse = await response.json();
+    const data: BancamigaResponse = await response.json();
 
-    if (data.Code !== 200) {
-      throw new Error(`Bancamiga API error: ${data.Code}`);
+    if (data.code !== 200) {
+      console.warn(`[Bancamiga] getPaymentHistory returned code ${data.code}: ${data.mensaje}`);
+      return [];
     }
 
-    return data.Data?.payments || [];
+    return data.lista || [];
   }
 
   /**
@@ -222,12 +245,12 @@ export class BancamigaClient {
   }): Promise<BancamigaPayment | null> {
     const daysToSearch = params.dateRange || 1;
     const today = new Date();
-    
+
     // Search backwards from today
     for (let i = 0; i < daysToSearch; i++) {
       const searchDate = new Date(today);
       searchDate.setDate(searchDate.getDate() - i);
-      
+
       const dateStr = searchDate.toISOString().split('T')[0];
 
       try {
@@ -240,8 +263,8 @@ export class BancamigaClient {
         // Filter by reference digits
         const matchingPayments = payments.filter((payment) => {
           const refMatch = payment.NroReferencia.endsWith(params.referenceDigits) ||
-                          payment.NroReferenciaCorto.endsWith(params.referenceDigits);
-          
+            payment.NroReferenciaCorto.endsWith(params.referenceDigits);
+
           if (!refMatch) return false;
 
           // If expected amount is provided, validate it
@@ -276,8 +299,8 @@ export function createBancamigaClient(): BancamigaClient {
     dni: Deno.env.get('BANCAMIGA_DNI') || '',
     accessToken: Deno.env.get('BANCAMIGA_ACCESS_TOKEN'),
     refreshToken: Deno.env.get('BANCAMIGA_REFRESH_TOKEN'),
-    tokenExpires: Deno.env.get('BANCAMIGA_TOKEN_EXPIRES') 
-      ? parseInt(Deno.env.get('BANCAMIGA_TOKEN_EXPIRES')!) 
+    tokenExpires: Deno.env.get('BANCAMIGA_TOKEN_EXPIRES')
+      ? parseInt(Deno.env.get('BANCAMIGA_TOKEN_EXPIRES')!)
       : undefined,
   };
 

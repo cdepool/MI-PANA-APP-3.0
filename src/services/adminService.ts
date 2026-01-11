@@ -115,6 +115,33 @@ export const userManagementService = {
     }
   },
 
+  async getAdmins(): Promise<UserProfile[]> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'ADMIN')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(u => ({
+        id: u.id,
+        name: u.full_name || u.name || 'Administrador',
+        email: u.email,
+        role: u.role,
+        status: u.status || 'active',
+        createdAt: u.created_at,
+        phone: u.phone || 'N/A',
+        documentId: u.document_id || 'N/A',
+        adminRole: u.admin_role
+      }));
+    } catch (error) {
+      logger.error("Error fetching admins", error);
+      return [];
+    }
+  },
+
   async updateUserStatus(userId: string, status: 'active' | 'suspended'): Promise<boolean> {
     try {
       const { error } = await supabase
