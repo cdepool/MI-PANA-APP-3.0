@@ -54,8 +54,11 @@ Notifica a Bancamiga (vía soporte o su portal) los datos de recepción:
 
 ---
 
-## 4. Verificación
-1. **En la App**: Crea una solicitud de recarga.
+## 4. Verificación y Dominios
+> [!IMPORTANT]
+> **Dominio Autorizado:** Bancamiga tiene en su lista blanca el dominio **`v1.mipana.app`** como origen de confianza (IP Fija). Asegúrate de que todas las pruebas de producción se realicen a través de este dominio para evitar bloqueos en la verificación de pagos.
+
+1. **En la App**: Crea una solicitud de recarga desde `v1.mipana.app`.
 2. **Banco**: Realiza el Pago Móvil a **Next TV C.A.** (0272 / 0414-5274111 / J-40724274-1).
 3. **Confirmación**: El dinero debería aparecer en tu billetera de la app automáticamente en pocos segundos.
 

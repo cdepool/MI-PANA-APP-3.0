@@ -154,6 +154,42 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
       </main>
 
       <footer className="mt-auto pt-8 pb-4 text-center">
+        {/* Portal Switcher */}
+        <div className="mb-6 space-y-3">
+          {!isDriverDomain() && !isAdminDomain() ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              ¿Eres conductor?{' '}
+              <a 
+                href={window.location.hostname === 'localhost' ? '/login?role=chofer' : 'https://chofer.mipana.app'} 
+                className="text-[#FF6B00] font-bold hover:underline"
+              >
+                Acceso Conductores
+              </a>
+            </p>
+          ) : isDriverDomain() ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              ¿Buscas un viaje?{' '}
+              <a 
+                href={window.location.hostname === 'localhost' ? '/login' : 'https://v1.mipana.app'} 
+                className="text-[#FF6B00] font-bold hover:underline"
+              >
+                Volver a Pasajeros
+              </a>
+            </p>
+          ) : null}
+          
+          {!isAdminDomain() && (
+            <div className="pt-2">
+              <a 
+                href={window.location.hostname === 'localhost' ? '/login?role=admin' : 'https://admin.mipana.app'} 
+                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                Acceso Administrativo
+              </a>
+            </div>
+          )}
+        </div>
+
         <div className="mt-6 mx-auto w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mb-4"></div>
       </footer>
     </div>

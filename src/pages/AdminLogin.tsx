@@ -144,11 +144,17 @@ const AdminLogin: React.FC = () => {
 
             <div className="w-full max-w-md z-10">
                 <button
-                    onClick={() => navigate('/login')}
+                    onClick={() => {
+                        if (window.location.hostname === 'localhost') {
+                            navigate('/login');
+                        } else {
+                            window.location.href = 'https://v1.mipana.app';
+                        }
+                    }}
                     className="flex items-center gap-2 text-white/50 hover:text-white mb-8 transition-colors text-sm font-medium"
                 >
                     <ArrowLeft size={16} />
-                    Volver al inicio
+                    Volver al sitio público
                 </button>
 
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl">
