@@ -9,7 +9,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'sonner';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
-import { isDriverDomain } from '../utils/domain';
+import { isDriverDomain, isAdminDomain } from '../utils/domain';
 
 interface LoginProps {
   onNavigateRegister: () => void;
