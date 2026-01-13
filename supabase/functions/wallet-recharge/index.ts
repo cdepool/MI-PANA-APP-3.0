@@ -77,7 +77,10 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const cleanPhone = body.userPhone.replace(/\D/g, '');
+    let cleanPhone = body.userPhone.replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '58' + cleanPhone.substring(1);
+    }
 
     console.log('[Wallet Recharge] Step 1: Get or create wallet');
     let { data: wallet, error: walletError } = await supabase

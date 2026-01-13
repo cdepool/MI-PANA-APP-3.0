@@ -8,37 +8,12 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- DEFAULT PROFILE GENERATOR ---
 
-const generateDefaultProfile = (userId: string, user: any): DriverProfile => {
-    return {
-        userId,
-        personalData: {
-            fullName: user.name || 'Conductor Nuevo',
-            birthDate: new Date('1990-01-01'),
-            nationality: 'VENEZOLANO',
-            address: 'Dirección no registrada',
-            phone: user.phone || ''
-        },
-        vehicle: {
-            model: user.vehicle?.model || 'Modelo no registrado',
-            color: user.vehicle?.color || 'Color no registrado',
-            plate: user.vehicle?.plate || 'SIN-PLACA',
-            brand: 'Marca Genérica',
-            year: 2020,
-            serviceType: 'mototaxi',
-            documents: []
-        },
-        documents: [],
-        auditLog: [],
-        pendingChanges: []
-    };
-};
-
 // --- PUBLIC SERVICE ---
 
 export const driverService = {
 
     // 1. Get Full Profile
-    getProfile: async (userId: string): Promise<DriverProfile> => {
+    getProfile: async (userId: string): Promise<DriverProfile | null> => {
         // Try to fetch from 'driver_profiles' table
         const { data, error } = await supabase
             .from('driver_profiles')
@@ -56,24 +31,8 @@ export const driverService = {
             return data as DriverProfile;
         }
 
-        // If not found, create default
-        const user = authService.getSession(); // Get basic info from session
-        const newProfile = generateDefaultProfile(userId, user || {});
-
-        // Save to Supabase
-        const { error: insertError } = await supabase
-            .from('driver_profiles')
-            .insert([{
-                user_id: userId,
-                ...newProfile // Assuming table columns match JSON structure or using JSONB column
-            }]);
-
-        if (insertError) {
-            console.error('Error creating default driver profile:', insertError);
-            // Fallback to local object if DB fails, to not block UI
-        }
-
-        return newProfile;
+        // Return null if not found
+        return null;
     },
 
     // 2. Update Specific Section

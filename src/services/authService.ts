@@ -131,107 +131,7 @@ export const authService = {
     return authService.signInWithGoogle();
   },
 
-  registerOrLoginImplicit: async (email: string, password?: string, name?: string, phone?: string) => {
-    // Use provided password or fallback to a more "hidden" default for this specific flow
-    const securePassword = password || `mp_${email.split('@')[0]}_pana`;
-
-    // 1. Try Login first
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password: securePassword,
-    });
-
-    if (!loginError && loginData.user) {
-      // ✅ Login Successful
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', loginData.user.id).single();
-
-      // SECURITY BLOCK: Admins cannot use implicit login
-      if (profile?.role === 'ADMIN' || profile?.admin_role) {
-        // Sign out immediately
-        await supabase.auth.signOut();
-        throw new Error('Por seguridad, los administradores deben usar el Acceso Corporativo.');
-      }
-
-      return {
-        id: loginData.user.id,
-        email: loginData.user.email || email,
-        phone: profile?.phone || phone,
-        name: profile?.name || name || email.split('@')[0],
-        role: profile?.role || UserRole.PASSENGER,
-        avatarUrl: profile?.avatarUrl,
-        wallet: { balance: 0, transactions: [] }
-      } as User;
-    }
-
-    // 2. If Login failed, try Registering
-    // We assume the error was "Invalid login credentials" or user doesn't exist
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password: securePassword,
-      options: {
-        data: {
-          name: name || email.split('@')[0],
-          role: 'PASSENGER',
-          phone: phone
-        }
-      }
-    });
-
-    if (signUpError) {
-      // If error is related to sending email, it's possible the user WAS created (thanks to our trigger)
-      if (signUpError.message.toLowerCase().includes('email') || signUpError.message.includes('500')) {
-        console.warn("Email confirmation failed, but user might be created. Retrying login...");
-        const { data: retryLogin, error: retryError } = await supabase.auth.signInWithPassword({
-          email,
-          password: securePassword,
-        });
-        if (!retryError && retryLogin.user) {
-          const { data: profile } = await supabase.from('profiles').select('*').eq('id', retryLogin.user.id).single();
-          return {
-            id: retryLogin.user.id,
-            email: retryLogin.user.email || email,
-            phone: profile?.phone || phone,
-            name: profile?.name || name || email.split('@')[0],
-            role: profile?.role || UserRole.PASSENGER,
-            wallet: { balance: 0, transactions: [] }
-          } as User;
-        }
-      }
-
-      if (signUpError.message.includes('already registered')) {
-        throw new Error('Este número ya está en uso. Por favor verifica tus datos.');
-      }
-      throw signUpError;
-    }
-
-    if (signUpData.user) {
-      // ✅ Registration Successful
-      const newProfile = {
-        id: signUpData.user.id,
-        email: email,
-        name: name || email.split('@')[0],
-        role: 'PASSENGER',
-        phone: phone,
-        created_at: new Date().toISOString()
-      };
-
-      // Try Insert Profile (Internal DB)
-      await supabase.from('profiles').upsert(newProfile);
-
-      return {
-        id: newProfile.id,
-        email: newProfile.email,
-        phone: phone,
-        name: newProfile.name,
-        role: UserRole.PASSENGER,
-        wallet: { balance: 0, transactions: [] }
-      } as User;
-    }
-
-    throw new Error('No se pudo completar el acceso rápido. Intenta de nuevo.');
-  },
-
-  loginPassenger: async (identifier: string, password: string) => {
+  loginWithPassword: async (identifier: string, password: string) => {
     // Real Supabase Authentication
     const email = identifier.includes('@') ? identifier : `${identifier}@mipana.app`;
 
@@ -262,6 +162,63 @@ export const authService = {
       ...profile
     } as User;
   },
+
+  registerUser: async (data: RegistrationData & { role: UserRole }) => {
+    const { email, password, name, phone, role } = data;
+
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+          role,
+          phone
+        }
+      }
+    });
+
+    if (signUpError) {
+      if (signUpError.message.includes('already registered')) {
+        throw new Error('Este correo ya está registrado.');
+      }
+      throw signUpError;
+    }
+
+    if (signUpData.user) {
+      // ✅ Registration Successful
+      const newProfile = {
+        id: signUpData.user.id,
+        email: email,
+        name: name,
+        role: role,
+        phone: phone,
+        created_at: new Date().toISOString()
+      };
+
+      // Try Insert Profile (Internal DB)
+      // Note: The trigger might handle this, but explicit insert ensures control if trigger fails/is missing
+      const { error: profileError } = await supabase.from('profiles').upsert(newProfile);
+
+      if (profileError) {
+        console.warn("Profile creation warn:", profileError);
+        // Don't throw, as auth user exists.
+      }
+
+      return {
+        id: newProfile.id,
+        email: newProfile.email,
+        phone: phone,
+        name: newProfile.name,
+        role: role,
+        wallet: { balance: 0, transactions: [] }
+      } as User;
+    }
+
+    throw new Error('No se pudo completar el registro.');
+  },
+
+
 
   updateUser: async (userId: string, data: Partial<User>) => {
     const { data: updated, error } = await supabase

@@ -18,32 +18,63 @@ const DriverHome: React.FC = () => {
   useEffect(() => {
     let unsubscribe: any;
 
-    if (isOnline && !activeRide) {
-      // In a real app, we'd subscribe to "REQUESTED" trips nearby
-      // For now, let's fetch all requested trips
-      const fetchAvailable = async () => {
-        const { data } = await supabase
-          .from('trips')
-          .select('*')
-          .eq('status', 'REQUESTED');
-        if (data) setAvailableRides(data.map(r => ({ ...r, serviceId: r.serviceId as ServiceId })));
-      };
+    const initMapAndRides = async () => {
+      if (!isOnline) {
+        setAvailableRides([]);
+        return;
+      }
 
-      fetchAvailable();
+      if (activeRide) return;
 
-      // Real-time subscription for new requests
-      const channel = supabase
-        .channel('new-trips')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trips', filter: 'status=eq.REQUESTED' }, (payload) => {
-          notificationService.sendLocalNotification('Nueva Solicitud', 'Hay un Pana cerca necesitando un viaje.');
-          setAvailableRides(prev => [...prev, payload.new as Ride]);
-        })
-        .subscribe();
+      try {
+        // 1. Get Location
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        }).catch(e => null);
 
-      unsubscribe = () => supabase.removeChannel(channel);
-    } else {
-      setAvailableRides([]);
-    }
+        // 2. Fetch Rides using RPC if location available, else fallback or empty
+        if (position) {
+          const { latitude, longitude } = position.coords;
+          const { data, error } = await supabase.rpc('get_nearby_rides', {
+            user_lat: latitude,
+            user_lng: longitude,
+            radius_km: 50 // 50km radius
+          });
+
+          if (error) {
+            console.error('RPC Error:', error);
+            // Fallback to simple query if RPC fails (e.g. function missing)
+            const { data: fallbackData } = await supabase.from('trips').select('*').eq('status', 'REQUESTED');
+            if (fallbackData) setAvailableRides(fallbackData.map(r => ({ ...r, serviceId: r.serviceId as ServiceId })));
+          } else if (data) {
+            // Map RPC result structure to Ride type if needed, usually matches if return table matches
+            setAvailableRides(data.map((r: any) => ({ ...r, serviceId: r.service_id as ServiceId, vehicleType: r.vehicle_type })));
+          }
+        } else {
+          // Fallback if no location permission
+          console.warn("No location permission, fetching all requests (dev mode)");
+          const { data } = await supabase.from('trips').select('*').eq('status', 'REQUESTED');
+          if (data) setAvailableRides(data.map(r => ({ ...r, serviceId: r.serviceId as ServiceId })));
+        }
+
+        // 3. Real-time Subscription
+        const channel = supabase
+          .channel('new-trips')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trips', filter: 'status=eq.REQUESTED' }, (payload) => {
+            // Ideally check distance here too manually
+            notificationService.sendLocalNotification('Nueva Solicitud', 'Hay un Pana cerca necesitando un viaje.');
+            setAvailableRides(prev => [...prev, payload.new as Ride]);
+          })
+          .subscribe();
+
+        unsubscribe = () => supabase.removeChannel(channel);
+
+      } catch (err) {
+        console.error("Error initializing driver map", err);
+      }
+    };
+
+    initMapAndRides();
 
     return () => {
       if (unsubscribe) unsubscribe();

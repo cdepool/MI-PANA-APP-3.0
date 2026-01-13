@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { z } from 'zod'; // Keep zod for basic validation if needed, or simple checks
 import { ArrowLeft, Smartphone, User, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { isDriverDomain } from '../utils/domain';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { authService } from '../services/authService';
@@ -35,20 +36,47 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
       toast.error("Ingresa un número de teléfono válido para WhatsApp");
       return;
     }
+    if (!name.trim()) {
+      toast.error("Por favor ingresa tu nombre");
+      return;
+    }
 
     setIsLoading(true);
     try {
-      // Call Smart Service (Login or Signup)
-      await authService.registerOrLoginImplicit(email.trim(), password, name, phone);
+      // Call standard Register
+      const targetRole = isDriverDomain() || new URLSearchParams(window.location.search).get('role') === 'chofer'
+        ? UserRole.DRIVER
+        : UserRole.PASSENGER;
 
-      // No need to manually call login() anymore, 
-      // AuthContext's onAuthStateChange will handle the state update.
-      toast.success("¡Acceso exitoso!");
-      onNavigateHome();
+      await authService.registerUser({
+        email: email.trim(),
+        password,
+        name,
+        phone,
+        idType: 'V', // Default, logic can be expanded
+        idNumber: '', // Default
+        age: 18, // Default
+        role: targetRole
+      });
+
+      toast.success("¡Registro exitoso! Bienvenido.");
+
+      // Attempt auto-login or redirect
+      // If you want to auto-login, you might need to call loginWithPassword here 
+      // or just navigate to login if email confirmation is required (Supabase default usually requires it but for this Plan we might assume auto-confirm or login works).
+
+      // Let's try to auto-login to improve UX
+      try {
+        await authService.loginWithPassword(email.trim(), password);
+        onNavigateHome();
+      } catch (loginErr) {
+        // If auto-login fails (e.g. email not confirmed), send to login
+        onNavigateLogin();
+      }
 
     } catch (err: any) {
       console.error('Auth Error:', err);
-      toast.error(err.message || "Error de autenticación");
+      toast.error(err.message || "Error al registrarse");
     } finally {
       setIsLoading(false);
     }

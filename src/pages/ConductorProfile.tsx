@@ -34,10 +34,12 @@ const ConductorProfile: React.FC = () => {
             const driverProfile = await driverService.getProfile(currentUser.id);
             setProfile(driverProfile);
 
-            // Init forms
-            setPersonalForm(driverProfile.personalData);
-            setVehicleForm(driverProfile.vehicle);
-            setFiscalForm(driverProfile.fiscalData || { rif: '', address: '', fiscalStatus: 'PERSONA_NATURAL' });
+            // Init forms if profile exists
+            if (driverProfile) {
+                setPersonalForm(driverProfile.personalData);
+                setVehicleForm(driverProfile.vehicle);
+                setFiscalForm(driverProfile.fiscalData || { rif: '', address: '', fiscalStatus: 'PERSONA_NATURAL' });
+            }
 
         } catch (error) {
             console.error(error);
@@ -70,8 +72,34 @@ const ConductorProfile: React.FC = () => {
         await loadData();
     };
 
-    if (loading && !profile) {
+    if (loading) {
         return <div className="min-h-screen flex items-center justify-center bg-gray-50">Cargando perfil...</div>;
+    }
+
+    if (!profile) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6 text-center">
+                <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full">
+                    <Shield size={64} className="text-blue-600 mx-auto mb-6" />
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Perfil Incompleto</h1>
+                    <p className="text-gray-500 mb-8">
+                        Para comenzar a recibir viajes, necesitas completar tu registro de conductor y vehículo.
+                    </p>
+                    <button
+                        onClick={() => window.location.href = '/onboarding'} // Or appropriate route
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-600/20"
+                    >
+                        Completar Registro
+                    </button>
+                    <button
+                        onClick={() => window.history.back()}
+                        className="mt-4 text-gray-400 hover:text-gray-600 font-semibold text-sm"
+                    >
+                        Volver al Inicio
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return (
