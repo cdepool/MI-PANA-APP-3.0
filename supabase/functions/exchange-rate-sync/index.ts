@@ -24,14 +24,14 @@ serve(async (req) => {
     console.log('[Exchange Rate Sync] Starting sync...');
 
     // Fetch exchange rate from DolarAPI
-    const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
-    
+    const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+
     if (!response.ok) {
       throw new Error(`DolarAPI returned ${response.status}`);
     }
 
     const data: DolarAPIResponse = await response.json();
-    
+
     console.log('[Exchange Rate Sync] Fetched rate:', data.promedio, 'VES/USD');
 
     // Initialize Supabase client
@@ -105,7 +105,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[Exchange Rate Sync] Error:', error);
-    
+
     return new Response(
       JSON.stringify({
         success: false,

@@ -142,11 +142,11 @@ export class BancamigaClient {
       return true;
     }
 
-    const now = Date.now();
-    const expiresIn = this.config.tokenExpires - now;
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const expiresIn = this.config.tokenExpires - nowSeconds;
 
     // Consider expired if less than 5 minutes remaining
-    return expiresIn < 5 * 60 * 1000;
+    return expiresIn < 5 * 60;
   }
 
   /**
@@ -174,11 +174,13 @@ export class BancamigaClient {
     if (cleanPhone.length === 10) cleanPhone = '58' + cleanPhone;
     if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) cleanPhone = '58' + cleanPhone.substring(1);
 
+    console.log(`[Bancamiga] Fetching: ${this.config.host}/public/protected/pm/find`);
     const response = await fetch(`${this.config.host}/public/protected/pm/find`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.config.accessToken}`,
+        'User-Agent': 'Mozilla/5.0 (Supabase Edge Function)',
       },
       body: JSON.stringify({
         Phone: cleanPhone,
@@ -188,7 +190,9 @@ export class BancamigaClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to search payments: ${response.statusText}`);
+      const errorBody = await response.text();
+      console.error(`[Bancamiga] Search failed with status ${response.status}. Body:`, errorBody.substring(0, 500));
+      throw new Error(`Failed to search payments: ${response.statusText} ${errorBody.substring(0, 100)}`);
     }
 
     const data: BancamigaResponse = await response.json();
@@ -209,11 +213,13 @@ export class BancamigaClient {
   }): Promise<BancamigaPayment[]> {
     await this.ensureValidToken();
 
+    console.log(`[Bancamiga] Fetching: ${this.config.host}/public/protected/pm/history/find`);
     const response = await fetch(`${this.config.host}/public/protected/pm/history/find`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.config.accessToken}`,
+        'User-Agent': 'Mozilla/5.0 (Supabase Edge Function)',
       },
       body: JSON.stringify({
         Date: params.date,
@@ -239,6 +245,7 @@ export class BancamigaClient {
    */
   async findPaymentByReference(params: {
     phoneOrig: string;
+    bancoOrig: string;
     referenceDigits: string;
     expectedAmount?: number;
     dateRange?: number; // days to search back (default: 1)
@@ -256,7 +263,7 @@ export class BancamigaClient {
       try {
         const payments = await this.searchPayments({
           phoneOrig: params.phoneOrig,
-          bancoOrig: '0172',
+          bancoOrig: params.bancoOrig,
           fechaMovimiento: dateStr,
         });
 
@@ -295,8 +302,8 @@ export class BancamigaClient {
  */
 export function createBancamigaClient(): BancamigaClient {
   const config: BancamigaConfig = {
-    host: Deno.env.get('BANCAMIGA_HOST') || 'https://adminp2p.sitca-ve.com',
-    dni: Deno.env.get('BANCAMIGA_DNI') || '',
+    host: Deno.env.get('BANCAMIGA_HOST') || 'http://35.202.142.88',
+    dni: Deno.env.get('BANCAMIGA_DNI') || 'j407242741',
     accessToken: Deno.env.get('BANCAMIGA_ACCESS_TOKEN'),
     refreshToken: Deno.env.get('BANCAMIGA_REFRESH_TOKEN'),
     tokenExpires: Deno.env.get('BANCAMIGA_TOKEN_EXPIRES')
