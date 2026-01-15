@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { User, DriverProfile } from '../types';
+import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import { driverService } from '../services/driverService';
 import { ProfileSectionCard } from '../components/conductor/ProfileSectionCard';
@@ -10,6 +11,7 @@ import { PendingChangesNotification } from '../components/conductor/PendingChang
 import { User as UserIcon, Car, CreditCard, FileText, Shield, Camera, ArrowLeft } from 'lucide-react';
 
 const ConductorProfile: React.FC = () => {
+    const { user: currentUser } = useAuth();
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<DriverProfile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -23,12 +25,11 @@ const ConductorProfile: React.FC = () => {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [currentUser]);
 
     const loadData = async () => {
         try {
-            const currentUser = authService.getSession();
-            if (!currentUser) return; // Handle redirect in real app
+            if (!currentUser) return;
             setUser(currentUser);
 
             const driverProfile = await driverService.getProfile(currentUser.id);

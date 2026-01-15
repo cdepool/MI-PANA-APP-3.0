@@ -1,9 +1,12 @@
 import { supabase } from './supabaseClient';
 import { Ride, ServiceId, VehicleType, LocationPoint } from '../types';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+
 export const TripService = {
     /**
-     * Creates a new trip request in the database.
+     * Creates a new trip request in the database and optionally triggers matching.
      */
     async createTrip(
         passengerId: string,
@@ -12,42 +15,35 @@ export const TripService = {
         serviceId: ServiceId,
         vehicleType: VehicleType,
         price: { usd: number, ves: number },
-        distanceKm: number
+        distanceKm: number,
+        autoMatch: boolean = true
     ): Promise<Ride> {
+        // Build insert payload with coordinates for matching
+        const insertPayload: Record<string, unknown> = {
+            passenger_id: passengerId,
+            status: 'REQUESTED',
+            origin: origin.address,
+            destination: destination.address,
+            "priceUsd": price.usd,
+            "priceVes": price.ves,
+            "distanceKm": distanceKm,
+            "serviceId": serviceId,
+            "vehicleType": vehicleType
+        };
 
-        // Ensure coords are valid geometry points (although we store as Geography(Point) in DB, Supabase JS client handles some casting if configured, 
-        // but often it's easier to send raw values if we used a text column. 
-        // Since we used GEOGRAPHY(Point), we might need to rely on PostGIS raw query or send string representation.
-        // For simplicity in this Quick Start, we'll try sending simple objects and rely on the client or update to use raw SQL if needed.
-        // However, typically Supabase handles standard inserts. Let's try standard insert first.
-        // Update: user migration uses "originCoords" GEOGRAPHY(Point). 
-        // Inserting directly into geography columns via JS client can be tricky without a wrapper.
-        // We will attempt to insert as GeoJSON-like or WKT if possible, or use a customized RPC.
-        // BUT for now, let's assume we can insert metadata and use a view or just try raw.
-        // Actually, the easiest way for Geography in JS is passing a WKT string 'POINT(lng lat)' if the driver supports it, 
-        // or using `st_point` via RPC.
-        // Let's use a standard insert and see. If "originCoords" fails, we might mock it or fix it.
+        // Add coordinates if available (for PostGIS matching)
+        if (origin.lat && origin.lng) {
+            insertPayload.origin_lat = origin.lat;
+            insertPayload.origin_lng = origin.lng;
+        }
+        if (destination.lat && destination.lng) {
+            insertPayload.destination_lat = destination.lat;
+            insertPayload.destination_lng = destination.lng;
+        }
 
-        // Construct the payload matching the table columns (using the quoted names from migration)
         const { data, error } = await supabase
             .from('trips')
-            .insert([
-                {
-                    passenger_id: passengerId,
-                    status: 'REQUESTED',
-                    origin: origin.address,
-                    destination: destination.address,
-                    // "originCoords": `POINT(${origin.lng} ${origin.lat})`, // WKT format often works if casted
-                    // Let's pass null for coords initially to avoid PostGIS format errors until we confirm handling.
-                    // Or better: pass them if we update the simulation to use them.
-                    // We'll trust the text addresses for the UI for now.
-                    "priceUsd": price.usd,
-                    "priceVes": price.ves,
-                    "distanceKm": distanceKm,
-                    "serviceId": serviceId,
-                    "vehicleType": vehicleType
-                }
-            ])
+            .insert([insertPayload])
             .select()
             .single();
 
@@ -56,8 +52,49 @@ export const TripService = {
             throw error;
         }
 
-        // Map DB response to Ride type
-        return mapDbTripToRide(data);
+        const ride = mapDbTripToRide(data);
+
+        // Trigger matching engine asynchronously (don't wait)
+        if (autoMatch) {
+            this.triggerMatching(ride.id).catch(err => {
+                console.error('Error triggering matching:', err);
+            });
+        }
+
+        return ride;
+    },
+
+    /**
+     * Trigger the matching engine Edge Function for a trip.
+     * This is fire-and-forget from the frontend perspective.
+     */
+    async triggerMatching(tripId: string): Promise<void> {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+            console.warn('No session, skipping match trigger');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/match-driver`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({ trip_id: tripId }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('Matching engine error:', error);
+            } else {
+                console.log('Matching engine triggered for trip:', tripId);
+            }
+        } catch (err) {
+            console.error('Failed to call matching engine:', err);
+        }
     },
 
     /**
@@ -116,6 +153,27 @@ export const TripService = {
         }
 
         return data.map(mapDbTripToRide);
+    },
+
+    /**
+     * Get active trip for a user (as passenger or driver)
+     */
+    async getActiveTrip(userId: string): Promise<Ride | null> {
+        const { data, error } = await supabase
+            .from('trips')
+            .select('*')
+            .or(`passenger_id.eq.${userId},driver_id.eq.${userId}`)
+            .in('status', ['REQUESTED', 'MATCHING', 'ACCEPTED', 'IN_PROGRESS'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Error fetching active trip:', error);
+            return null;
+        }
+
+        return data ? mapDbTripToRide(data) : null;
     }
 };
 

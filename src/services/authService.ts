@@ -54,15 +54,7 @@ export const authService = {
     }
   },
 
-  // --- Session Management (Legacy shells, do not use) ---
-
-  getSession: (): User | null => {
-    return null;
-  },
-
-  setSession: (_user: User) => {
-    // Session is handled by Supabase natively
-  },
+  // --- Session Management ---
 
   logout: async () => {
     await supabase.auth.signOut();

@@ -7,6 +7,8 @@ import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 import { TripService } from '../services/tripService';
 import { notificationService } from '../services/notificationService';
+import DriverLocationService from '../services/driverLocationService';
+import { Power, Star, Activity, MapPin, MessageCircle, Phone, ShieldCheck } from 'lucide-react';
 
 const DriverHome: React.FC = () => {
   const { user } = useAuth();
@@ -81,16 +83,58 @@ const DriverHome: React.FC = () => {
     };
   }, [isOnline, activeRide]);
 
-  const toggleOnline = () => setIsOnline(!isOnline);
+  // Handle online toggle with location tracking
+  const toggleOnline = async () => {
+    const newOnlineState = !isOnline;
+
+    if (newOnlineState && user) {
+      // Going online - start location tracking
+      const success = await DriverLocationService.startLocationTracking(user.id, (error) => {
+        console.error('[DriverHome] GPS error:', error);
+        notificationService.sendLocalNotification(
+          'Error GPS',
+          'No se puede acceder a tu ubicación. Verifica los permisos.'
+        );
+      });
+
+      if (success) {
+        await DriverLocationService.setDriverAvailability(user.id, true);
+        setIsOnline(true);
+      } else {
+        notificationService.sendLocalNotification(
+          'Ubicación Requerida',
+          'Debes permitir acceso a tu ubicación para recibir viajes.'
+        );
+      }
+    } else if (user) {
+      // Going offline - stop tracking
+      DriverLocationService.stopLocationTracking();
+      await DriverLocationService.setDriverAvailability(user.id, false);
+      setIsOnline(false);
+    }
+  };
 
   const acceptRide = async (ride: Ride) => {
     try {
-      const { error } = await supabase
-        .from('trips')
-        .update({ status: 'ACCEPTED', driver_id: user?.id })
-        .eq('id', ride.id);
+      // Use atomic RPC function to prevent race conditions
+      const { data, error } = await supabase.rpc('assign_driver_to_trip', {
+        p_trip_id: ride.id,
+        p_driver_id: user?.id
+      });
 
-      if (error) throw error;
+      if (error) {
+        // Trip was likely taken by another driver
+        if (error.message.includes('not available')) {
+          notificationService.sendLocalNotification(
+            'Viaje No Disponible',
+            'Otro conductor aceptó este viaje primero.'
+          );
+          // Remove from available rides
+          setAvailableRides(prev => prev.filter(r => r.id !== ride.id));
+          return;
+        }
+        throw error;
+      }
 
       setActiveRide({ ...ride, status: 'ACCEPTED', driverId: user?.id });
       setStatus('ACCEPTED');
