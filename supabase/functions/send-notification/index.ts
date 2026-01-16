@@ -15,7 +15,99 @@ interface NotificationRequest {
     data?: Record<string, string>;
 }
 
-const FCM_SERVER_KEY = Deno.env.get("FCM_SERVER_KEY");
+// FCM V1 API Configuration
+const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") || "landing-sketch";
+const FIREBASE_SERVICE_ACCOUNT = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
+
+// Token cache for OAuth2
+let accessTokenCache: { token: string; expiresAt: number } | null = null;
+
+/**
+ * Get OAuth2 access token from Service Account credentials
+ */
+async function getAccessToken(): Promise<string> {
+    // Return cached token if still valid
+    if (accessTokenCache && Date.now() < accessTokenCache.expiresAt - 60000) {
+        return accessTokenCache.token;
+    }
+
+    if (!FIREBASE_SERVICE_ACCOUNT) {
+        throw new Error("FIREBASE_SERVICE_ACCOUNT not configured");
+    }
+
+    const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
+
+    // Create JWT for Service Account authentication
+    const now = Math.floor(Date.now() / 1000);
+    const header = { alg: "RS256", typ: "JWT" };
+    const payload = {
+        iss: serviceAccount.client_email,
+        sub: serviceAccount.client_email,
+        aud: "https://oauth2.googleapis.com/token",
+        iat: now,
+        exp: now + 3600, // 1 hour
+        scope: "https://www.googleapis.com/auth/firebase.messaging",
+    };
+
+    // Encode JWT parts
+    const encoder = new TextEncoder();
+    const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+    const payloadB64 = btoa(JSON.stringify(payload)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+
+    // Import private key and sign
+    const privateKeyPem = serviceAccount.private_key;
+    const privateKey = await crypto.subtle.importKey(
+        "pkcs8",
+        pemToArrayBuffer(privateKeyPem),
+        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+        false,
+        ["sign"]
+    );
+
+    const signatureInput = encoder.encode(`${headerB64}.${payloadB64}`);
+    const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", privateKey, signatureInput);
+    const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+        .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+
+    const jwt = `${headerB64}.${payloadB64}.${signatureB64}`;
+
+    // Exchange JWT for access token
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenData.access_token) {
+        throw new Error(`Failed to get access token: ${JSON.stringify(tokenData)}`);
+    }
+
+    // Cache the token
+    accessTokenCache = {
+        token: tokenData.access_token,
+        expiresAt: Date.now() + (tokenData.expires_in * 1000),
+    };
+
+    return tokenData.access_token;
+}
+
+/**
+ * Convert PEM to ArrayBuffer for crypto API
+ */
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+    const b64 = pem
+        .replace(/-----BEGIN PRIVATE KEY-----/, "")
+        .replace(/-----END PRIVATE KEY-----/, "")
+        .replace(/\n/g, "");
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
 
 Deno.serve(async (req) => {
     if (req.method === "OPTIONS") {
@@ -75,10 +167,10 @@ Deno.serve(async (req) => {
 
         const results: { user_id: string; success: boolean; error?: string }[] = [];
 
-        // Send notifications via FCM
+        // Send notifications via FCM V1 API
         for (const profile of eligibleProfiles) {
             try {
-                const fcmResponse = await sendFCMNotification(
+                const fcmResponse = await sendFCMNotificationV1(
                     profile.fcm_token,
                     title,
                     body,
@@ -105,8 +197,8 @@ Deno.serve(async (req) => {
                 });
 
                 // If token is invalid, remove it
-                if (fcmResponse.error?.includes("InvalidRegistration") ||
-                    fcmResponse.error?.includes("NotRegistered")) {
+                if (fcmResponse.error?.includes("UNREGISTERED") ||
+                    fcmResponse.error?.includes("INVALID_ARGUMENT")) {
                     await supabaseClient
                         .from("profiles")
                         .update({ fcm_token: null })
@@ -144,54 +236,89 @@ Deno.serve(async (req) => {
 });
 
 /**
- * Send a push notification via Firebase Cloud Messaging
+ * Send a push notification via Firebase Cloud Messaging V1 API
+ * Uses OAuth2 with Service Account for authentication
  */
-async function sendFCMNotification(
+async function sendFCMNotificationV1(
     token: string,
     title: string,
     body: string,
     data?: Record<string, string>
 ): Promise<{ success: boolean; message_id?: string; error?: string }> {
-    if (!FCM_SERVER_KEY) {
-        console.warn("FCM_SERVER_KEY not configured, using mock mode");
+    if (!FIREBASE_SERVICE_ACCOUNT) {
+        console.warn("FIREBASE_SERVICE_ACCOUNT not configured, using mock mode");
         return { success: true, message_id: `mock_${Date.now()}` };
     }
 
     try {
-        const response = await fetch("https://fcm.googleapis.com/fcm/send", {
+        // Get OAuth2 access token
+        const accessToken = await getAccessToken();
+
+        // FCM V1 API endpoint
+        const fcmUrl = `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`;
+
+        const response = await fetch(fcmUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `key=${FCM_SERVER_KEY}`,
+                "Authorization": `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-                to: token,
-                notification: {
-                    title,
-                    body,
-                    icon: "/logo-app.png",
-                    click_action: "OPEN_APP",
+                message: {
+                    token: token,
+                    notification: {
+                        title,
+                        body,
+                    },
+                    webpush: {
+                        notification: {
+                            icon: "/logo-app.png",
+                            badge: "/badge-icon.png",
+                            requireInteraction: true,
+                        },
+                        fcm_options: {
+                            link: "/",
+                        },
+                    },
+                    android: {
+                        priority: "high",
+                        notification: {
+                            icon: "ic_notification",
+                            color: "#6366f1",
+                            click_action: "OPEN_APP",
+                        },
+                    },
+                    apns: {
+                        payload: {
+                            aps: {
+                                badge: 1,
+                                sound: "default",
+                            },
+                        },
+                    },
+                    data: {
+                        ...data,
+                        timestamp: new Date().toISOString(),
+                    },
                 },
-                data: {
-                    ...data,
-                    timestamp: new Date().toISOString(),
-                },
-                priority: "high",
-                time_to_live: 86400, // 24 hours
             }),
         });
 
-        const result = await response.json();
-
-        if (result.success === 1) {
+        if (response.ok) {
+            const result = await response.json();
+            // Extract message ID from the response (format: projects/*/messages/*)
+            const messageId = result.name?.split("/").pop();
             return {
                 success: true,
-                message_id: result.results?.[0]?.message_id,
+                message_id: messageId || result.name,
             };
         } else {
+            const errorData = await response.json();
+            const errorMessage = errorData.error?.message || JSON.stringify(errorData);
+            const errorCode = errorData.error?.details?.[0]?.errorCode || "";
             return {
                 success: false,
-                error: result.results?.[0]?.error || "Unknown FCM error",
+                error: `${errorCode}: ${errorMessage}`,
             };
         }
     } catch (err) {

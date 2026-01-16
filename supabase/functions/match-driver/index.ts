@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
 
       if (!nearbyDrivers || nearbyDrivers.length === 0) {
         console.log(`[Matching] No drivers found in ${radius}km radius`);
-        
+
         // Expand radius
         await supabaseClient.rpc("expand_matching_radius", { p_trip_id: trip_id });
         currentRadiusIndex++;
@@ -118,14 +118,39 @@ Deno.serve(async (req) => {
 
       // Notify all nearby drivers (in production, send push notifications)
       const driverIds = nearbyDrivers.map((d: NearbyDriver) => d.driver_id);
-      
+
       await supabaseClient
         .from("trips")
         .update({ assigned_driver_ids: driverIds })
         .eq("id", trip_id);
 
-      // TODO: Send push notifications to drivers
-      // For now, drivers poll or use Realtime subscription
+      // Send push notifications to all nearby drivers
+      try {
+        const functionUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-notification`;
+        await fetch(functionUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            user_ids: driverIds,
+            title: "🚗 Nuevo viaje disponible",
+            body: `Viaje de ${trip.origin} a ${trip.destination}`,
+            type: "trip_request",
+            data: {
+              trip_id: trip_id,
+              origin: trip.origin,
+              destination: trip.destination,
+              estimated_fare: String(trip.estimated_fare || ""),
+            },
+          }),
+        });
+        console.log(`[Matching] Push notifications sent to ${driverIds.length} drivers`);
+      } catch (notifError) {
+        console.error("[Matching] Error sending push notifications:", notifError);
+        // Continue matching even if notifications fail
+      }
 
       // Wait for driver acceptance (polling approach)
       const startTime = Date.now();
@@ -139,7 +164,7 @@ Deno.serve(async (req) => {
 
         if (updatedTrip?.status === "ACCEPTED" && updatedTrip?.driver_id) {
           console.log(`[Matching] Driver ${updatedTrip.driver_id} accepted trip ${trip_id}`);
-          
+
           return new Response(
             JSON.stringify({
               success: true,
@@ -193,7 +218,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error("[Matching] Unexpected error:", error);
-    
+
     return new Response(
       JSON.stringify({ error: "Internal server error", details: String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
