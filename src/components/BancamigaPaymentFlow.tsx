@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CreditCard, CheckCircle, AlertCircle, Loader, Copy, Hash, Building2 } from 'lucide-react';
 
 interface BancamigaPaymentFlowProps {

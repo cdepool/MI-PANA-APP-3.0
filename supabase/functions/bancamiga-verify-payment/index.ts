@@ -133,7 +133,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'No se encontró el pago. Verifica que los datos sean correctos y que el pago se haya realizado en las últimas 72 horas.',
+            error: 'No se encontró el pago. Verifica que:\n1. Los últimos 4 dígitos sean correctos\n2. Hayas seleccionado el banco correcto\n3. El pago se haya realizado en las últimas 72 horas\n4. El monto sea exactamente Bs. ' + body.expectedAmount.toFixed(2),
           }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

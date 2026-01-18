@@ -8,6 +8,7 @@ interface WalletRechargeProps {
   prefilledAmount?: number;
   onSuccess: (newBalance: { ves: number; usd: number }) => void;
   onCancel?: () => void;
+  walletStatus?: string; // Add wallet status prop
 }
 
 // Lista de bancos principales de Venezuela
@@ -30,7 +31,8 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
   userPhone,
   prefilledAmount,
   onSuccess,
-  onCancel
+  onCancel,
+  walletStatus = 'active'
 }) => {
   const [step, setStep] = useState<'amount' | 'payment' | 'verification' | 'success' | 'error'>('amount');
   const [amount, setAmount] = useState(prefilledAmount ? prefilledAmount.toString() : '');
@@ -62,7 +64,13 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
       setError('Por seguridad bancaria, esta función solo está disponible en v1.mipana.app');
       setStep('error');
     }
-  }, []);
+
+    // Check wallet status
+    if (walletStatus !== 'active') {
+      setError(`Tu billetera está ${walletStatus}. Contacta a soporte para activarla.`);
+      setStep('error');
+    }
+  }, [walletStatus]);
 
   useEffect(() => {
     if (prefilledAmount) {
@@ -147,7 +155,14 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
           onSuccess(mappedWallet);
         }, 2000);
       } else {
-        setError(result.error || 'No se pudo verificar el pago. Si ya pagaste, espera unos minutos e intenta de nuevo.');
+        const errorMsg = result.error || 'No se pudo verificar el pago.';
+        const suggestions = [
+          'Verifica que los últimos 4 dígitos sean correctos',
+          'Confirma que seleccionaste el banco correcto',
+          'Asegúrate de que el pago se realizó en las últimas 24 horas',
+          `Verifica que el monto sea exactamente Bs. ${amount}`
+        ];
+        setError(`${errorMsg}\n\nSugerencias:\n${suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}`);
         setStep('error');
       }
     } catch (err) {

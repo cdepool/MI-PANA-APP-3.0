@@ -113,6 +113,18 @@ serve(async (req) => {
       throw walletError;
     }
 
+    // Validate wallet status
+    if (wallet!.status !== 'active') {
+      console.warn(`[Wallet Recharge] Wallet status is ${wallet!.status}`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Tu billetera está ${wallet!.status}. Contacta a soporte para activarla antes de realizar recargas.`,
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('[Wallet Recharge] Step 2: Create recharge request');
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
@@ -156,7 +168,9 @@ serve(async (req) => {
         matchingPayment = existingPayments.find((payment) => {
           const refMatch = payment.reference.endsWith(body.lastFourDigits);
           const amountMatch = Math.abs(parseFloat(payment.amount) - body.amount) <= 0.01;
-          return refMatch && amountMatch && !payment.matched_wallet_transaction_id;
+          const notUsed = !payment.matched_wallet_transaction_id;
+          console.log(`[Wallet Recharge] Checking payment ${payment.reference}: refMatch=${refMatch}, amountMatch=${amountMatch}, notUsed=${notUsed}`);
+          return refMatch && amountMatch && notUsed;
         });
       }
 
@@ -183,7 +197,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({
               success: false,
-              error: 'No se encontró el pago en Bancamiga.',
+              error: 'No se encontró el pago en Bancamiga. Verifica que:\n1. Los últimos 4 dígitos sean correctos\n2. El pago se haya realizado en las últimas 72 horas\n3. El monto sea exactamente Bs. ' + body.amount.toFixed(2),
             }),
             { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );

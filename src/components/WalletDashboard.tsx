@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, DollarSign, TrendingUp, Plus, ArrowUpRight, ArrowDownRight, RefreshCw, History } from 'lucide-react';
+import { Wallet, DollarSign, TrendingUp, Plus, ArrowUpRight, ArrowDownRight, RefreshCw, History, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import TransactionDetailModal from './TransactionDetailModal';
 
 interface WalletDashboardProps {
   userId: string;
   onRecharge: () => void;
+  wallet?: WalletBalance | null; // Add wallet prop to pass status
 }
 
 interface WalletBalance {
@@ -31,8 +33,24 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, onRech
   const [isLoading, setIsLoading] = useState(true);
   const [showTransactions, setShowTransactions] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalTransactions, setTotalTransactions] = useState(0);
+  const transactionsPerPage = 10;
+
+  // Filter state
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterDateFrom, setFilterDateFrom] = useState<string>('');
+  const [filterDateTo, setFilterDateTo] = useState<string>('');
+  const [filterMinAmount, setFilterMinAmount] = useState<string>('');
+  const [filterMaxAmount, setFilterMaxAmount] = useState<string>('');
+
+  // Selected transaction for detail modal
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+
   useEffect(() => {
     fetchWalletBalance();
+    fetchTransactions();
   }, [userId]);
 
   const fetchWalletBalance = async () => {
@@ -59,6 +77,65 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, onRech
       setIsLoading(false);
     }
   };
+
+  const fetchTransactions = async () => {
+    try {
+      // Build query parameters
+      let query = `user_id=eq.${userId}&order=created_at.desc`;
+
+      // Add filters
+      if (filterType !== 'all') {
+        query += `&type=eq.${filterType}`;
+      }
+      if (filterDateFrom) {
+        query += `&created_at=gte.${filterDateFrom}T00:00:00`;
+      }
+      if (filterDateTo) {
+        query += `&created_at=lte.${filterDateTo}T23:59:59`;
+      }
+      if (filterMinAmount) {
+        query += `&amount_ves=gte.${filterMinAmount}`;
+      }
+      if (filterMaxAmount) {
+        query += `&amount_ves=lte.${filterMaxAmount}`;
+      }
+
+      // Add pagination
+      const offset = (currentPage - 1) * transactionsPerPage;
+      query += `&limit=${transactionsPerPage}&offset=${offset}`;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/wallet_transactions?${query}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Prefer': 'count=exact',
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      // Get total count from Content-Range header
+      const contentRange = response.headers.get('Content-Range');
+      if (contentRange) {
+        const total = parseInt(contentRange.split('/')[1]);
+        setTotalTransactions(total);
+      }
+
+      setTransactions(data || []);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    }
+  };
+
+  // Refetch transactions when filters or pagination change
+  useEffect(() => {
+    if (showTransactions) {
+      fetchTransactions();
+    }
+  }, [currentPage, filterType, filterDateFrom, filterDateTo, filterMinAmount, filterMaxAmount, showTransactions]);
 
   const formatCurrency = (amount: number, currency: 'VES' | 'USD'): string => {
     return new Intl.NumberFormat('es-VE', {
@@ -95,8 +172,23 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, onRech
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <RefreshCw size={32} className="animate-spin text-blue-600" />
+      <div className="max-w-4xl mx-auto p-4 space-y-6">
+        {/* Skeleton Loading */}
+        <div className="animate-pulse space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+              <div className="space-y-2">
+                <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
+            <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -116,10 +208,11 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, onRech
         </div>
         <button
           onClick={fetchWalletBalance}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          disabled={isLoading}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Actualizar saldo"
         >
-          <RefreshCw size={20} className="text-gray-600" />
+          <RefreshCw size={20} className={`text-gray-600 dark:text-gray-400 ${isLoading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
@@ -205,26 +298,116 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, onRech
 
       {/* Transactions History */}
       {showTransactions && (
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <div className="p-4 bg-gray-50 border-b border-gray-200">
-            <h3 className="font-bold text-gray-900">Historial de Transacciones</h3>
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-900 dark:text-white">Historial de Transacciones</h3>
+              <button
+                onClick={() => setShowTransactions(false)}
+                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                Ocultar
+              </button>
+            </div>
+
+            {/* Filters */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <Filter size={16} />
+                <span>Filtros</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* Type Filter */}
+                <select
+                  value={filterType}
+                  onChange={(e) => { setFilterType(e.target.value); setCurrentPage(1); }}
+                  className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="all">Todos los tipos</option>
+                  <option value="recharge">Recarga</option>
+                  <option value="payment">Pago de viaje</option>
+                  <option value="refund">Reembolso</option>
+                  <option value="withdrawal">Retiro</option>
+                  <option value="adjustment">Ajuste</option>
+                </select>
+
+                {/* Date From */}
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => { setFilterDateFrom(e.target.value); setCurrentPage(1); }}
+                  className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Desde"
+                />
+
+                {/* Date To */}
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => { setFilterDateTo(e.target.value); setCurrentPage(1); }}
+                  className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Hasta"
+                />
+
+                {/* Amount Range */}
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={filterMinAmount}
+                    onChange={(e) => { setFilterMinAmount(e.target.value); setCurrentPage(1); }}
+                    className="w-1/2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Min Bs."
+                  />
+                  <input
+                    type="number"
+                    value={filterMaxAmount}
+                    onChange={(e) => { setFilterMaxAmount(e.target.value); setCurrentPage(1); }}
+                    className="w-1/2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Max Bs."
+                  />
+                </div>
+              </div>
+
+              {/* Clear Filters */}
+              {(filterType !== 'all' || filterDateFrom || filterDateTo || filterMinAmount || filterMaxAmount) && (
+                <button
+                  onClick={() => {
+                    setFilterType('all');
+                    setFilterDateFrom('');
+                    setFilterDateTo('');
+                    setFilterMinAmount('');
+                    setFilterMaxAmount('');
+                    setCurrentPage(1);
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
           </div>
-          <div className="divide-y divide-gray-200">
+
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {transactions.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                 <History size={48} className="mx-auto mb-2 opacity-50" />
-                <p>No hay transacciones aún</p>
+                <p>No hay transacciones que coincidan con los filtros</p>
               </div>
             ) : (
               transactions.map((tx) => (
-                <div key={tx.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div
+                  key={tx.id}
+                  className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  onClick={() => setSelectedTransaction(tx)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {getTransactionIcon(tx.type)}
                       <div>
-                        <p className="font-medium text-gray-900">{getTransactionLabel(tx.type)}</p>
-                        <p className="text-sm text-gray-500">{tx.description}</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="font-medium text-gray-900 dark:text-white">{getTransactionLabel(tx.type)}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{tx.description}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
                           {new Date(tx.created_at).toLocaleDateString('es-VE', {
                             year: 'numeric',
                             month: 'short',
@@ -236,12 +419,12 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, onRech
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-bold ${tx.type === 'recharge' || tx.type === 'refund' ? 'text-green-600' : 'text-red-600'}`}>
+                      <p className={`font-bold ${tx.type === 'recharge' || tx.type === 'refund' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {tx.type === 'recharge' || tx.type === 'refund' ? '+' : '-'}
                         {formatCurrency(tx.amount_ves, 'VES')}
                       </p>
                       {tx.amount_usd > 0 && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {formatCurrency(tx.amount_usd, 'USD')}
                         </p>
                       )}
@@ -251,7 +434,45 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, onRech
               ))
             )}
           </div>
+
+          {/* Pagination */}
+          {totalTransactions > transactionsPerPage && (
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Mostrando {((currentPage - 1) * transactionsPerPage) + 1} - {Math.min(currentPage * transactionsPerPage, totalTransactions)} de {totalTransactions}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <span className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">
+                    {currentPage}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    disabled={currentPage * transactionsPerPage >= totalTransactions}
+                    className="p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <TransactionDetailModal
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+        />
       )}
 
       {/* Status Badge */}

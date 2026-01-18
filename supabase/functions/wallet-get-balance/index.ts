@@ -4,6 +4,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Cache for exchange rate (5 minutes TTL)
+let exchangeRateCache: { rate: number; timestamp: number } | null = null;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 serve(async (req) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -62,9 +66,27 @@ serve(async (req) => {
       throw walletError;
     }
 
-    // Get current exchange rate
-    const { data: exchangeRate } = await supabase
-      .rpc('get_current_exchange_rate', { p_rate_type: 'oficial' });
+    // Get current exchange rate with caching
+    let exchangeRate = 0;
+
+    // Check cache first
+    const now = Date.now();
+    if (exchangeRateCache && (now - exchangeRateCache.timestamp) < CACHE_TTL_MS) {
+      console.log('[Wallet Get Balance] Using cached exchange rate');
+      exchangeRate = exchangeRateCache.rate;
+    } else {
+      console.log('[Wallet Get Balance] Fetching fresh exchange rate');
+      const { data: rateData } = await supabase
+        .rpc('get_current_exchange_rate', { p_rate_type: 'oficial' });
+
+      exchangeRate = rateData || 0;
+
+      // Update cache
+      exchangeRateCache = {
+        rate: exchangeRate,
+        timestamp: now,
+      };
+    }
 
     // Calculate equivalent values
     const vesEquivalent = wallet.balance_ves + (wallet.balance_usd * (exchangeRate || 0));
@@ -87,7 +109,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[Wallet Get Balance] Error:', error);
-    
+
     return new Response(
       JSON.stringify({
         success: false,
