@@ -51,6 +51,36 @@ export interface DriverAlert {
   severity: 'warning' | 'critical';
 }
 
+export interface OnlineDriver {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  is_available: boolean;
+  last_updated: string;
+}
+
+export interface SystemSettings {
+  id: string;
+  category: string;
+  key: string;
+  value: any;
+  updated_at: string;
+}
+
+export interface AdminAuditLog {
+  id: string;
+  admin_id: string;
+  admin_name?: string;
+  action_type: string;
+  resource_type: string;
+  resource_id: string;
+  details: any;
+  ip_address: string;
+  user_agent: string;
+  created_at: string;
+}
+
 export const adminService = {
   async getDashboardStats(): Promise<AdminStats> {
     try {
@@ -186,6 +216,49 @@ export const adminService = {
     return () => supabase.removeChannel(channel);
   },
 
+  async getOnlineDrivers(): Promise<OnlineDriver[]> {
+    try {
+      const { data, error } = await supabase
+        .from('driver_locations')
+        .select(`
+          driver_id, lat, lng, is_available, last_updated,
+          profile:profiles!driver_id(name)
+        `)
+        .eq('is_available', true)
+        .gte('last_updated', new Date(Date.now() - 5 * 60 * 1000).toISOString()); // Only active in last 5 mins
+
+      if (error) throw error;
+
+      return (data || []).map(d => ({
+        id: d.driver_id,
+        name: (d.profile as any)?.name || 'Conductor',
+        lat: d.lat,
+        lng: d.lng,
+        is_available: d.is_available,
+        last_updated: d.last_updated,
+      }));
+    } catch (error) {
+      logger.error("Error fetching online drivers", error);
+      return [];
+    }
+  },
+
+  subscribeToDriverLocations(onUpdate: (drivers: OnlineDriver[]) => void): () => void {
+    const channel = supabase
+      .channel('admin_driver_locations')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'driver_locations' },
+        async () => {
+          const drivers = await this.getOnlineDrivers();
+          onUpdate(drivers);
+        }
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  },
+
   // ========================================
   // TRANSACTION LOG
   // ========================================
@@ -307,6 +380,28 @@ export const adminService = {
     }
   },
 
+  async getPendingRecharges(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('recharge_requests')
+        .select(`
+          *,
+          profile:profiles!user_id(name)
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map(r => ({
+        ...r,
+        user_name: (r.profile as any)?.name || 'Usuario'
+      }));
+    } catch (error) {
+      logger.error("Error fetching pending recharges", error);
+      return [];
+    }
+  },
+
   async manualReconcile(transactionId: string, rechargeRequestId: string, adminId: string): Promise<boolean> {
     try {
       // Link the bank transaction to the recharge request
@@ -334,6 +429,105 @@ export const adminService = {
     } catch (error) {
       logger.error("Error in manual reconciliation", error);
       return false;
+    }
+  },
+
+  // ========================================
+  // SYSTEM SETTINGS
+  // ========================================
+
+  async getSystemSettings(): Promise<SystemSettings[]> {
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('*')
+        .order('category', { ascending: true });
+
+      if (error) {
+        // If table doesn't exist yet, return empty or mock data
+        if (error.code === '42P01') {
+          logger.warn("Table system_settings does not exist yet");
+          return [];
+        }
+        throw error;
+      }
+      return data || [];
+    } catch (error) {
+      logger.error("Error fetching system settings", error);
+      return [];
+    }
+  },
+
+  async updateSystemSetting(id: string, value: any): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('system_settings')
+        .update({ value, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Log the action
+      await this.logAdminAction('update_setting', 'system_settings', id, { new_value: value });
+
+      return true;
+    } catch (error) {
+      logger.error("Error updating system setting", error);
+      return false;
+    }
+  },
+
+  // ========================================
+  // AUDIT LOGS
+  // ========================================
+
+  async getAuditLogs(limit: number = 100): Promise<AdminAuditLog[]> {
+    try {
+      const { data, error } = await supabase
+        .from('admin_audit_logs')
+        .select('*, admin:profiles!admin_id(name)')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        if (error.code === '42P01') {
+          logger.warn("Table admin_audit_logs does not exist yet");
+          return [];
+        }
+        throw error;
+      }
+
+      return (data || []).map(log => ({
+        ...log,
+        admin_name: (log.admin as any)?.name || 'Sistema'
+      }));
+    } catch (error) {
+      logger.error("Error fetching audit logs", error);
+      return [];
+    }
+  },
+
+  async logAdminAction(
+    actionType: string,
+    resourceType: string,
+    resourceId: string,
+    details: any = {}
+  ): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase.from('admin_audit_logs').insert({
+        admin_id: user.id,
+        action_type: actionType,
+        resource_type: resourceType,
+        resource_id: resourceId,
+        details,
+        ip_address: '0.0.0.0', // Would need backend help for real IP
+        user_agent: navigator.userAgent
+      });
+    } catch (error) {
+      logger.error("Error logging admin action", error);
     }
   }
 };

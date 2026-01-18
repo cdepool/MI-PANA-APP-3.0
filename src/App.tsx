@@ -19,12 +19,17 @@ const Register = lazy(() => import('./pages/Register'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const PassengerHome = lazy(() => import('./pages/PassengerHome'));
 const DriverHome = lazy(() => import('./pages/DriverHome'));
-const ProfessionalAdminDashboard = lazy(() => import('./pages/ProfessionalAdminDashboard'));
+const AdminHome = lazy(() => import('./pages/AdminHome'));
 const Wallet = lazy(() => import('./pages/Wallet'));
 const RideHistory = lazy(() => import('./pages/RideHistory'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
 const ScheduleRides = lazy(() => import('./pages/ScheduleRides'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const TeamManagement = lazy(() => import('./pages/admin/TeamManagement'));
+const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'));
+const AuditLogs = lazy(() => import('./pages/admin/AuditLogs'));
+const OperationsMonitor = lazy(() => import('./pages/admin/OperationsMonitor'));
+const Reconciliation = lazy(() => import('./pages/admin/Reconciliation'));
 
 const AppRoutes = () => {
   const { effectiveRole } = useAuth();
@@ -64,7 +69,42 @@ const AppRoutes = () => {
               <Route path="/" element={
                 <PrivateRoute role="ADMIN">
                   <Layout onNavigate={navigate}>
-                    <ProfessionalAdminDashboard />
+                    <AdminHome />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/team" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <TeamManagement />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/settings" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <SystemSettings />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/audit-logs" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <AuditLogs />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/operations" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <OperationsMonitor />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/reconciliation" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <Reconciliation />
                   </Layout>
                 </PrivateRoute>
               } />
@@ -108,7 +148,42 @@ const AppRoutes = () => {
               <Route path="/admin" element={
                 <PrivateRoute role="ADMIN">
                   <Layout onNavigate={navigate}>
-                    <ProfessionalAdminDashboard />
+                    <AdminHome />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/admin/team" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <TeamManagement />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/admin/settings" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <SystemSettings />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/admin/audit-logs" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <AuditLogs />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/admin/operations" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <OperationsMonitor />
+                  </Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/admin/reconciliation" element={
+                <PrivateRoute role="ADMIN">
+                  <Layout onNavigate={navigate}>
+                    <Reconciliation />
                   </Layout>
                 </PrivateRoute>
               } />

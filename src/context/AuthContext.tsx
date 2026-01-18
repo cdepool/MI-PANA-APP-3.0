@@ -55,6 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setIsLoading(false);
       }
+
+      if (event === 'PASSWORD_RECOVERY') {
+        logger.log("Password recovery event detected");
+      }
     });
 
     async function fetchAndSetUser(supabaseUser: any) {

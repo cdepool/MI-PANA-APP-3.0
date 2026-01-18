@@ -8,7 +8,12 @@ import {
   LogOut,
   Car,
   FileCheck,
-  X
+  X,
+  Shield,
+  ClipboardList,
+  Sliders,
+  Activity,
+  ArrowRightLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AppView, UserRole } from '../types';
@@ -75,13 +80,50 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, isDeskto
         )}
 
         {effectiveRole === UserRole.ADMIN && (
-          <button
-            onClick={() => handleNavigation('/admin')}
-            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
-          >
-            <span className="text-mipana-navy dark:text-cyan-400"><FileCheck size={20} /></span>
-            <span>Aprobaciones</span>
-          </button>
+          <>
+            <button
+              onClick={() => handleNavigation('/admin')}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
+            >
+              <span className="text-mipana-navy dark:text-cyan-400"><Home size={20} /></span>
+              <span>Dashboard Admin</span>
+            </button>
+            <button
+              onClick={() => handleNavigation('/admin/team')}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
+            >
+              <span className="text-mipana-navy dark:text-cyan-400"><Shield size={20} /></span>
+              <span>Equipo</span>
+            </button>
+            <button
+              onClick={() => handleNavigation('/admin/settings')}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
+            >
+              <span className="text-mipana-navy dark:text-cyan-400"><Sliders size={20} /></span>
+              <span>Ajustes Sistema</span>
+            </button>
+            <button
+              onClick={() => handleNavigation('/admin/audit-logs')}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
+            >
+              <span className="text-mipana-navy dark:text-cyan-400"><ClipboardList size={20} /></span>
+              <span>Auditoría</span>
+            </button>
+            <button
+              onClick={() => handleNavigation('/admin/operations')}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
+            >
+              <span className="text-mipana-navy dark:text-cyan-400"><Activity size={20} /></span>
+              <span>Operaciones En Vivo</span>
+            </button>
+            <button
+              onClick={() => handleNavigation('/admin/reconciliation')}
+              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
+            >
+              <span className="text-mipana-navy dark:text-cyan-400"><ArrowRightLeft size={20} /></span>
+              <span>Conciliación</span>
+            </button>
+          </>
         )}
 
         <div className="h-px bg-gray-200 dark:bg-gray-700 my-4" />

@@ -11,7 +11,7 @@ export const prefetchPage = (pageName: 'PassengerHome' | 'DriverHome' | 'Admin' 
             import('../pages/DriverHome');
             break;
         case 'Admin':
-            import('../pages/ProfessionalAdminDashboard');
+            import('../pages/AdminHome');
             break;
         case 'Wallet':
             import('../pages/Wallet');

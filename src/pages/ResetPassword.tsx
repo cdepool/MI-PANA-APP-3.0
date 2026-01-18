@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { authService } from '../services/authService';
+import { supabase } from '../services/supabaseClient';
 
 const ResetPassword: React.FC = () => {
     const navigate = useNavigate();
@@ -14,14 +15,32 @@ const ResetPassword: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
-    // Check if we have a valid reset token
+    // Check for valid reset token in URL (query params or hash)
     useEffect(() => {
-        const accessToken = searchParams.get('access_token');
-        const type = searchParams.get('type');
+        // Supabase can put tokens in the hash (#) or query params (?)
+        const hash = window.location.hash;
+        const hashParams = new URLSearchParams(hash.substring(1)); // remove #
+
+        const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
+        const type = searchParams.get('type') || hashParams.get('type');
+        const errorCode = searchParams.get('error_code') || hashParams.get('error_code');
+        const errorDescription = searchParams.get('error_description') || hashParams.get('error_description');
+
+        if (errorCode) {
+            toast.error(`Error: ${errorDescription || 'Enlace inválido'}`);
+            setTimeout(() => navigate('/login'), 3000);
+            return;
+        }
 
         if (!accessToken || type !== 'recovery') {
-            toast.error('Enlace de recuperación inválido o expirado');
-            setTimeout(() => navigate('/login'), 2000);
+            // If we don't have a token, check if we're already "in session" 
+            // because Supabase might have already established the session
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                if (!session) {
+                    toast.error('Enlace de recuperación inválido o expirado');
+                    setTimeout(() => navigate('/login'), 2000);
+                }
+            });
         }
     }, [searchParams, navigate]);
 
