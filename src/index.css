@@ -309,3 +309,111 @@ body {
   background: radial-gradient(at top left, rgba(255, 107, 0, 0.4), transparent 50%), radial-gradient(at bottom right, rgba(26, 46, 86, 0.4), transparent 50%);
   filter: blur(40px);
 }
+
+/* ========================================
+   ENTERPRISE UX MICRO-INTERACTIONS
+   ======================================== */
+
+@layer utilities {
+  /* Smooth transitions for all interactive elements */
+  .smooth-transition {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Button hover effects */
+  .btn-hover {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .btn-hover:hover {
+      transform: scale(1.05);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn-hover:active {
+      transform: scale(0.95);
+    }
+  }
+
+  /* Table row hover effects */
+  .table-row-hover {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .table-row-hover:hover {
+      background-color: rgba(249, 250, 251, 0.5);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+
+  /* Fade in up animation */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.3s ease-out;
+  }
+
+  /* Fade out down animation */
+  @keyframes fadeOutDown {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
+  .animate-fade-out-down {
+    animation: fadeOutDown 0.3s ease-out;
+  }
+
+  /* Skeleton pulse animation */
+  @keyframes skeleton-pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .skeleton-pulse {
+    animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Scale on hover for interactive cards */
+  .card-hover {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+  }
+
+  /* Focus ring for accessibility */
+  .focus-ring {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
