@@ -18,6 +18,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
   const [phoneOrEmail, setPhoneOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Auto-redirect if already authenticated
