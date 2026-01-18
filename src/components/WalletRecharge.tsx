@@ -34,12 +34,13 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
   onCancel,
   walletStatus = 'active'
 }) => {
-  const [step, setStep] = useState<'amount' | 'payment' | 'verification' | 'success' | 'error'>('amount');
-  const [amount, setAmount] = useState(prefilledAmount ? prefilledAmount.toString() : '');
+  const [step, setStep] = useState<'amount' | 'confirm' | 'payment' | 'verification' | 'success' | 'error'>('amount');
+  const [amount, setAmount] = useState(prefilledAmount ? prefilledAmount.toFixed(2) : '');
   const [originBank, setOriginBank] = useState('');
   const [lastFourDigits, setLastFourDigits] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [amountError, setAmountError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [newBalance, setNewBalance] = useState<{ ves: number; usd: number } | null>(null);
 
@@ -74,9 +75,27 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
 
   useEffect(() => {
     if (prefilledAmount) {
-      setStep('payment');
+      setStep('confirm');
     }
   }, [prefilledAmount]);
+
+  // Real-time amount validation
+  useEffect(() => {
+    if (amount) {
+      const num = parseFloat(amount);
+      if (isNaN(num)) {
+        setAmountError('Formato inválido');
+      } else if (num < 1) {
+        setAmountError('Mínimo Bs. 1.00');
+      } else if (num > 100000) {
+        setAmountError('Máximo Bs. 100,000.00');
+      } else {
+        setAmountError(null);
+      }
+    } else {
+      setAmountError(null);
+    }
+  }, [amount]);
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -86,8 +105,27 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^\d.]/g, '');
+    let value = e.target.value.replace(/[^\d.,]/g, '');
+
+    // Replace comma with period
+    value = value.replace(',', '.');
+
+    // Limit to 2 decimals
+    const parts = value.split('.');
+    if (parts.length > 2) {
+      value = parts[0] + '.' + parts[1];
+    }
+    if (parts[1] && parts[1].length > 2) {
+      value = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+
     setAmount(value);
+  };
+
+  const formatAmountDisplay = (amt: string): string => {
+    const num = parseFloat(amt);
+    if (isNaN(num)) return '0.00';
+    return num.toFixed(2);
   };
 
   const handleDigitsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,7 +133,7 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
     setLastFourDigits(cleaned);
   };
 
-  const handleContinueToPayment = () => {
+  const handleContinueToConfirm = () => {
     const numAmount = parseFloat(amount);
 
     if (!numAmount || numAmount <= 0) {
@@ -108,8 +146,13 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
       return;
     }
 
+    if (numAmount > 100000) {
+      setError('El monto máximo de recarga es Bs. 100,000.00');
+      return;
+    }
+
     setError(null);
-    setStep('payment');
+    setStep('confirm');
   };
 
   const handleProcessRecharge = async () => {
@@ -233,19 +276,52 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
               </p>
             </div>
 
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <span className="text-2xl font-bold text-gray-400">Bs.</span>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Monto a Recargar</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <span className="text-2xl font-bold text-gray-400">Bs.</span>
+                </div>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={handleAmountChange}
+                  placeholder="0.00"
+                  className="w-full pl-16 pr-4 py-6 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-mipana-orange dark:focus:border-mipana-orange outline-none rounded-2xl text-4xl font-black text-mipana-darkBlue dark:text-white transition-all shadow-inner"
+                />
               </div>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={amount}
-                onChange={handleAmountChange}
-                placeholder="0.00"
-                className="w-full pl-16 pr-4 py-6 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-mipana-orange dark:focus:border-mipana-orange outline-none rounded-2xl text-4xl font-black text-mipana-darkBlue dark:text-white transition-all shadow-inner"
-              />
+
+              {/* Real-time validation feedback */}
+              {amountError && (
+                <p className="text-sm text-red-600 flex items-center gap-2">
+                  <AlertCircle size={16} />
+                  {amountError}
+                </p>
+              )}
+
+              {/* Amount preview */}
+              {amount && !amountError && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-3 rounded-r-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    <strong>Vista previa:</strong> Bs. {formatAmountDisplay(amount)}
+                  </p>
+                </div>
+              )}
             </div>
+
+            {/* Exact amount warning */}
+            {amount && !amountError && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                <div className="flex gap-3">
+                  <AlertCircle className="text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" size={20} />
+                  <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                    <p className="font-bold mb-1">⚠️ Importante</p>
+                    <p>Debes pagar <strong>exactamente Bs. {formatAmountDisplay(amount)}</strong> (incluye los céntimos)</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="text-red-500 text-xs font-bold flex items-center gap-1 animate-pulse">
@@ -254,12 +330,58 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
             )}
 
             <button
-              onClick={handleContinueToPayment}
-              disabled={!amount || parseFloat(amount) <= 0}
-              className="w-full bg-mipana-orange hover:bg-orange-600 active:scale-[0.98] disabled:opacity-50 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2 group"
+              onClick={handleContinueToConfirm}
+              disabled={!amount || parseFloat(amount) <= 0 || !!amountError}
+              className="w-full bg-mipana-orange hover:bg-orange-600 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2 group"
             >
               Siguiente <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
+          </div>
+        )}
+
+        {step === 'confirm' && (
+          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+            <div className="text-center">
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Confirma tu Recarga</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Vas a recargar:</p>
+            </div>
+
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-800 rounded-2xl p-8 text-center">
+              <p className="text-sm text-green-700 dark:text-green-400 mb-2 font-medium">Monto Exacto</p>
+              <p className="text-6xl font-black text-green-900 dark:text-green-100 mb-1">
+                Bs. {formatAmountDisplay(amount)}
+              </p>
+              <p className="text-xs text-green-600 dark:text-green-400">Incluye céntimos</p>
+            </div>
+
+            <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-400 p-4 rounded-r-lg">
+              <div className="flex gap-3">
+                <AlertCircle className="text-orange-600 dark:text-orange-400 flex-shrink-0" size={20} />
+                <div className="text-sm text-orange-800 dark:text-orange-200">
+                  <p className="font-bold mb-2">⚠️ Importante</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Debes pagar <strong>exactamente Bs. {formatAmountDisplay(amount)}</strong></li>
+                    <li>Incluye los céntimos (.{formatAmountDisplay(amount).split('.')[1]})</li>
+                    <li>Cualquier diferencia causará rechazo</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep('amount')}
+                className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-bold transition-all active:scale-95"
+              >
+                Cambiar Monto
+              </button>
+              <button
+                onClick={() => setStep('payment')}
+                className="flex-1 bg-mipana-orange hover:bg-orange-600 text-white py-3 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 group"
+              >
+                Continuar <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
           </div>
         )}
 

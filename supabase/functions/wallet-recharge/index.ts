@@ -125,6 +125,50 @@ serve(async (req) => {
       );
     }
 
+    // Rate limiting: Check recent failed attempts (max 3 in 5 minutes)
+    console.log('[Wallet Recharge] Checking rate limiting...');
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const { data: recentAttempts } = await supabase
+      .from('recharge_requests')
+      .select('created_at')
+      .eq('user_id', body.userId)
+      .gte('created_at', fiveMinutesAgo.toISOString())
+      .eq('status', 'failed');
+
+    if (recentAttempts && recentAttempts.length >= 3) {
+      console.warn(`[Wallet Recharge] Rate limit exceeded: ${recentAttempts.length} failed attempts in last 5 minutes`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Demasiados intentos fallidos. Por favor espera 5 minutos antes de intentar nuevamente.',
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check for duplicate successful recharges (same bank + last 4 digits in last 24 hours)
+    console.log('[Wallet Recharge] Checking for duplicates...');
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const { data: existingRecharge } = await supabase
+      .from('recharge_requests')
+      .select('*')
+      .eq('user_id', body.userId)
+      .eq('bank_orig', body.bancoOrig)
+      .eq('last_four_digits', body.lastFourDigits)
+      .eq('status', 'completed')
+      .gte('created_at', twentyFourHoursAgo.toISOString());
+
+    if (existingRecharge && existingRecharge.length > 0) {
+      console.warn('[Wallet Recharge] Duplicate payment detected');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Este pago ya fue registrado anteriormente. Si crees que es un error, contacta a soporte.',
+        }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('[Wallet Recharge] Step 2: Create recharge request');
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
@@ -219,6 +263,38 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+
+        // EXACT AMOUNT VALIDATION
+        console.log('[Wallet Recharge] Validating exact amount...');
+        const paymentAmount = parseFloat(payment.Amount.toString());
+        const requestedAmount = parseFloat(body.amount.toFixed(2));
+        const amountDifference = Math.abs(paymentAmount - requestedAmount);
+
+        console.log('[Wallet Recharge] Amount comparison:', {
+          requested: requestedAmount,
+          paid: paymentAmount,
+          difference: amountDifference,
+          matches: amountDifference <= 0.01
+        });
+
+        if (amountDifference > 0.01) {
+          console.warn(`[Wallet Recharge] Amount mismatch: requested ${requestedAmount}, paid ${paymentAmount}`);
+          await supabase
+            .from('recharge_requests')
+            .update({ status: 'failed' })
+            .eq('id', rechargeRequest.id);
+
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: `El monto pagado (Bs. ${paymentAmount.toFixed(2)}) no coincide con el monto solicitado (Bs. ${requestedAmount.toFixed(2)}). Por favor verifica e intenta nuevamente con el monto exacto.`,
+            }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log('[Wallet Recharge] Amount validation passed!');
+
 
         console.log('[Wallet Recharge] Saving payment to database...');
         const transactionDateTime = new Date(`${payment.FechaMovimiento}T${payment.HoraMovimiento}`);
