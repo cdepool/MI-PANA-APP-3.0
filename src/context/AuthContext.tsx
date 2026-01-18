@@ -59,15 +59,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     async function fetchAndSetUser(supabaseUser: any) {
       try {
+        // ⚡ OPTIMIZATION: Try to use metadata first to avoid a database round-trip
+        // This is much faster than fetching from the profiles table
+        const metadata = supabaseUser.user_metadata || {};
+
+        // Check if we already have the basic data we need
+        if (metadata.name && metadata.role) {
+          setUser({
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            name: metadata.name,
+            role: metadata.role,
+            phone: metadata.phone || '',
+            adminRole: metadata.admin_role || (metadata.role === 'ADMIN' ? 'ADMIN' : undefined),
+          } as User);
+
+          // Background sync to ensure we have the latest profile data (non-blocking)
+          // This keeps the UI responsive while we verify details
+          setIsLoading(false);
+          clearTimeout(safetyTimeout);
+
+          // Non-blocking background fetch
+          supabase.from('profiles').select('*').eq('id', supabaseUser.id).single()
+            .then(({ data: profile }) => {
+              if (profile) {
+                setUser(prev => ({
+                  ...prev,
+                  ...profile,
+                  adminRole: profile.admin_role
+                } as User));
+              }
+            });
+          return;
+        }
+
+        // Fallback: If metadata is missing, do a blocking fetch
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', supabaseUser.id)
           .single();
-
-        if (error) {
-          logger.error("Error fetching profile", error);
-        }
 
         if (profile) {
           setUser({
@@ -75,12 +106,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             adminRole: profile.admin_role
           } as User);
         } else {
-          // Fallback for new users or if profile sync failed
           setUser({
             id: supabaseUser.id,
             email: supabaseUser.email || '',
             role: UserRole.PASSENGER,
-            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0],
+            name: metadata.name || supabaseUser.email?.split('@')[0],
           } as User);
         }
       } catch (e) {

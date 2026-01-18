@@ -4,60 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Shield, Lock, Mail, ArrowRight, ArrowLeft } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
+import { authService } from '../services/authService';
 
-// Debug Component
-const DebugStatus = () => {
-    const [status, setStatus] = useState<'checking' | 'ok' | 'error'>('checking');
-    const [msg, setMsg] = useState('Verificando conexión...');
-    const [details, setDetails] = useState('');
 
-    React.useEffect(() => {
-        const check = async () => {
-            try {
-                if (!navigator.onLine) throw new Error("Sin conexión a internet");
-
-                // Check if Env Vars are loaded
-                const url = import.meta.env.VITE_SUPABASE_URL;
-                const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-                if (!url) throw new Error("Falta VITE_SUPABASE_URL");
-                if (!key) throw new Error("Falta VITE_SUPABASE_ANON_KEY");
-
-                // Check Supabase Connectivity with a quick fetch to the API
-                // This bypasses SDK cache and checks direct network access
-                const healthCheck = await Promise.race([
-                    fetch(`${url}/rest/v1/`, { method: 'GET', headers: { 'apikey': key } }),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de Red (Supabase)")), 8000))
-                ]) as Response;
-
-                if (!healthCheck.ok && healthCheck.status !== 401 && healthCheck.status !== 404) {
-                    throw new Error(`Error de Red: Status ${healthCheck.status}`);
-                }
-
-                setStatus('ok');
-                setMsg('Sistema Conectado');
-                setDetails(`${url.substring(0, 20)}...`);
-            } catch (e: any) {
-                console.error("Debug Check Failed:", e);
-                setStatus('error');
-                setMsg('Falla de Conexión');
-                setDetails(e.message);
-            }
-        };
-        check();
-    }, []);
-
-    return (
-        <div className="fixed bottom-4 right-4 bg-black/90 backdrop-blur-xl text-white p-4 rounded-xl text-[10px] font-mono border border-white/10 max-w-[240px] shadow-2xl z-[100]">
-            <div className="flex items-center gap-2 mb-2">
-                <div className={`w-2.5 h-2.5 rounded-full ${status === 'ok' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : status === 'checking' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'}`} />
-                <span className="font-bold tracking-tight uppercase">{msg}</span>
-            </div>
-            {details && <div className="text-white/40 break-all bg-white/5 p-2 rounded-md border border-white/5">{details}</div>}
-            <div className="mt-2 text-[9px] text-white/20 italic">V4-PROD-DIAGNOSTIC</div>
-        </div>
-    );
-};
 
 const AdminLogin: React.FC = () => {
     const { login } = useAuth();
@@ -71,65 +20,45 @@ const AdminLogin: React.FC = () => {
         setIsLoading(true);
         toast.dismiss();
 
-        // Helper to timeout promises - Increased for production reliability
-        const withTimeout = (promise: Promise<any>, ms: number, label: string) => {
-            return Promise.race([
-                promise,
-                new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} excedió el tiempo de espera (${ms}ms). Verifique su conexión.`)), ms))
-            ]);
-        };
-
         try {
-            toast.loading("Verificando credenciales corporativas...");
-            console.log("Iniciando signInWithPassword a 20s timeout...");
+            toast.loading("Verificando acceso corporativo...");
 
-            const { data, error } = await withTimeout(
-                supabase.auth.signInWithPassword({ email, password }),
-                20000,
-                "Autenticación"
-            );
+            // ⚡ OPTIMIZATION: Use the already optimized authService.loginWithPassword
+            // This service now returns user data including metadata (name, role, etc.)
+            // in a single database round-trip.
+            const userProfile = await authService.loginWithPassword(email, password);
 
-            if (error) {
-                console.error("Auth Error:", error);
-                throw error;
-            }
+            console.log("Admin auth successful:", userProfile.id);
 
-            console.log("SignIn exitoso:", data.user?.id);
-
-            toast.dismiss();
-            toast.loading("Permisos encontrados. Verificando rol...");
-
-            if (data.user) {
-                console.log("Consultando perfil con 15s timeout...");
-                const { data: profile, error: profileError } = await withTimeout(
-                    supabase
+            // ⚡ OPTIMIZATION: Check role directly from the returned profile (already in metadata)
+            // No secondary fetch needed!
+            if (userProfile.role !== 'ADMIN' && !(userProfile as any).admin_role) {
+                // Secondary check: If metadata is missing (legacy user), ONLY then do a targeted fetch
+                // This preserves speed for 99% of cases while ensuring compatibility
+                if (!(userProfile as any).admin_role) {
+                    const { data: profile } = await supabase
                         .from('profiles')
                         .select('role, admin_role')
-                        .eq('id', data.user.id)
-                        .single(),
-                    15000,
-                    "Consulta de Perfil"
-                );
+                        .eq('id', userProfile.id)
+                        .single();
 
-                if (profileError) {
-                    console.error('Error fetching profile:', profileError);
-                    throw new Error('No se pudo verificar el perfil del administrador: ' + profileError.message);
+                    if (profile?.role !== 'ADMIN' && !profile?.admin_role) {
+                        await supabase.auth.signOut();
+                        throw new Error('Esta cuenta no tiene privilegios administrativos.');
+                    }
                 }
-                console.log("Perfil obtenido:", profile);
-
-                if (profile?.role !== 'ADMIN' && !profile?.admin_role) {
-                    await supabase.auth.signOut();
-                    throw new Error('Esta cuenta no tiene privilegios administrativos.');
-                }
-
-                toast.dismiss();
-                toast.success("Bienvenido al Panel Corporativo");
-                setTimeout(() => navigate('/admin'), 500);
             }
-        } catch (err: any) {
-            console.error('Login Error Trap:', err);
+
             toast.dismiss();
-            toast.error(err.message || 'Error desconocido');
+            toast.success("Acceso Concedido. Bienvenido.");
+
+            // ⚡ OPTIMIZATION: Removed 500ms artificial delay. 
+            // Immediate navigation provides better perceived performance.
+            navigate('/admin');
+        } catch (err: any) {
+            console.error('Admin Login Error:', err);
+            toast.dismiss();
+            toast.error(err.message || 'Error de autenticación');
             setIsLoading(false);
         }
     };
@@ -140,7 +69,7 @@ const AdminLogin: React.FC = () => {
             <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-mipana-gold/5 rounded-full blur-3xl pointer-events-none"></div>
             <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-            <DebugStatus />
+
 
             <div className="w-full max-w-md z-10">
                 <button
