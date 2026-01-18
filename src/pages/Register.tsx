@@ -1,13 +1,10 @@
 
-import React, { useState } from 'react';
-import { z } from 'zod'; // Keep zod for basic validation if needed, or simple checks
-import { ArrowLeft, Smartphone, User, Loader2 } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { isDriverDomain } from '../utils/domain';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { authService } from '../services/authService';
-import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 
 interface RegisterProps {
@@ -23,7 +20,11 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSmartSubmit = async () => {
+  // ⚡ OPTIMIZATION: useCallback to prevent re-creation
+  const handleSmartSubmit = useCallback(async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    // Inline validation for better UX
     if (!email.includes('@')) {
       toast.error("Por favor ingresa un email válido");
       return;
@@ -33,7 +34,7 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
       return;
     }
     if (phone.length < 10) {
-      toast.error("Ingresa un número de teléfono válido para WhatsApp");
+      toast.error("Ingresa un número de teléfono válido");
       return;
     }
     if (!name.trim()) {
@@ -43,7 +44,6 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
     setIsLoading(true);
     try {
-      // Call standard Register
       const targetRole = isDriverDomain() || new URLSearchParams(window.location.search).get('role') === 'chofer'
         ? UserRole.DRIVER
         : UserRole.PASSENGER;
@@ -51,30 +51,26 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
       await authService.registerUser({
         email: email.trim(),
         password,
-        name,
+        name: name.trim(),
         phone,
-        idType: 'V', // Default, logic can be expanded
-        idNumber: '', // Default
-        age: 18, // Default
+        idType: 'V',
+        idNumber: '',
+        age: 18,
         role: targetRole
       });
 
-      // ⚡ OPTIMIZATION: Removed auto-login to eliminate 1-2s latency
-      // User can login manually on next screen for better perceived performance
-      toast.success("¡Registro exitoso! Ahora puedes iniciar sesión.", {
-        duration: 4000
+      toast.success("¡Registro exitoso!", {
+        description: "Ahora puedes iniciar sesión",
+        duration: 3000
       });
 
-      // Navigate to login immediately
       onNavigateLogin();
-
     } catch (err: any) {
-      console.error('Auth Error:', err);
       toast.error(err.message || "Error al registrarse");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [email, password, phone, name, onNavigateLogin]);
 
   return (
     <div className="min-h-screen bg-mipana-lightGray dark:bg-[#011836] flex flex-col items-center justify-center p-6">
@@ -86,14 +82,17 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
           <p className="text-gray-400 text-sm mt-1">Ingresa tu correo para Continuar</p>
         </div>
 
-        <div className="space-y-4">
+        <form onSubmit={handleSmartSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Correo Electrónico</label>
             <Input
+              type="email"
+              autoComplete="email"
               placeholder="ejemplo@email.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               className="w-full bg-gray-50 dark:bg-gray-700"
+              disabled={isLoading}
             />
           </div>
 
@@ -101,40 +100,47 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
             <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Contraseña</label>
             <Input
               type="password"
-              placeholder="********"
+              autoComplete="new-password"
+              placeholder="••••••••"
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="w-full bg-gray-50 dark:bg-gray-700 font-mono"
+              disabled={isLoading}
             />
           </div>
 
-          {/* Phone Number Field - Critical for WhatsApp */}
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Teléfono (WhatsApp)</label>
             <Input
               type="tel"
+              autoComplete="tel"
               placeholder="0412 123 4567"
               value={phone}
               onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
               className="w-full bg-gray-50 dark:bg-gray-700 font-mono"
+              disabled={isLoading}
             />
           </div>
 
-          {/* Optional Name for new users */}
           <div>
-            <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Nombre (Opcional si eres nuevo)</label>
+            <label className="text-xs font-bold text-gray-400 uppercase mb-1 block">Nombre</label>
             <Input
+              type="text"
+              autoComplete="name"
               placeholder="Tu Nombre"
               value={name}
               onChange={e => setName(e.target.value)}
               className="w-full bg-gray-50 dark:bg-gray-700"
+              disabled={isLoading}
             />
           </div>
-        </div>
+        </form>
 
         <Button
+          type="submit"
           onClick={handleSmartSubmit}
           isLoading={isLoading}
+          disabled={isLoading || !email || !password || !phone || !name}
           fullWidth
           variant="action"
           className="mt-8 h-14 text-lg shadow-mipana"

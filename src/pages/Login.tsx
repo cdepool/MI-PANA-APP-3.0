@@ -1,15 +1,10 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { UserRole } from '../types';
-import Button from '../components/Button';
-import Input from '../components/Input';
-import { User, Lock, ArrowRight, AlertCircle, Car, Shield, MapPin, Star, Smartphone, LogIn, UserPlus } from 'lucide-react';
-import { useGoogleLogin } from '@react-oauth/google';
+import { User, Lock, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
-import { isDriverDomain, isAdminDomain } from '../utils/domain';
+import { isDriverDomain } from '../utils/domain';
 
 interface LoginProps {
   onNavigateRegister: () => void;
@@ -21,9 +16,8 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 
   const [phoneOrEmail, setPhoneOrEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showSecurityModal, setShowSecurityModal] = useState(true);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Auto-redirect if already authenticated
   useEffect(() => {
@@ -32,21 +26,19 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Security: Enforce URL param pattern and clean URL
+  // ⚡ OPTIMIZATION: Show security modal after 2 seconds (non-blocking)
   useEffect(() => {
-    // Mimic the bank's security param pattern ?p=1 to look "official"
-    const params = new URLSearchParams(window.location.search);
-    if (!params.get('p')) {
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set('p', '1');
-      window.history.replaceState({}, '', newUrl.toString());
-    }
+    const timer = setTimeout(() => setShowSecurityModal(true), 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-mipana-darkBlue"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white"></div></div>;
 
-  const handleLogin = async () => {
-    if (!phoneOrEmail) {
+  // ⚡ OPTIMIZATION: useCallback to prevent re-creation on every render
+  const handleLogin = useCallback(async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    if (!phoneOrEmail.trim()) {
       toast.error("Por favor ingresa tu celular o correo");
       return;
     }
@@ -56,18 +48,15 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
     }
 
     setIsLoading(true);
-    setError(null);
     try {
-      await authService.loginWithPassword(phoneOrEmail, password);
-      toast.success("¡Bienvenido de vuelta! 🚕");
+      await authService.loginWithPassword(phoneOrEmail.trim(), password);
+      toast.success("¡Bienvenido! 🚕");
     } catch (err: any) {
-      console.error(err);
-      setError("Credenciales incorrectas. Verifica tus datos.");
-      toast.error("Error al ingresar");
+      toast.error(err.message || "Credenciales incorrectas");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [phoneOrEmail, password]);
 
   const currentDomain = isDriverDomain() ? 'https://chofer.mipana.app' : 'https://v1.mipana.app';
 
@@ -124,19 +113,21 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
         </div>
 
         {/* Form Section */}
-        <div className="w-full space-y-4">
+        <form onSubmit={handleLogin} className="w-full space-y-4">
           <div className="space-y-1">
-            <label className="block text-xs font-bold text-[#1A2E56]/60 dark:text-slate-400 ml-1 uppercase">Usuario (Teléfono o Email)</label>
+            <label className="block text-xs font-bold text-[#1A2E56]/60 dark:text-slate-400 ml-1 uppercase">Usuario</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <User className="text-[#1A2E56]/40 dark:text-white/40" size={20} />
               </div>
               <input
+                autoComplete="username"
                 className="block w-full pl-12 pr-4 py-3.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] outline-none font-medium text-lg transition-all"
-                placeholder="04120000000 o correo"
+                placeholder="Teléfono o correo"
                 type="text"
                 value={phoneOrEmail}
                 onChange={(e) => setPhoneOrEmail(e.target.value)}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -148,22 +139,21 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
                 <Lock className="text-[#1A2E56]/40 dark:text-white/40" size={20} />
               </div>
               <input
+                autoComplete="current-password"
                 className="block w-full pl-12 pr-4 py-3.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] outline-none font-medium text-lg transition-all"
-                placeholder="********"
+                placeholder="••••••••"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                disabled={isLoading}
               />
             </div>
           </div>
 
-          {error && <p className="text-red-500 text-sm text-center font-bold px-4">{error}</p>}
-
           <button
-            onClick={handleLogin}
-            disabled={isLoading}
-            className="w-full bg-[#FF6B00] hover:bg-[#e66000] active:scale-[0.98] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#FF6B00]/20 transition-all flex items-center justify-center text-lg disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+            type="submit"
+            disabled={isLoading || !phoneOrEmail.trim() || !password}
+            className="w-full bg-[#FF6B00] hover:bg-[#e66000] active:scale-[0.98] text-white font-bold py-4 rounded-xl shadow-lg shadow-[#FF6B00]/20 transition-all flex items-center justify-center text-lg disabled:opacity-50 disabled:cursor-not-allowed mt-4"
           >
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -181,7 +171,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
               Regístrate aquí
             </button>
           </div>
-        </div>
+        </form>
       </main>
 
       <footer className="mt-auto pt-8 pb-4 text-center">
