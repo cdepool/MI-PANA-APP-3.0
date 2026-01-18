@@ -214,4 +214,40 @@ export const authService = {
 
     return updated as User;
   },
+
+  // --- Password Recovery ---
+
+  /**
+   * Request password reset email
+   * Supabase will send an email with a reset link to the user
+   */
+  requestPasswordReset: async (email: string) => {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      logger.error("Password reset request failed", error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  /**
+   * Update password after reset
+   * Called from the reset password page after user clicks the email link
+   */
+  updatePassword: async (newPassword: string) => {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      logger.error("Password update failed", error);
+      throw error;
+    }
+
+    return data;
+  },
 };

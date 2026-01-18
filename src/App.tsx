@@ -24,6 +24,7 @@ const Wallet = lazy(() => import('./pages/Wallet'));
 const RideHistory = lazy(() => import('./pages/RideHistory'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
 const ScheduleRides = lazy(() => import('./pages/ScheduleRides'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 const AppRoutes = () => {
   const { effectiveRole } = useAuth();
@@ -36,8 +37,9 @@ const AppRoutes = () => {
     <SimpleErrorBoundary>
       <Suspense fallback={<SplashScreen />}>
         <Routes>
-          {/* Rutas Comunes */}
+          {/* Common Routes - Available on all domains */}
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* CONFIGURACIÓN CONDUCTORES (chofer.mipana.app) */}
           {isDriver && (

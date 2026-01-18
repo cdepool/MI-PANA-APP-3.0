@@ -6,6 +6,7 @@ import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 import { isDriverDomain } from '../utils/domain';
 import { prefetchPage } from '../utils/prefetch';
+import ForgotPassword from '../components/ForgotPassword';
 
 interface LoginProps {
   onNavigateRegister: () => void;
@@ -19,6 +20,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Auto-redirect if already authenticated
@@ -179,17 +181,32 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
             )}
           </button>
 
-          <div className="pt-4 text-center">
-            <p className="text-sm text-slate-500">¿No tienes cuenta?</p>
+          <div className="pt-4 text-center space-y-2">
             <button
-              onClick={onNavigateRegister}
-              className="text-[#FF6B00] font-bold hover:underline mt-1"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-sm text-[#FF6B00] hover:text-[#e66000] font-medium hover:underline"
             >
-              Regístrate aquí
+              ¿Olvidaste tu contraseña?
             </button>
+
+            <div>
+              <p className="text-sm text-slate-500">¿No tienes cuenta?</p>
+              <button
+                onClick={onNavigateRegister}
+                className="text-[#FF6B00] font-bold hover:underline mt-1"
+              >
+                Regístrate aquí
+              </button>
+            </div>
           </div>
         </form>
       </main>
+
+      {/* Forgot Password Modal */}
+      <ForgotPassword
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
 
       <footer className="mt-auto pt-8 pb-4 text-center">
         <div className="mt-6 mx-auto w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mb-4"></div>
