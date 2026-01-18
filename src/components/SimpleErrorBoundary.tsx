@@ -22,7 +22,9 @@ function isChunkLoadError(error: Error): boolean {
         errorMessage.includes('Loading chunk') ||
         errorMessage.includes('Loading CSS chunk') ||
         errorMessage.includes('ChunkLoadError') ||
-        errorMessage.includes('Failed to load')
+        errorMessage.includes('Failed to load') ||
+        errorMessage.includes('imported module') ||
+        errorMessage.includes('Unexpected token') // Sometimes happens when JS returns HTML (404)
     );
 }
 
@@ -42,24 +44,47 @@ export class SimpleErrorBoundary extends Component<Props, State> {
         };
     }
 
+    public componentDidMount() {
+        // Add global listener for unhandled rejections (often how dynamic imports fail)
+        window.addEventListener('unhandledrejection', this.handleUnhandledRejection);
+    }
+
+    public componentWillUnmount() {
+        window.removeEventListener('unhandledrejection', this.handleUnhandledRejection);
+    }
+
+    private handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+        if (isChunkLoadError(event.reason)) {
+            console.warn('Unhandled chunk load error:', event.reason);
+            this.handleChunkError();
+        }
+    };
+
+    private handleChunkError = () => {
+        const hasReloaded = sessionStorage.getItem('chunk_error_reload');
+        const now = Date.now();
+        const lastReload = parseInt(sessionStorage.getItem('chunk_error_time') || '0', 10);
+
+        // Limit reloads to once every 10 seconds to prevent infinite loops
+        if (!hasReloaded || (now - lastReload > 10000)) {
+            sessionStorage.setItem('chunk_error_reload', 'true');
+            sessionStorage.setItem('chunk_error_time', now.toString());
+            console.log('Chunk load error detected, forcing hard reload...');
+
+            // Force a reload with cache-busting
+            setTimeout(() => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('v', now.toString());
+                window.location.href = url.toString();
+            }, 500);
+        }
+    };
+
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         console.error('Uncaught error:', error, errorInfo);
 
-        // If it's a chunk load error, attempt auto-reload once
         if (isChunkLoadError(error)) {
-            const hasReloaded = sessionStorage.getItem('chunk_error_reload');
-
-            if (!hasReloaded) {
-                sessionStorage.setItem('chunk_error_reload', 'true');
-                console.log('Chunk load error detected, reloading page...');
-                // Small delay to allow the error to be logged
-                setTimeout(() => {
-                    window.location.reload();
-                }, 100);
-            } else {
-                // Clear the flag for the next session
-                sessionStorage.removeItem('chunk_error_reload');
-            }
+            this.handleChunkError();
         }
     }
 
