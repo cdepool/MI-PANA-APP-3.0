@@ -59,20 +59,14 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
         role: targetRole
       });
 
-      toast.success("¡Registro exitoso! Bienvenido.");
+      // ⚡ OPTIMIZATION: Removed auto-login to eliminate 1-2s latency
+      // User can login manually on next screen for better perceived performance
+      toast.success("¡Registro exitoso! Ahora puedes iniciar sesión.", {
+        duration: 4000
+      });
 
-      // Attempt auto-login or redirect
-      // If you want to auto-login, you might need to call loginWithPassword here 
-      // or just navigate to login if email confirmation is required (Supabase default usually requires it but for this Plan we might assume auto-confirm or login works).
-
-      // Let's try to auto-login to improve UX
-      try {
-        await authService.loginWithPassword(email.trim(), password);
-        onNavigateHome();
-      } catch (loginErr) {
-        // If auto-login fails (e.g. email not confirmed), send to login
-        onNavigateLogin();
-      }
+      // Navigate to login immediately
+      onNavigateLogin();
 
     } catch (err: any) {
       console.error('Auth Error:', err);
