@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SimpleErrorBoundary } from './components/SimpleErrorBoundary';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
+import SplashScreen from './components/SplashScreen';
 
 // Pages
 const Login = lazy(() => import('./pages/Login'));
@@ -33,14 +34,7 @@ const AppRoutes = () => {
 
   return (
     <SimpleErrorBoundary>
-      <Suspense fallback={
-        <div className="flex items-center justify-center min-h-screen bg-mipana-darkBlue text-white">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-            <p className="text-sm font-medium animate-pulse">Cargando...</p>
-          </div>
-        </div>
-      }>
+      <Suspense fallback={<SplashScreen />}>
         <Routes>
           {/* Rutas Comunes */}
           <Route path="/onboarding" element={<Onboarding />} />

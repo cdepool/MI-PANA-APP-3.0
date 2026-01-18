@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { isDriverDomain } from '../utils/domain';
@@ -6,6 +5,8 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import { authService } from '../services/authService';
 import { UserRole } from '../types';
+import { ArrowLeft, Smartphone, User, Loader2, Eye, EyeOff } from 'lucide-react';
+import { prefetchPage } from '../utils/prefetch';
 
 interface RegisterProps {
   onNavigateHome: () => void;
@@ -13,11 +14,11 @@ interface RegisterProps {
 }
 
 const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) => {
-  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // ⚡ OPTIMIZATION: useCallback to prevent re-creation
@@ -98,15 +99,24 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
 
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Contraseña</label>
-            <Input
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-gray-700 font-mono"
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl py-3 px-4 font-mono pr-12 focus:ring-2 focus:ring-mipana-mediumBlue outline-none transition-all"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-mipana-mediumBlue transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <div>
@@ -130,6 +140,12 @@ const Register: React.FC<RegisterProps> = ({ onNavigateHome, onNavigateLogin }) 
               placeholder="Tu Nombre"
               value={name}
               onChange={e => setName(e.target.value)}
+              onFocus={() => {
+                // ⚡ SMART PREFETCH: User is almost done
+                if (isDriverDomain()) prefetchPage('DriverHome');
+                else prefetchPage('PassengerHome');
+                prefetchPage('Wallet');
+              }}
               className="w-full bg-gray-50 dark:bg-gray-700"
               disabled={isLoading}
             />

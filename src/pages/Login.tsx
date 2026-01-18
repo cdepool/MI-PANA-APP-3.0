@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Lock, AlertCircle } from 'lucide-react';
+import { User, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 import { isDriverDomain } from '../utils/domain';
+import { prefetchPage } from '../utils/prefetch';
 
 interface LoginProps {
   onNavigateRegister: () => void;
@@ -16,7 +17,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
 
   const [phoneOrEmail, setPhoneOrEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Auto-redirect if already authenticated
@@ -140,13 +141,28 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
               </div>
               <input
                 autoComplete="current-password"
-                className="block w-full pl-12 pr-4 py-3.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] outline-none font-medium text-lg transition-all"
+                className="block w-full pl-12 pr-12 py-3.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-[#1A2E56] dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#FF6B00] outline-none font-medium text-lg transition-all"
                 placeholder="••••••••"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => {
+                  // ⚡ SMART PREFETCH: Preload potential dashboards when user is about to finish form
+                  if (isDriverDomain()) prefetchPage('DriverHome');
+                  else prefetchPage('PassengerHome');
+
+                  // Always prefetch common next pages
+                  prefetchPage('Wallet');
+                }}
                 disabled={isLoading}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#1A2E56]/40 dark:text-white/40 hover:text-[#FF6B00] transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
           </div>
 
