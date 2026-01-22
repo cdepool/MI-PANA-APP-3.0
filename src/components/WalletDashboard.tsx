@@ -22,6 +22,7 @@ import { WalletQRCode } from './WalletQRCode';
 import { WalletQRScanner } from './WalletQRScanner';
 import { WalletP2PPayment } from './WalletP2PPayment';
 import { toast } from 'sonner';
+import { walletService } from '../services/walletService';
 
 // Register ChartJS components
 ChartJS.register(
@@ -86,17 +87,8 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
   const fetchWalletBalance = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wallet-get-balance?userId=${userId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-      if (data.success) {
+      const data = await walletService.getBalance(userId);
+      if (data) {
         setWallet(data.wallet);
         setExchangeRate(data.exchange_rate);
       }
@@ -109,30 +101,10 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
 
   const fetchTransactions = async () => {
     try {
-      let query = `user_id=eq.${userId}&order=created_at.desc`;
-      if (filterType !== 'all') query += `&type=eq.${filterType}`;
+      const response = await walletService.getTransactions(userId, filterType, currentPage, transactionsPerPage);
 
-      const offset = (currentPage - 1) * transactionsPerPage;
-      query += `&limit=${transactionsPerPage}&offset=${offset}`;
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/wallet_transactions?${query}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Prefer': 'count=exact',
-          },
-        }
-      );
-
-      const data = await response.json();
-      const contentRange = response.headers.get('Content-Range');
-      if (contentRange) {
-        const total = parseInt(contentRange.split('/')[1]);
-        setTotalTransactions(total);
-      }
-      setTransactions(data || []);
+      setTotalTransactions(response.total);
+      setTransactions(response.transactions || []);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     }

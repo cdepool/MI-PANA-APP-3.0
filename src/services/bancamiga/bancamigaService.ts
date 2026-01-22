@@ -2,6 +2,7 @@
 // Servicio para integración con API de BANCAMIGA
 
 import { createClient } from '@supabase/supabase-js';
+import logger from '../../utils/logger';
 
 interface BancamigaConfig {
     host: string;
@@ -71,7 +72,7 @@ export class BancamigaService {
             const data = await response.json();
             return { success: true, data };
         } catch (error) {
-            console.error('❌ Health check failed:', error);
+            logger.error('❌ Health check failed:', error);
             return { success: false, error: error.message };
         }
     }
@@ -104,7 +105,7 @@ export class BancamigaService {
             this.config.refreshToken = data.refresToken!;
             this.config.tokenExpires = data.expireDate!;
 
-            console.log('✅ Tokens renovados exitosamente');
+            logger.log('✅ Tokens renovados exitosamente');
             return {
                 success: true,
                 data: {
@@ -114,7 +115,7 @@ export class BancamigaService {
                 },
             };
         } catch (error) {
-            console.error('❌ Error renovando tokens:', error);
+            logger.error('❌ Error renovando tokens:', error);
             return { success: false, error: error.message };
         }
     }
@@ -149,10 +150,10 @@ export class BancamigaService {
             const data: BancamigaResponse = await response.json();
 
             if (data.code !== 200) {
-                console.warn('⚠️ Respuesta con código diferente a 200:', data);
+                logger.warn('⚠️ Respuesta con código diferente a 200:', data);
             }
 
-            console.log(`✅ Encontrados ${data.num || 0} pagos`);
+            logger.log(`✅ Encontrados ${data.num || 0} pagos`);
             return {
                 success: true,
                 data: {
@@ -162,7 +163,7 @@ export class BancamigaService {
                 },
             };
         } catch (error) {
-            console.error('❌ Error buscando pagos móvil:', error);
+            logger.error('❌ Error buscando pagos móvil:', error);
             return { success: false, error: error.message };
         }
     }
@@ -191,10 +192,10 @@ export class BancamigaService {
             const data: BancamigaResponse = await response.json();
 
             if (data.code !== 200) {
-                console.warn('⚠️ Respuesta con código diferente a 200:', data);
+                logger.warn('⚠️ Respuesta con código diferente a 200:', data);
             }
 
-            console.log(`✅ Historial: ${data.num || 0} pagos encontrados`);
+            logger.log(`✅ Historial: ${data.num || 0} pagos encontrados`);
             return {
                 success: true,
                 data: {
@@ -204,7 +205,7 @@ export class BancamigaService {
                 },
             };
         } catch (error) {
-            console.error('❌ Error buscando historial:', error);
+            logger.error('❌ Error buscando historial:', error);
             return { success: false, error: error.message };
         }
     }
@@ -220,7 +221,7 @@ export class BancamigaService {
         const expires = expiresIn < secondsInDays;
 
         if (expires) {
-            console.warn(`⚠️ Token expirará en menos de ${daysBeforeExpire} días`);
+            logger.warn(`⚠️ Token expirará en menos de ${daysBeforeExpire} días`);
         }
 
         return expires;

@@ -1,6 +1,7 @@
 import { User } from '../types';
 import { getZoneByLocation, calculateDistance } from './zoneService';
 import { getPheromoneIntensity, depositPheromone } from './pheromoneService';
+import logger from '../utils/logger';
 
 /**
  * Swarm Matching Service - Algoritmo de matching basado en inteligencia de enjambre
@@ -259,7 +260,7 @@ export function recordMatchResult(
     }
 
     // TODO: Guardar en BD para análisis y ajuste de pesos
-    console.log('Match result recorded:', {
+    logger.log('Match result recorded:', {
         driver_id: scoredDriver.driver.id,
         zone_id: scoredDriver.zone_id,
         result,
@@ -278,7 +279,7 @@ export function adjustWeights(historicalMatches: any[]): void {
     // - Tiempo promedio de matching
     // - Satisfacción del usuario
 
-    console.log('Adjusting swarm weights based on', historicalMatches.length, 'matches');
+    logger.log('Adjusting swarm weights based on', historicalMatches.length, 'matches');
 }
 
 /**

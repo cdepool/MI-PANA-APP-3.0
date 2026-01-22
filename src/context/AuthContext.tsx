@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthContextType, User, UserRole, SavedPlace, TransactionType } from '../types';
 import { mockLoginUser } from '../services/mockService';
 import { authService } from '../services/authService';
+import { walletService } from '../services/walletService';
 import { supabase } from '../services/supabaseClient';
 import logger from '../utils/logger';
 
@@ -156,7 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginPassenger = async (identifier: string, password: string) => {
     try {
-      const loggedUser = await authService.loginPassenger(identifier, password);
+      const loggedUser = await authService.loginWithPassword(identifier, password);
       setUser(loggedUser);
     } catch (error) {
       throw error;
@@ -177,7 +178,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const walletTransaction = async (amount: number, type: TransactionType, description: string, reference?: string) => {
     if (!user) return;
     try {
-      const updatedUser = await authService.processTransaction(user.id, amount, type, description, reference);
+      const updatedUser = await walletService.processTransaction(user.id, amount, type, description, reference);
       setUser(updatedUser);
     } catch (error) {
       logger.error("Transaction failed", error);

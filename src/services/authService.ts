@@ -2,11 +2,7 @@ import { User, UserRole, RegistrationData, TransactionType } from '../types';
 import { supabase } from './supabaseClient';
 import logger from '../utils/logger';
 
-// LocalStorage Persistence - No longer needed, kept for TS compatibility if imported elsewhere
-export interface StoredUser extends User {
-  created_at?: string;
-  verified?: boolean;
-}
+
 
 export const authService = {
 
@@ -208,7 +204,7 @@ export const authService = {
       .single();
 
     if (error) {
-      console.warn("Update profile failed", error);
+      logger.warn("Update profile failed", error);
       throw error;
     }
 

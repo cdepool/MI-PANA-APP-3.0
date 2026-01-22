@@ -1,5 +1,6 @@
 // Notification Service for Push Notifications
 // Preparación para notificaciones push cuando se complete una recarga
+import logger from '../utils/logger';
 
 export interface NotificationPayload {
     userId: string;
@@ -14,7 +15,7 @@ export interface NotificationPayload {
  * TODO: Integrate with Firebase Cloud Messaging or similar service
  */
 export const sendPushNotification = async (payload: NotificationPayload): Promise<boolean> => {
-    console.log('[Notification Service] Preparing to send notification:', payload);
+    logger.log('[Notification Service] Preparing to send notification:', payload);
 
     // TODO: Implement actual push notification logic
     // This is a placeholder for future implementation
@@ -26,10 +27,10 @@ export const sendPushNotification = async (payload: NotificationPayload): Promis
 
     try {
         // Placeholder: Log notification instead of sending
-        console.log(`[Notification Service] Would send to user ${payload.userId}:`);
-        console.log(`  Title: ${payload.title}`);
-        console.log(`  Body: ${payload.body}`);
-        console.log(`  Type: ${payload.type}`);
+        logger.log(`[Notification Service] Would send to user ${payload.userId}:`);
+        logger.log(`  Title: ${payload.title}`);
+        logger.log(`  Body: ${payload.body}`);
+        logger.log(`  Type: ${payload.type}`);
 
         // TODO: Replace with actual API call
         // const response = await fetch('https://fcm.googleapis.com/fcm/send', {
@@ -50,7 +51,7 @@ export const sendPushNotification = async (payload: NotificationPayload): Promis
 
         return true;
     } catch (error) {
-        console.error('[Notification Service] Error sending notification:', error);
+        logger.error('[Notification Service] Error sending notification:', error);
         return false;
     }
 };

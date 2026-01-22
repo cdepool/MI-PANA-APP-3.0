@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import logger from '../utils/logger';
 
 /**
  * Driver Location Service
@@ -41,12 +42,12 @@ export async function startLocationTracking(
     onError?: (error: GeolocationPositionError) => void
 ): Promise<boolean> {
     if (state.isTracking) {
-        console.log('[DriverLocation] Already tracking');
+        logger.log('[DriverLocation] Already tracking');
         return true;
     }
 
     if (!navigator.geolocation) {
-        console.error('[DriverLocation] Geolocation not supported');
+        logger.error('[DriverLocation] Geolocation not supported');
         return false;
     }
 
@@ -77,11 +78,11 @@ export async function startLocationTracking(
 
                     if (!state.isTracking) {
                         state.isTracking = true;
-                        console.log('[DriverLocation] Tracking started');
+                        logger.log('[DriverLocation] Tracking started');
                         resolve(true);
                     }
                 } catch (error) {
-                    console.error('[DriverLocation] Error updating location:', error);
+                    logger.error('[DriverLocation] Error updating location:', error);
                     state.errorCount++;
 
                     if (state.errorCount >= MAX_ERROR_COUNT) {
@@ -90,7 +91,7 @@ export async function startLocationTracking(
                 }
             },
             (error) => {
-                console.error('[DriverLocation] GPS error:', error);
+                logger.error('[DriverLocation] GPS error:', error);
                 state.errorCount++;
                 onError?.(error);
 
@@ -117,7 +118,7 @@ export function stopLocationTracking(): void {
         state.watchId = null;
     }
     state.isTracking = false;
-    console.log('[DriverLocation] Tracking stopped');
+    logger.log('[DriverLocation] Tracking stopped');
 }
 
 /**
@@ -268,7 +269,7 @@ function parseGeographyPoint(point: unknown): { lat: number; lng: number } {
         }
     }
 
-    console.warn('[DriverLocation] Unknown point format:', point);
+    logger.warn('[DriverLocation] Unknown point format:', point);
     return { lat: 0, lng: 0 };
 }
 

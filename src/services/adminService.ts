@@ -274,6 +274,7 @@ export const adminService = {
         .limit(limit / 2);
 
       // Get wallet transactions
+      // TODO: Refactor to use Edge Function for security (DEBT)
       const { data: walletTx } = await supabase
         .from('wallet_transactions')
         .select('id, type, amount_usd, amount_ves, status, created_at, reference, wallet:wallets(user:profiles(name))')
