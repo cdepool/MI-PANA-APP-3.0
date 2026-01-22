@@ -178,6 +178,23 @@ serve(async (req) => {
       );
     }
 
+    // SPAM PREVENTION: Check for too many PENDING requests
+    const { count: pendingCount } = await supabase
+      .from('recharge_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', body.userId)
+      .eq('status', 'pending');
+
+    if (pendingCount && pendingCount >= 5) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Tienes demasiadas solicitudes de recarga pendientes. Por favor espera a que se procesen o contacta a soporte.',
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Check for duplicate successful recharges (same bank + last 4 digits in last 24 hours)
     console.log('[Wallet Recharge] Checking for duplicates...');
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
