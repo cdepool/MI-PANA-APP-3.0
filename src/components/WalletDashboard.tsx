@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Wallet, DollarSign, TrendingUp, Plus, ArrowUpRight, ArrowDownRight,
-  RefreshCw, History, Filter, ChevronLeft, ChevronRight, QrCode,
+  RefreshCw, History, Filter, ChevronLeft, ChevronRight, QrCode, Camera,
   ArrowRight, CreditCard, Activity, PieChart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -241,7 +241,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
               <div>
                 <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Saldo Disponible</p>
                 <div className="flex items-baseline gap-2">
-                  <h2 className="text-5xl font-black tracking-tighter">${wallet?.balance_usd.toFixed(2)}</h2>
+                  <h2 className="text-5xl font-black tracking-tighter">${(wallet?.balance_usd || 0).toFixed(2)}</h2>
                   <span className="text-xl font-bold text-gray-500">USD</span>
                 </div>
                 <p className="text-sm font-medium text-mipana-orange mt-1">

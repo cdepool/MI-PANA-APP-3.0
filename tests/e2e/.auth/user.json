@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "sb-example-auth-token",
+          "value": "{\"access_token\":\"fake-jwt-token\",\"token_type\":\"bearer\",\"expires_in\":3600,\"refresh_token\":\"fake-refresh-token\",\"user\":{\"id\":\"user-123\",\"aud\":\"authenticated\",\"role\":\"authenticated\",\"email\":\"test-passenger@mipana.app\",\"user_metadata\":{\"name\":\"Test Passenger\",\"role\":\"passenger\"}},\"expires_at\":1769112685}"
+        }
+      ]
+    }
+  ]
+}
