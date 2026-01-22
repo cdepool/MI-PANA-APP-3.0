@@ -4,7 +4,9 @@ import { Toaster } from 'sonner';
 import { isDriverDomain, isAdminDomain } from './utils/domain';
 
 // Contexts
+// Contexts
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Components
 import { SimpleErrorBoundary } from './components/SimpleErrorBoundary';
@@ -232,10 +234,12 @@ const AppRoutes = () => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppRoutes />
-        <Toaster richColors closeButton position="top-center" />
-      </Router>
+      <ThemeProvider>
+        <Router>
+          <AppRoutes />
+          <Toaster richColors closeButton position="top-center" />
+        </Router>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

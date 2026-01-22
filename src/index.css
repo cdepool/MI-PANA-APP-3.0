@@ -68,7 +68,13 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f3f4f6;
+  background-color: #f3f4f6; /* Light mode default */
+  transition: background-color 0.3s ease;
+}
+
+.dark body {
+  background-color: #001F3F; /* Dark mode blue */
+  color: #ffffff;
 }
 
 /* App Container */

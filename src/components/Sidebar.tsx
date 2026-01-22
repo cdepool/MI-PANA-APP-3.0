@@ -13,9 +13,12 @@ import {
   ClipboardList,
   Sliders,
   Activity,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { AppView, UserRole } from '../types';
 
 interface SidebarProps {
@@ -27,6 +30,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, isDesktop = false }) => {
   const { user, logout, effectiveRole } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const menuItems = [
     { label: 'Inicio', icon: <Home size={20} />, path: '/' },
@@ -134,6 +138,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, isDeskto
         >
           <span className="text-gray-400"><Settings size={20} /></span>
           <span>Configuración</span>
+        </button>
+
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200 font-medium"
+        >
+          <span className="text-gray-400">
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </span>
+          <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>
         </button>
 
         <button

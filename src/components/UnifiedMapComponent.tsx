@@ -6,7 +6,8 @@ interface UnifiedMapComponentProps {
     className?: string;
     status?: 'IDLE' | 'PICKING_ORIGIN' | 'PICKING_DEST' | 'SEARCHING' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CONFIRM_SERVICE';
     onCenterChange?: () => void;
-    onCameraChange?: (center: { lat: number, lng: number }) => void;
+    onCameraChange?: (center: { lat: number, lng: number, address?: string }) => void;
+    onRouteCalculated?: (routeInfo: { distanceKm: number, durationMin: number, distanceText: string, durationText: string }) => void;
     currentProgress?: number;
     heading?: number;
     origin?: { lat: number, lng: number };
@@ -31,6 +32,7 @@ const UnifiedMapComponent: React.FC<UnifiedMapComponentProps> = ({
     status = 'IDLE',
     onCenterChange,
     onCameraChange,
+    onRouteCalculated,
     currentProgress = 0,
     origin,
     destination
@@ -90,16 +92,53 @@ const UnifiedMapComponent: React.FC<UnifiedMapComponentProps> = ({
         }
     };
 
-    const handleCenterChanged = () => {
+    const handleCenterChanged = useCallback(() => {
         if (map) {
             const newCenter = map.getCenter();
             if (newCenter) {
                 const latLng = { lat: newCenter.lat(), lng: newCenter.lng() };
-                if (onCameraChange) onCameraChange(latLng);
+
+                // Emit coordinates immediately for visual feedback
                 if (onCenterChange) onCenterChange();
+
+                // Debounce geocoding to avoid excessive API calls
+                if (debounceTimer.current) {
+                    clearTimeout(debounceTimer.current);
+                }
+
+                debounceTimer.current = setTimeout(() => {
+                    // Reverse geocode to get readable address
+                    if (window.google && window.google.maps) {
+                        const geocoder = new window.google.maps.Geocoder();
+                        geocoder.geocode({ location: latLng }, (results, status) => {
+                            if (status === 'OK' && results && results[0]) {
+                                const address = results[0].formatted_address;
+                                if (onCameraChange) {
+                                    onCameraChange({ ...latLng, address });
+                                }
+                            } else {
+                                // Fallback to coordinates if geocoding fails
+                                if (onCameraChange) {
+                                    onCameraChange({
+                                        ...latLng,
+                                        address: `${latLng.lat.toFixed(4)}, ${latLng.lng.toFixed(4)}`
+                                    });
+                                }
+                            }
+                        });
+                    } else {
+                        // Fallback if Google Maps not loaded
+                        if (onCameraChange) {
+                            onCameraChange({
+                                ...latLng,
+                                address: `${latLng.lat.toFixed(4)}, ${latLng.lng.toFixed(4)}`
+                            });
+                        }
+                    }
+                }, 500); // 500ms debounce
             }
         }
-    };
+    }, [map, onCameraChange, onCenterChange]);
 
     // Calculate Route when origin/destination change
     useEffect(() => {
@@ -116,8 +155,24 @@ const UnifiedMapComponent: React.FC<UnifiedMapComponentProps> = ({
                     // Extract info
                     const route = result.routes[0];
                     if (route && route.legs && route.legs[0]) {
-                        setDistance(route.legs[0].distance?.text || '');
-                        setDuration(route.legs[0].duration?.text || '');
+                        const leg = route.legs[0];
+                        const distanceText = leg.distance?.text || '';
+                        const durationText = leg.duration?.text || '';
+                        const distanceKm = leg.distance?.value ? leg.distance.value / 1000 : 0;
+                        const durationMin = leg.duration?.value ? leg.duration.value / 60 : 0;
+
+                        setDistance(distanceText);
+                        setDuration(durationText);
+
+                        // Emit route info for price calculation
+                        if (onRouteCalculated) {
+                            onRouteCalculated({
+                                distanceKm,
+                                durationMin,
+                                distanceText,
+                                durationText
+                            });
+                        }
                     }
                 } else {
                     console.error('Directions request failed due to ' + status);
@@ -128,7 +183,7 @@ const UnifiedMapComponent: React.FC<UnifiedMapComponentProps> = ({
             setDistance('');
             setDuration('');
         }
-    }, [origin, destination]);
+    }, [origin, destination, onRouteCalculated]);
 
     const isPicking = status === 'PICKING_ORIGIN' || status === 'PICKING_DEST';
 

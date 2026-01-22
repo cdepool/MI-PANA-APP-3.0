@@ -18,6 +18,26 @@ test('wallet recharge handles 500 error gracefully', async ({ page }) => {
         });
     });
 
+    // Mock token refresh to avoid logout
+    await page.route('**/auth/v1/token?grant_type=refresh_token', async route => {
+        await route.fulfill({
+            json: {
+                access_token: "fake-jwt-token-refreshed",
+                token_type: "bearer",
+                expires_in: 3600,
+                refresh_token: "fake-refresh-token-new",
+                user: {
+                    id: "user-123",
+                    aud: "authenticated",
+                    role: "authenticated",
+                    email: "test-passenger@mipana.app",
+                    app_metadata: { provider: "email" },
+                    user_metadata: { name: "Test Passenger", role: "passenger" }
+                }
+            }
+        });
+    });
+
     // Mock profile fetch (AuthContext needs this)
     await page.route('**/rest/v1/profiles*', async route => {
         await route.fulfill({

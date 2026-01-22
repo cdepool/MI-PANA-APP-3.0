@@ -19,6 +19,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import UnifiedMapComponent from '../components/UnifiedMapComponent';
 import ChatInterface from '../components/ChatInterface';
+import PlacesAutocomplete from '../components/PlacesAutocomplete';
 import { toast } from 'sonner';
 import { SERVICE_CATALOG, getTariffs, getDriverById, mockMatchDriver, startRideSimulation, sendChatMessage } from '../services/mockService';
 import { notificationService } from '../services/notificationService';
@@ -96,13 +97,20 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   const [origin, setOrigin] = useState<LocationPoint>({ address: 'Ubicación Actual' });
   const [destination, setDestination] = useState<LocationPoint | null>(null);
 
-  // ... (Map States unchanged) ...
+  // Map States
   const [pickingType, setPickingType] = useState<'ORIGIN' | 'DESTINATION' | null>(null);
   const [mapCenterAddress, setMapCenterAddress] = useState<string>('');
   const [mapCenterCoords, setMapCenterCoords] = useState<{ lat: number, lng: number } | null>(null);
   const [isMapMoving, setIsMapMoving] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const [userRealLocation, setUserRealLocation] = useState<{ lat: number, lng: number } | null>(null);
+
+  // Text Search States
+  const [showPlacesSearch, setShowPlacesSearch] = useState(false);
+  const [searchingFor, setSearchingFor] = useState<'ORIGIN' | 'DESTINATION' | null>(null);
+
+  // Route Info State
+  const [routeDistance, setRouteDistance] = useState<number | null>(null); // in km
 
   // ... (Beneficiary State unchanged) ...
   const [forWhom, setForWhom] = useState<'ME' | 'OTHER'>('ME');
@@ -224,8 +232,9 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
       setDestination(dest);
       setPickingType(null);
 
-      // Auto calculate price
-      const calculated = calculatePrice(4.2, selectedServiceId);
+      // Auto calculate price with real distance if available
+      const distanceToUse = routeDistance || 4.2; // Fallback to 4.2 if route not calculated yet
+      const calculated = calculatePrice(distanceToUse, selectedServiceId);
       setPrice(calculated);
       setStep('CONFIRM_SERVICE');
     }
@@ -265,7 +274,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
         selectedServiceId,
         service?.vehicleType || 'CAR',
         price,
-        4.2 // Mock distance for now, normally calculated
+        routeDistance || 4.2 // Use real distance if available
       );
       setCurrentTripId(newTrip.id);
 
@@ -345,9 +354,17 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
           status={step === 'PICK_ON_MAP' ? (pickingType === 'ORIGIN' ? 'PICKING_ORIGIN' : 'PICKING_DEST') : (step === 'CONFIRM_SERVICE' ? 'CONFIRM_SERVICE' : (step === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'IDLE'))}
           onCameraChange={(center) => {
             setMapCenterCoords(center);
-            // In a real app, we would reverse geocode here. 
-            // For now, it updates the visual center address.
-            setMapCenterAddress(`${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`);
+            // Use address from geocoding if available, otherwise fallback to coordinates
+            const displayAddress = center.address || `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`;
+            setMapCenterAddress(displayAddress);
+          }}
+          onRouteCalculated={(routeInfo) => {
+            setRouteDistance(routeInfo.distanceKm);
+            // Auto-update price if we're in CONFIRM_SERVICE step
+            if (step === 'CONFIRM_SERVICE' && destination) {
+              const calculated = calculatePrice(routeInfo.distanceKm, selectedServiceId);
+              setPrice(calculated);
+            }
           }}
         />
       </div>
@@ -395,23 +412,45 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                 <div className="relative z-10 w-5 h-5 flex items-center justify-center">
                   <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.15)]"></div>
                 </div>
-                <div
-                  className="flex-1 border-b border-gray-100 pb-2 cursor-pointer hover:bg-gray-50 transition-colors rounded px-2 -ml-2"
-                  onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); }}
-                >
+                <div className="flex-1 border-b border-gray-100 pb-2">
                   <p className="text-[9px] text-green-600 font-bold uppercase">Desde</p>
-                  <p className="text-xs md:text-sm font-medium text-gray-900 truncate">{origin.address}</p>
+                  <div className="flex items-center gap-2">
+                    <p
+                      className="flex-1 text-xs md:text-sm font-medium text-gray-900 truncate cursor-pointer hover:text-mipana-mediumBlue transition-colors"
+                      onClick={() => { setSearchingFor('ORIGIN'); setShowPlacesSearch(true); }}
+                    >
+                      {origin.address}
+                    </p>
+                    <button
+                      onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); }}
+                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      title="Seleccionar en mapa"
+                    >
+                      <MapPin size={14} className="text-gray-400" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {/* Dest Field */}
-              <div className="flex items-center gap-3 relative group" onClick={() => { setPickingType('DESTINATION'); setStep('PICK_ON_MAP'); }}>
+              <div className="flex items-center gap-3 relative group">
                 <div className="relative z-10 w-5 h-5 flex items-center justify-center">
                   <div className="w-2 h-2 rounded-full bg-mipana-orange shadow-[0_0_0_3px_rgba(242,98,15,0.15)]"></div>
                 </div>
-                <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2.5 flex items-center justify-between border border-gray-200 cursor-pointer hover:border-mipana-mediumBlue transition-colors shadow-inner">
-                  <span className="text-gray-400 text-sm font-medium">¿A dónde vas?</span>
-                  <Search size={16} className="text-mipana-mediumBlue" />
+                <div className="flex-1 bg-gray-50 rounded-xl px-3 py-2.5 flex items-center justify-between border border-gray-200 shadow-inner">
+                  <span
+                    className="flex-1 text-gray-400 text-sm font-medium cursor-pointer hover:text-mipana-mediumBlue transition-colors"
+                    onClick={() => { setSearchingFor('DESTINATION'); setShowPlacesSearch(true); }}
+                  >
+                    {destination?.address || '¿A dónde vas?'}
+                  </span>
+                  <button
+                    onClick={() => { setPickingType('DESTINATION'); setStep('PICK_ON_MAP'); }}
+                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    title="Seleccionar en mapa"
+                  >
+                    <MapPin size={16} className="text-mipana-mediumBlue" />
+                  </button>
                 </div>
               </div>
 
@@ -429,31 +468,6 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
               )}
             </div>
 
-            {/* WALLET WIDGET CARD (Desktop Only) */}
-            <div className="hidden md:flex bg-white rounded-2xl shadow-xl p-4 animate-slide-up border border-gray-100 relative overflow-hidden items-center justify-between pointer-events-auto" style={{ animationDelay: '0.1s' }}>
-              {/* Decorative BG */}
-              <div className="absolute -right-4 -top-4 w-20 h-20 bg-yellow-400/20 rounded-full blur-xl"></div>
-
-              <div className="relative z-10">
-                <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 flex items-center gap-1">
-                  Saldo disponible
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse block"></span>
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <h3 className="text-2xl font-extrabold text-mipana-darkBlue">Bs. {(walletBalance * currentRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
-                </div>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <div className="bg-blue-50 px-1.5 rounded text-[10px] font-bold text-blue-700 border border-blue-100">$ {walletBalance.toFixed(2)}</div>
-                </div>
-              </div>
-
-              <Button
-                onClick={onNavigateWallet}
-                className="relative z-10 bg-[#ccff00] hover:bg-[#b3e600] text-black border-none shadow-lg font-bold px-6 py-3 rounded-xl active:scale-95 transition-all"
-              >
-                Recargar
-              </Button>
-            </div>
           </div>
         </>
       )}
@@ -726,6 +740,41 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
         )}
 
       </div>
+
+      {/* PLACES SEARCH MODAL */}
+      {showPlacesSearch && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-mipana-darkBlue">
+                {searchingFor === 'ORIGIN' ? 'Punto de Partida' : 'Destino'}
+              </h3>
+              <button
+                onClick={() => { setShowPlacesSearch(false); setSearchingFor(null); }}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <ArrowLeft size={20} />
+              </button>
+            </div>
+            <PlacesAutocomplete
+              placeholder={searchingFor === 'ORIGIN' ? 'Buscar punto de partida...' : 'Buscar destino...'}
+              defaultValue={searchingFor === 'ORIGIN' ? origin.address : destination?.address || ''}
+              onPlaceSelected={(place) => {
+                if (searchingFor === 'ORIGIN') {
+                  setOrigin({ address: place.address, lat: place.lat, lng: place.lng });
+                } else if (searchingFor === 'DESTINATION') {
+                  setDestination({ address: place.address, lat: place.lat, lng: place.lng });
+                  // Price will be calculated automatically by onRouteCalculated callback
+                  setStep('CONFIRM_SERVICE');
+                }
+                setShowPlacesSearch(false);
+                setSearchingFor(null);
+              }}
+              icon={<Search size={16} />}
+            />
+          </div>
+        </div>
+      )}
 
       {/* RECHARGE MODAL FOR INSUFFICIENT BALANCE */}
       {showRechargeModal && user && (

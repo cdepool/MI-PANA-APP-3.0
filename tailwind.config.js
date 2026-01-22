@@ -14,6 +14,7 @@ export default {
     'border-orange-500',
     'border-gray-400',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
