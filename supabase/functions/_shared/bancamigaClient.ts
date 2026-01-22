@@ -302,8 +302,8 @@ export class BancamigaClient {
  */
 export function createBancamigaClient(): BancamigaClient {
   const config: BancamigaConfig = {
-    host: Deno.env.get('BANCAMIGA_HOST') || 'http://35.202.142.88',
-    dni: Deno.env.get('BANCAMIGA_DNI') || 'j407242741',
+    host: Deno.env.get('BANCAMIGA_HOST') || 'https://adminp2p.sitca-ve.com',
+    dni: Deno.env.get('BANCAMIGA_DNI') || 'J40724274',
     accessToken: Deno.env.get('BANCAMIGA_ACCESS_TOKEN'),
     refreshToken: Deno.env.get('BANCAMIGA_REFRESH_TOKEN'),
     tokenExpires: Deno.env.get('BANCAMIGA_TOKEN_EXPIRES')

@@ -75,6 +75,38 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // 0. SECURITY CHECK: Verify User Auth
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing Authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', details: authError?.message }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (user.id !== body.userId) {
+      console.warn(`[Wallet Recharge] Security Alert: User ${user.id} tried to recharge for ${body.userId}`);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: You can only recharge your own wallet' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     let cleanPhone = body.userPhone.replace(/\D/g, '');
@@ -343,6 +375,31 @@ serve(async (req) => {
           .single();
 
         console.log('[Wallet Recharge] Recharge completed successfully!');
+
+        // Send Push Notification
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              user_id: body.userId,
+              title: '💰 Recarga Exitosa',
+              body: `Se han acreditado Bs. ${body.amount.toFixed(2)} a tu billetera.`,
+              type: 'wallet_recharge',
+              data: {
+                amount_ves: body.amount.toString(),
+                new_balance_usd: updatedWallet?.balance_usd.toString() || '0'
+              }
+            }),
+          });
+        } catch (notificationError) {
+          console.error('[Wallet Recharge] Failed to send push notification:', notificationError);
+          // Don't fail the whole request if notification fails
+        }
+
         return new Response(
           JSON.stringify({
             success: true,

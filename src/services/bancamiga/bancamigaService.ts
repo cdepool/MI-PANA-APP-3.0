@@ -46,7 +46,7 @@ export class BancamigaService {
 
     constructor() {
         this.config = {
-            host: import.meta.env.VITE_BANCAMIGA_HOST || '',
+            host: import.meta.env.VITE_BANCAMIGA_HOST || 'https://adminp2p.sitca-ve.com',
             accessToken: import.meta.env.VITE_BANCAMIGA_ACCESS_TOKEN || '',
             refreshToken: import.meta.env.VITE_BANCAMIGA_REFRESH_TOKEN || '',
             tokenExpires: parseInt(import.meta.env.VITE_BANCAMIGA_TOKEN_EXPIRES || '0'),

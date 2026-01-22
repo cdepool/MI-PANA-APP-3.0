@@ -56,7 +56,7 @@ export interface GoogleProfile {
   scopes: ('calendar' | 'tasks' | 'gmail')[];
 }
 
-export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'PAYMENT' | 'REFUND';
+export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'PAYMENT' | 'REFUND' | 'QR_PAYMENT' | 'QR_RECEIVE';
 
 export interface Transaction {
   id: string;
@@ -67,7 +67,13 @@ export interface Transaction {
   type: TransactionType;
   description: string;
   reference?: string; // Pago Movil ref
-  status: 'COMPLETED' | 'PENDING' | 'FAILED';
+  status: 'COMPLETED' | 'PENDING' | 'FAILED' | 'VERIFIED';
+  metadata?: {
+    qrId?: string;
+    targetUser?: string;
+    bankName?: string;
+    bcvRateAtTime?: number;
+  };
 }
 
 export interface Wallet {
