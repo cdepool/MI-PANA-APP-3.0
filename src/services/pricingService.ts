@@ -6,7 +6,7 @@ import logger from '../utils/logger';
 const BCV_API_URL = 'https://ve.dolarapi.com/v1/dolares/oficial';
 
 // Variable global para la tasa (Estado simple)
-export let currentBcvRate = 344.51; // Valor real actualizado el 20 de enero 2026
+export let currentBcvRate = 352.71; // Valor real actualizado el 23 de enero 2026
 export let lastBcvUpdate = new Date();
 
 // Interface based on Strict Rule: docs/BCV_RULE.md
@@ -20,24 +20,25 @@ interface BcvResponse {
 }
 
 // Función Crítica: Obtener Tasa Oficial
+import { fetchBcvRateWithFallback } from './exchangeRateService';
+
 export const fetchBcvRate = async () => {
     try {
         logger.log('🔄 Consultando Tasa Oficial BCV...');
-        const response = await fetch(BCV_API_URL);
-
-        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-
-        const data: BcvResponse = await response.json();
-
-        // Strict Rule: Use 'promedio'
-        const rate = data.promedio;
+        const { rate, source, isFresh } = await fetchBcvRateWithFallback();
 
         if (typeof rate === 'number' && rate > 0) {
             currentBcvRate = rate;
-            lastBcvUpdate = new Date(data.fechaActualizacion || Date.now());
-            logger.log(`✅ Tasa BCV Actualizada: Bs ${currentBcvRate} (Fuente: ${data.fuente})`);
+            lastBcvUpdate = new Date();
+
+            const freshnessIndicator = isFresh ? '✅' : '⚠️';
+            logger.log(`${freshnessIndicator} Tasa BCV Actualizada: Bs ${currentBcvRate} (Fuente: ${source})`);
+
+            if (!isFresh) {
+                logger.warn('⚠️ WARNING: Using stale or fallback exchange rate data');
+            }
         } else {
-            logger.warn('⚠️ Formato de tasa inválido recibido del API, manteniendo tasa anterior.');
+            logger.warn('⚠️ Formato de tasa inválido recibido, manteniendo tasa anterior.');
         }
     } catch (error) {
         logger.error('❌ Error obteniendo tasa BCV (usando valor en memoria):', error);

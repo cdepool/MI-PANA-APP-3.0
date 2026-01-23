@@ -7,19 +7,24 @@ interface ProfessionalHeaderProps {
 
 const ProfessionalHeader: React.FC<ProfessionalHeaderProps> = ({ onMenuClick }) => {
   const [tasa, setTasa] = useState<string>('---');
+  const [isFresh, setIsFresh] = useState<boolean>(true);
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     const fetchTasa = async () => {
       try {
-        const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
-        const data = await response.json();
-        setTasa(data.promedio.toLocaleString('es-VE', { minimumFractionDigits: 2 }));
+        const { fetchBcvRateWithFallback } = await import('../services/exchangeRateService');
+        const { rate, isFresh } = await fetchBcvRateWithFallback();
+        setTasa(rate.toLocaleString('es-VE', { minimumFractionDigits: 2 }));
+        setIsFresh(isFresh);
       } catch (error) {
         console.error('Error fetching tasa:', error);
       }
     };
     fetchTasa();
+    // Update every 5 minutes
+    const interval = setInterval(fetchTasa, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -38,8 +43,8 @@ const ProfessionalHeader: React.FC<ProfessionalHeaderProps> = ({ onMenuClick }) 
 
       <div className="flex items-center gap-2 md:gap-6">
         <div className="flex items-center gap-1.5 md:gap-2 bg-white/10 px-2.5 md:px-4 py-1.5 rounded-full border border-white/20 whitespace-nowrap">
-          <span className="text-[10px] md:text-xs font-medium text-cyan-400">📈 BCV:</span>
-          <span className="text-xs md:text-sm font-bold">Bs {tasa}</span>
+          <span className="text-[10px] md:text-xs font-medium text-cyan-400">{isFresh ? '📈' : '⚠️'} BCV:</span>
+          <span className="text-xs md:text-sm font-bold" style={!isFresh ? { color: '#FFA500' } : {}}>Bs {tasa}</span>
         </div>
 
         <div className="flex items-center gap-1 md:gap-2 shrink-0">

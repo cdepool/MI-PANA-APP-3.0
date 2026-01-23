@@ -34,6 +34,25 @@ serve(async (req) => {
 
     console.log('[Exchange Rate Sync] Fetched rate:', data.promedio, 'VES/USD');
 
+    // Validate data freshness (max 48 hours old)
+    const MAX_AGE_MS = 48 * 60 * 60 * 1000;
+    const dataAge = Date.now() - new Date(data.fecha).getTime();
+
+    if (dataAge > MAX_AGE_MS) {
+      const ageHours = Math.round(dataAge / (60 * 60 * 1000));
+      console.warn(`[Exchange Rate Sync] WARNING: DolarAPI data is stale (${ageHours}h old)`);
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          reason: 'stale_data',
+          ageHours,
+          message: `Data is ${ageHours}h old, exceeds 48h threshold`,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

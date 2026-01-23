@@ -12,6 +12,7 @@ interface ExchangeRate {
   rate: number;
   source: string;
   lastUpdate: string;
+  isFresh: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({ title, subtitle, onMenuClick }) => {
@@ -19,16 +20,17 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onMenuClick }) 
   const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Fetch exchange rate from DolarAPI
+  // Fetch exchange rate using new service
   useEffect(() => {
     const fetchExchangeRate = async () => {
       try {
-        const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
-        const data = await response.json();
-        
+        const { fetchBcvRateWithFallback } = await import('../services/exchangeRateService');
+        const { rate, source, isFresh } = await fetchBcvRateWithFallback();
+
         setExchangeRate({
-          rate: data.venta || data.promedio,
-          source: 'BCV',
+          rate,
+          source,
+          isFresh,
           lastUpdate: new Date().toLocaleTimeString('es-VE', {
             hour: '2-digit',
             minute: '2-digit',
@@ -61,11 +63,11 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onMenuClick }) 
           <button className="menu-button" onClick={onMenuClick} aria-label="Menu">
             <Menu size={24} />
           </button>
-          
+
           <div className="logo-container">
-            <img 
-              src="/logo-mipana.png" 
-              alt="MI PANA" 
+            <img
+              src="/logo-mipana.png"
+              alt="MI PANA"
               className="logo"
               onError={(e) => {
                 // Fallback if logo doesn't exist
@@ -91,14 +93,19 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onMenuClick }) 
         <div className="header-right">
           {/* Exchange Rate Display */}
           <div className="exchange-rate">
-            <span className="exchange-rate-icon">📈</span>
+            <span className="exchange-rate-icon">{exchangeRate && !exchangeRate.isFresh ? '⚠️' : '📈'}</span>
             <span className="exchange-rate-label">Tasa BCV:</span>
             {loading ? (
               <span className="exchange-rate-value loading">...</span>
             ) : exchangeRate ? (
-              <span className="exchange-rate-value">
-                Bs {exchangeRate.rate.toFixed(2)}
-              </span>
+              <>
+                <span className="exchange-rate-value" style={!exchangeRate.isFresh ? { color: '#FFA500' } : {}}>
+                  Bs {exchangeRate.rate.toFixed(2)}
+                </span>
+                {!exchangeRate.isFresh && (
+                  <span className="text-xs text-orange-500 ml-1" title="Datos desactualizados">⚠️</span>
+                )}
+              </>
             ) : (
               <span className="exchange-rate-value error">N/A</span>
             )}
@@ -111,8 +118,8 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onMenuClick }) 
           </button>
 
           {/* Dark Mode Toggle */}
-          <button 
-            className="icon-button" 
+          <button
+            className="icon-button"
             onClick={toggleDarkMode}
             aria-label="Toggle dark mode"
           >
