@@ -158,7 +158,11 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
 
         if (updatedTrip.status === 'ACCEPTED' && updatedTrip.driverId) {
           notificationService.sendLocalNotification('¡Pana encontrado!', 'Tu conductor aceptó el viaje y viene en camino.');
-          // ... rest of logic
+
+          if ('vibrate' in navigator) {
+            navigator.vibrate([100, 50, 100]);
+          }
+
           const foundDriver = Promise.resolve(preselectedDriver || mockMatchDriver(SERVICE_CATALOG.find(s => s.id === updatedTrip.serviceId)?.vehicleType || 'CAR', updatedTrip.driverId));
 
           foundDriver.then(d => {
@@ -174,6 +178,9 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
 
         if (updatedTrip.status === 'COMPLETED') {
           notificationService.sendLocalNotification('¡Llegaste!', 'Gracias por viajar con Mi Pana.');
+          if ('vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200]);
+          }
           setStep('COMPLETED');
         }
       });
@@ -264,6 +271,10 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
     }
 
     setStep('SEARCHING_DRIVER');
+
+    if ('vibrate' in navigator) {
+      navigator.vibrate(100);
+    }
 
     try {
       const service = SERVICE_CATALOG.find(s => s.id === selectedServiceId);

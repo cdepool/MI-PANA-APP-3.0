@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { AppView } from '../types';
 import ProfessionalHeader from './ProfessionalHeader';
 import DemoViewBanner from './admin/DemoViewBanner';
+import InstallPrompt from './InstallPrompt';
 
 // Lazy load Sidebar to reduce initial bundle size
 const Sidebar = lazy(() => import('./Sidebar'));
@@ -65,6 +66,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onNavigate }) => {
           {children}
         </div>
       </main>
+      <InstallPrompt />
     </div>
   );
 };

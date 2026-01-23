@@ -150,12 +150,35 @@ export class BancamigaClient {
   }
 
   /**
-   * Ensure valid access token (refresh if needed)
+   * Ensure valid access token (refresh if needed, re-authenticate as fallback)
    */
   async ensureValidToken(): Promise<void> {
     if (this.isTokenExpired()) {
-      console.log('[Bancamiga] Token expired, refreshing...');
-      await this.refreshAccessToken();
+      console.log('[Bancamiga] Token expired, attempting refresh...');
+      try {
+        await this.refreshAccessToken();
+        console.log('[Bancamiga] Token refreshed successfully');
+      } catch (refreshError) {
+        console.error('[Bancamiga] Refresh token failed:', refreshError);
+        console.log('[Bancamiga] Attempting re-authentication with password...');
+
+        const password = Deno.env.get('BANCAMIGA_PASSWORD');
+        if (password) {
+          try {
+            const newTokens = await this.generateTokens(password);
+            this.config.accessToken = newTokens.token;
+            this.config.refreshToken = newTokens.refresToken;
+            this.config.tokenExpires = newTokens.expireDate;
+            console.log('[Bancamiga] Re-authentication successful, new tokens acquired');
+          } catch (authError) {
+            console.error('[Bancamiga] Re-authentication failed:', authError);
+            throw new Error('BANCAMIGA_AUTH_EXPIRED: No se pudo renovar el token de autenticación bancaria. Contacta a soporte técnico.');
+          }
+        } else {
+          console.warn('[Bancamiga] No BANCAMIGA_PASSWORD configured for fallback authentication');
+          throw new Error('BANCAMIGA_TOKEN_EXPIRED: Token de acceso expirado y no hay método de renovación configurado.');
+        }
+      }
     }
   }
 

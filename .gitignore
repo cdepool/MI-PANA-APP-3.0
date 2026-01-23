@@ -23,5 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 .env
+# Production
 .vercel
 .env*.local
+
+# Testing and stats
+coverage
+stats.html

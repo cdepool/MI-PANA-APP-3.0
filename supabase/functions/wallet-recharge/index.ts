@@ -435,6 +435,50 @@ serve(async (req) => {
       }
     } catch (apiError) {
       console.error('[Wallet Recharge] Bancamiga API Flow Error:', apiError);
+
+      // Detectar tipo de error específico para dar mejor feedback
+      const errorMessage = (apiError as Error).message?.toLowerCase() || '';
+
+      // Error de autenticación con Bancamiga (token expirado)
+      if (errorMessage.includes('token') || errorMessage.includes('unauthorized') || errorMessage.includes('401')) {
+        console.error('[Wallet Recharge] Bancamiga authentication error - token may be expired');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Error de autenticación con el banco. Por favor intenta nuevamente en unos minutos.',
+            code: 'BANCAMIGA_AUTH_ERROR'
+          }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Error de conexión con Bancamiga
+      if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('econnrefused')) {
+        console.error('[Wallet Recharge] Bancamiga connection error');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'No se pudo conectar con el banco. Por favor verifica tu conexión e intenta nuevamente.',
+            code: 'BANCAMIGA_CONNECTION_ERROR'
+          }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Error de respuesta inválida de Bancamiga
+      if (errorMessage.includes('json') || errorMessage.includes('parse') || errorMessage.includes('unexpected')) {
+        console.error('[Wallet Recharge] Bancamiga response parsing error');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Respuesta inesperada del banco. Por favor intenta nuevamente.',
+            code: 'BANCAMIGA_PARSE_ERROR'
+          }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Otros errores - re-throw para el catch general
       throw apiError;
     }
 

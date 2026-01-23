@@ -496,7 +496,13 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
             <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
               <AlertCircle size={48} className="text-red-500" />
             </div>
-            <h3 className="text-xl font-black text-red-600">Acceso Restringido</h3>
+            <h3 className="text-xl font-black text-red-600">
+              {!isDomainAllowed
+                ? "Acceso Restringido"
+                : error?.toLowerCase().includes('interno') || error?.toLowerCase().includes('banco')
+                  ? "Error del Servicio"
+                  : "Error de Verificación"}
+            </h3>
             <p className="text-xs text-gray-500 font-bold leading-relaxed px-2">
               {!isDomainAllowed
                 ? "Por motivos de seguridad bancaria (Whitelist), los pagos solo pueden procesarse desde el dominio autorizado."
