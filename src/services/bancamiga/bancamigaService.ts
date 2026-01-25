@@ -42,6 +42,24 @@ interface BancamigaResponse {
     expireDate?: number;
 }
 
+interface ServiceResponse<T> {
+    success: boolean;
+    data?: T;
+    error?: string;
+}
+
+interface TokenData {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: Date;
+}
+
+interface PaymentSearchData {
+    totalPayments: number;
+    payments: PaymentMobile[];
+    raw: BancamigaResponse;
+}
+
 export class BancamigaService {
     private config: BancamigaConfig;
 
@@ -59,7 +77,7 @@ export class BancamigaService {
      * 1. HEALTH CHECK
      * Verifica el estado del servicio de BANCAMIGA
      */
-    async healthCheck(): Promise<{ success: boolean; data?: any; error?: string }> {
+    async healthCheck(): Promise<ServiceResponse<BancamigaResponse>> {
         try {
             const response = await fetch(`${this.config.host}/healthcheck`, {
                 method: 'GET',
@@ -69,11 +87,11 @@ export class BancamigaService {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            const data = await response.json();
+            const data: BancamigaResponse = await response.json();
             return { success: true, data };
-        } catch (error) {
+        } catch (error: any) {
             logger.error('❌ Health check failed:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: error.message || 'Unknown error' };
         }
     }
 
@@ -81,7 +99,7 @@ export class BancamigaService {
      * 2. RENOVAR TOKENS
      * Genera nuevos ACCESS_TOKEN y REFRESH_TOKEN
      */
-    async refreshTokens(): Promise<{ success: boolean; data?: any; error?: string }> {
+    async refreshTokens(): Promise<ServiceResponse<TokenData>> {
         try {
             const response = await fetch(`${this.config.host}/public/re/refresh`, {
                 method: 'POST',
@@ -109,14 +127,14 @@ export class BancamigaService {
             return {
                 success: true,
                 data: {
-                    accessToken: data.token,
-                    refreshToken: data.refresToken,
+                    accessToken: data.token!,
+                    refreshToken: data.refresToken!,
                     expiresAt: new Date(data.expireDate! * 1000),
                 },
             };
-        } catch (error) {
+        } catch (error: any) {
             logger.error('❌ Error renovando tokens:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: error.message || 'Unknown error' };
         }
     }
 
@@ -128,7 +146,7 @@ export class BancamigaService {
         phoneOrig: string,
         bankOrig: string,
         date: string
-    ): Promise<{ success: boolean; data?: any; error?: string }> {
+    ): Promise<ServiceResponse<PaymentSearchData>> {
         try {
             if (!phoneOrig || !bankOrig || !date) {
                 throw new Error('Faltan parámetros: phoneOrig, bankOrig, date');
@@ -162,9 +180,9 @@ export class BancamigaService {
                     raw: data,
                 },
             };
-        } catch (error) {
+        } catch (error: any) {
             logger.error('❌ Error buscando pagos móvil:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: error.message || 'Unknown error' };
         }
     }
 
@@ -172,7 +190,7 @@ export class BancamigaService {
      * 4. HISTORIAL DE PAGOS (MÁXIMO 1 VEZ CADA 10 MIN)
      * Busca TODOS los pagos recibidos en una fecha
      */
-    async findPaymentHistory(date: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    async findPaymentHistory(date: string): Promise<ServiceResponse<PaymentSearchData>> {
         try {
             if (!date) {
                 throw new Error('Date es requerida (YYYY-MM-DD)');
@@ -204,9 +222,9 @@ export class BancamigaService {
                     raw: data,
                 },
             };
-        } catch (error) {
+        } catch (error: any) {
             logger.error('❌ Error buscando historial:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: error.message || 'Unknown error' };
         }
     }
 

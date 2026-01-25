@@ -265,49 +265,19 @@ export const adminService = {
 
   async getTransactionLog(limit: number = 100): Promise<TransactionLogEntry[]> {
     try {
-      // Get trip transactions
-      const { data: trips } = await supabase
-        .from('trips')
-        .select('id, priceUsd, priceVes, status, created_at, passenger:profiles!passenger_id(name)')
-        .eq('status', 'COMPLETED')
-        .order('created_at', { ascending: false })
-        .limit(limit / 2);
+      const { data, error } = await supabase.functions.invoke('admin-get-transactions', {
+        body: { limit }
+      });
 
-      // Get wallet transactions
-      // TODO: Refactor to use Edge Function for security (DEBT)
-      const { data: walletTx } = await supabase
-        .from('wallet_transactions')
-        .select('id, type, amount_usd, amount_ves, status, created_at, reference, wallet:wallets(user:profiles(name))')
-        .order('created_at', { ascending: false })
-        .limit(limit / 2);
+      if (error) throw error;
 
-      const tripEntries: TransactionLogEntry[] = (trips || []).map(t => ({
-        id: t.id,
-        type: 'trip' as const,
-        amount_usd: t.priceUsd || 0,
-        amount_ves: t.priceVes || 0,
-        user_name: (t.passenger as any)?.name || 'Desconocido',
-        status: t.status,
-        created_at: t.created_at,
-        reference: `TRIP-${t.id.slice(0, 8)}`,
-      }));
+      if (!data || !data.success || !Array.isArray(data.data)) {
+        throw new Error("Invalid response from admin-get-transactions");
+      }
 
-      const walletEntries: TransactionLogEntry[] = (walletTx || []).map(t => ({
-        id: t.id,
-        type: t.type as 'recharge' | 'withdrawal' | 'refund',
-        amount_usd: t.amount_usd || 0,
-        amount_ves: t.amount_ves || 0,
-        user_name: (t.wallet as any)?.user?.name || 'Desconocido',
-        status: t.status,
-        created_at: t.created_at,
-        reference: t.reference || `TX-${t.id.slice(0, 8)}`,
-      }));
-
-      return [...tripEntries, ...walletEntries]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, limit);
+      return data.data as TransactionLogEntry[];
     } catch (error) {
-      logger.error("Error fetching transaction log", error);
+      logger.error("Error fetching transaction log via Edge Function", error);
       return [];
     }
   },

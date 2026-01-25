@@ -22,10 +22,16 @@ const AdminLogin: React.FC = () => {
         try {
             toast.loading("Verificando acceso corporativo...");
 
-            // ⚡ OPTIMIZATION: Use the already optimized authService.loginWithPassword
-            // This service now returns user data including metadata (name, role, etc.)
-            // in a single database round-trip.
-            const userProfile = await authService.loginWithPassword(email, password);
+            // Create a timeout promise
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Tiempo de espera agotado. Verifique su conexión.")), 10000)
+            );
+
+            // Race between login and timeout
+            const userProfile = await Promise.race([
+                authService.loginWithPassword(email, password),
+                timeoutPromise
+            ]) as any;
 
             console.log("Admin auth successful:", userProfile.id);
 
