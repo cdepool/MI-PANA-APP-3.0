@@ -1,11 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthContextType, User, UserRole, SavedPlace, TransactionType } from '../types';
-import { mockLoginUser } from '../services/mockService';
 import { authService } from '../services/authService';
 import { walletService } from '../services/walletService';
 import { supabase } from '../services/supabaseClient';
 import logger from '../utils/logger';
+import { AUTH_CONFIG } from '../config/constants';
 
 interface ExtendedAuthContextType extends AuthContextType {
   loginPassenger: (identifier: string, password: string) => Promise<void>;
@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logger.warn("Auth initialization timed out. Unblocking UI.");
         setIsLoading(false);
       }
-    }, 2500);
+    }, AUTH_CONFIG.TIMEOUT_MS);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.log(`Auth event: ${event}`, { userId: session?.user?.id });
@@ -132,28 +132,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = async (role: UserRole, userData?: Partial<User>) => {
-    // Legacy/Mock login for Driver/Admin - Should be replaced by real auth eventually
-    // For now, if we are in development, we might still allow this, 
-    // but the goal is to use REAL AUTH.
-    // If userData has an ID and we are authenticated, we should fetch the real profile.
-    if (userData?.id) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userData.id)
-        .single();
-
-      if (profile) {
-        setUser(profile as User);
-        return;
-      }
-    }
-
-    const baseUser = mockLoginUser(role);
-    const finalUser = userData ? { ...baseUser, ...userData } : baseUser;
-    setUser(finalUser);
-  };
 
   const loginPassenger = async (identifier: string, password: string) => {
     try {
@@ -276,7 +254,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={{
       user,
-      login,
       loginPassenger,
       updateProfile,
       walletTransaction,

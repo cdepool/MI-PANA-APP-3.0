@@ -9,7 +9,6 @@ import { authService } from '../services/authService';
 
 
 const AdminLogin: React.FC = () => {
-    const { login } = useAuth();
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

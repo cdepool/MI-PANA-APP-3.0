@@ -232,7 +232,6 @@ export interface ThemeContextType {
 
 export interface AuthContextType {
   user: User | null;
-  login: (role: UserRole, userData?: Partial<User>) => void;
   loginPassenger: (identifier: string, pin: string) => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   walletTransaction: (amount: number, type: TransactionType, description: string, reference?: string) => Promise<void>;

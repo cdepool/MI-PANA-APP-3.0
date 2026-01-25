@@ -172,45 +172,6 @@ export const simulateReverseGeocoding = (lat: number, lng: number): Promise<stri
     });
 };
 
-export const mockLoginUser = (role: UserRole): User => {
-    const baseUser = {
-        id: `user-${Date.now()}`,
-        email: `${role.toLowerCase()}@mipana.app`,
-        avatarUrl: `https://ui-avatars.com/api/?name=${role}&background=0D8ABC&color=fff`,
-        savedPlaces: role === UserRole.PASSENGER ? mockSavedPlaces : [],
-        phone: '04120000000',
-        documentId: 'V-12345678',
-        favoriteDriverIds: role === UserRole.PASSENGER ? ['driver-99'] : [] // Mock favorite driver
-    };
-
-    switch (role) {
-        case UserRole.ADMIN:
-            return { ...baseUser, name: 'Admin System', role: UserRole.ADMIN };
-        case UserRole.DRIVER:
-            return {
-                ...baseUser,
-                name: 'Carlos El Pana',
-                role: UserRole.DRIVER,
-                isOnline: true,
-                driverStats: {
-                    level: 'Pana Oro',
-                    points: 3450,
-                    nextLevelPoints: 5000,
-                    progressPercent: 69,
-                    completedRides: 142,
-                    rating: 4.9
-                },
-                vehicle: {
-                    model: 'Bera SBR 2024',
-                    color: 'Azul Metálico',
-                    plate: 'AB123CD'
-                }
-            };
-        case UserRole.PASSENGER:
-        default:
-            return { ...baseUser, name: 'María Pérez', role: UserRole.PASSENGER };
-    }
-};
 
 export const mockRecurringRides: RecurringRide[] = [
     {

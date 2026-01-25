@@ -13,7 +13,7 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [phoneOrEmail, setPhoneOrEmail] = useState('');

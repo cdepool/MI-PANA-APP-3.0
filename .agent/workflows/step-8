@@ -1,0 +1,381 @@
+```markdown
+# STEP 8: LIMPIEZA DE CÓDIGO Y OPTIMIZACIÓN DE TIMEOUTS (MI PANA APP 3.0)
+
+**Rol**: Senior Code Maintenance Engineer + Performance Analyst
+**Modelo Recomendado**: Claude Sonnet 4.5 (Thinking Mode)
+**Objetivo**: Ejecutar limpieza de código legacy identificado, optimizar timeouts de seguridad y eliminar dependencias obsoletas sin romper funcionalidad existente.
+
+---
+
+## CONTEXTO DEL PASO
+
+**Fase del Proyecto**: Post-Deployment (v3.0 en producción)
+**Propósito**: Mantenimiento técnico y optimización basada en hallazgos de auditorías previas
+**Impacto Esperado**: Reducir deuda técnica, mejorar mantenibilidad, optimizar UX según red venezolana
+
+**Issues Identificados**:
+1. **Código Legacy**: Método `login` con `mockLoginUser` en `AuthContext.tsx`
+2. **Timeout de Seguridad**: 2.5s para desbloqueo de UI si Supabase no responde
+
+---
+
+## TAREA 1: LIMPIEZA DE CÓDIGO LEGACY
+
+### 1.1 Análisis de Dependencias del Método Legacy
+
+**Archivo Objetivo**: `src/contexts/AuthContext.tsx`
+**Método a Investigar**: `login` que utiliza `mockLoginUser`
+
+#### A. Identificación del Código Legacy
+
+**Acción**: Localiza el método y documenta su implementación actual.
+
+**Preguntas de Validación**:
+1. ¿Dónde está definido `mockLoginUser`?
+2. ¿Es una función auxiliar o importada de un servicio?
+3. ¿Qué hace exactamente? (autenticación simulada, datos mock, bypass de Supabase)
+4. ¿Cuándo se agregó? (revisar git blame para contexto histórico)
+
+**Output esperado**:
+```markdown
+### 1.1 Código Legacy Identificado
+
+**Ubicación**: `src/contexts/AuthContext.tsx` - Línea [número]
+
+**Implementación Actual**:
+```typescript
+// Código exacto encontrado
+const login = async (email: string, password: string) => {
+  // ... implementación con mockLoginUser
+};
+```
+
+**Propósito Original**: [Desarrollo/Testing/MVP rápido]
+**Fecha de Creación**: [commit hash - fecha]
+**Autor**: [autor del commit]
+```
+
+---
+
+#### B. Análisis de Uso (Dependency Check)
+
+**Acción**: Busca todos los lugares donde se invoca este método `login`.
+
+**Comandos de Búsqueda**:
+```bash
+# Buscar referencias al método
+grep -r "login(" src/
+grep -r "authContext.login" src/
+grep -r "useAuth().*login" src/
+
+# O con VSCode/IDE: "Find All References"
+```
+
+**Validaciones Críticas**:
+- [ ] ¿Hay componentes activos llamando a `login`?
+- [ ] ¿Existe un método alternativo de autenticación (ej: `loginWithPassword`)?
+- [ ] ¿Los tests dependen de `mockLoginUser`?
+- [ ] ¿Algún flujo de onboarding usa este método?
+
+**Output esperado**:
+```markdown
+### 1.1B Análisis de Dependencias
+
+**Referencias Encontradas**: [número]
+
+| Archivo | Línea | Contexto de Uso | Crítico |
+|:--------|:------|:----------------|:--------|
+| LoginForm.tsx | 45 | onClick handler | [✅/❌] |
+| __tests__/auth.test.ts | 23 | Test suite | [✅/❌] |
+
+**Método Alternativo Disponible**: [Sí/No]
+- Nombre: `loginWithPassword` / `signInWithPassword`
+- Ubicación: [archivo]
+- Estado: [Funcional/En uso]
+
+**Conclusión**: [SAFE TO DELETE / REQUIERE MIGRACIÓN]
+```
+
+---
+
+#### C. Plan de Eliminación Segura
+
+**Si NO hay dependencias activas** (SAFE TO DELETE):
+
+**Acción**:
+1. Crear branch: `chore/remove-legacy-login`
+2. Eliminar método `login` de `AuthContext.tsx`
+3. Eliminar definición de `mockLoginUser` (si existe en archivo separado)
+4. Ejecutar `npm run test` para validar que nada se rompe
+5. Ejecutar `npm run build` para validar que el build pasa
+6. Commit con mensaje: `chore: remove legacy mock login method`
+
+**Si HAY dependencias activas** (REQUIERE MIGRACIÓN):
+
+**Acción**:
+1. Crear branch: `refactor/migrate-legacy-login`
+2. Reemplazar todas las llamadas a `login` por el método correcto (ej: `loginWithPassword`)
+3. Actualizar tests si dependen de `mockLoginUser`
+4. Ejecutar suite de tests completa
+5. Validar manualmente el flujo de login en local
+6. Eliminar método legacy DESPUÉS de migración
+7. Commit con mensaje: `refactor: migrate from mock login to supabase auth`
+
+**Output esperado**:
+```markdown
+### 1.1C Plan de Ejecución
+
+**Estrategia Elegida**: [ELIMINACIÓN DIRECTA / MIGRACIÓN]
+
+**Pasos Ejecutados**:
+1. ✅ Branch creado: `[nombre]`
+2. ✅ Código legacy eliminado/migrado
+3. ✅ Tests ejecutados: [X/X passed]
+4. ✅ Build validado: [OK/FAILED]
+
+**Commits Generados**:
+- [hash] - [mensaje]
+
+**Estado**: [COMPLETADO / BLOQUEADO - razón]
+```
+
+---
+
+## TAREA 2: OPTIMIZACIÓN DE TIMEOUT DE SEGURIDAD
+
+### 2.1 Análisis del Timeout Actual
+
+**Ubicación Esperada**: `AuthContext.tsx` o componente de autenticación
+**Valor Actual**: 2.5 segundos (2500ms)
+
+#### A. Identificación del Timeout
+
+**Acción**: Localiza el timeout en el código.
+
+**Patrones a Buscar**:
+```typescript
+// Patrones comunes
+setTimeout(() => { ... }, 2500);
+const TIMEOUT = 2500;
+const AUTH_TIMEOUT = 2.5 * 1000;
+```
+
+**Preguntas de Validación**:
+1. ¿Para qué sirve exactamente este timeout?
+   - ¿Desbloquea UI si Supabase no responde?
+   - ¿Muestra mensaje de error?
+   - ¿Hace retry automático?
+2. ¿Qué pasa cuando se cumple el timeout?
+3. ¿Existe logging o tracking de cuántas veces ocurre?
+
+**Output esperado**:
+```markdown
+### 2.1A Timeout Identificado
+
+**Ubicación**: `src/contexts/AuthContext.tsx` - Línea [número]
+
+**Implementación Actual**:
+```typescript
+// Código exacto
+const authTimeout = setTimeout(() => {
+  // Acción cuando expira
+  setLoading(false);
+  showError('Timeout de conexión');
+}, 2500);
+```
+
+**Propósito**: [Desbloqueo de UI / Fallback / Error handling]
+**Comportamiento al Expirar**: [Descripción]
+```
+
+---
+
+#### B. Análisis de Red del Mercado Venezolano
+
+**Contexto**: Venezuela tiene conectividad variable según zona y proveedor.
+
+**Consideraciones**:
+- **Zonas urbanas (Caracas, Maracaibo, Valencia)**: 3G/4G estable, latencia ~200-500ms
+- **Zonas semi-urbanas (Barquisimeto, Maracay)**: 3G intermitente, latencia ~500-1000ms
+- **Zonas rurales (Portuguesa, Apure)**: 2G/3G inestable, latencia >1000ms
+
+**Valores de Timeout Recomendados**:
+```markdown
+| Escenario | Timeout Recomendado | Justificación |
+|:----------|:-------------------|:--------------|
+| Conservador | 5000ms (5s) | Cubre 95% de casos incluso en red lenta |
+| Balanceado | 3500ms (3.5s) | Mejora UX sin frustrar en red intermedia |
+| Agresivo | 2000ms (2s) | Falla rápido pero puede frustrar en zonas rurales |
+| Actual | 2500ms (2.5s) | Balance aceptable para zonas urbanas |
+```
+
+**Recomendación Técnica**:
+- **Mantener 2.5s SOLO si** >80% de usuarios están en zonas urbanas
+- **Subir a 3.5-4s si** hay usuarios significativos en zonas rurales
+- **Hacer configurable** según geolocalización del usuario (avanzado)
+
+**Output esperado**:
+```markdown
+### 2.1B Análisis de Red
+
+**Perfil de Usuarios Esperado**:
+- Acarigua/Araure (Portuguesa): [Zona semi-urbana, red intermedia]
+- Conductores en rutas rurales: [Red variable 2G/3G]
+
+**Timeout Recomendado**: [3500ms / 4000ms / Mantener 2500ms]
+
+**Justificación**: [Explicación basada en contexto local]
+```
+
+---
+
+#### C. Implementación de Timeout Configurable
+
+**Estrategia**: Hacer el timeout configurable desde variables de entorno.
+
+**Acción**:
+1. Agregar variable a `.env.example`:
+   ```bash
+   # Timeout de autenticación en milisegundos (recomendado: 3000-5000 para Venezuela)
+   VITE_AUTH_TIMEOUT_MS=3500
+   ```
+
+2. Crear constante de configuración en `src/config/constants.ts`:
+   ```typescript
+   export const AUTH_CONFIG = {
+     TIMEOUT_MS: Number(import.meta.env.VITE_AUTH_TIMEOUT_MS) || 3500,
+     RETRY_ATTEMPTS: 2,
+     RETRY_DELAY_MS: 1000
+   } as const;
+   ```
+
+3. Actualizar uso en `AuthContext.tsx`:
+   ```typescript
+   import { AUTH_CONFIG } from '@/config/constants';
+   
+   // Antes:
+   setTimeout(() => { ... }, 2500);
+   
+   // Después:
+   setTimeout(() => { ... }, AUTH_CONFIG.TIMEOUT_MS);
+   ```
+
+4. Documentar en README:
+   ```markdown
+   ### Configuración de Timeouts
+   
+   La app incluye timeouts de seguridad configurables:
+   - `VITE_AUTH_TIMEOUT_MS`: Tiempo máximo de espera para autenticación (default: 3500ms)
+   - Recomendado para Venezuela: 3000-5000ms según zona geográfica
+   ```
+
+**Output esperado**:
+```markdown
+### 2.1C Implementación de Timeout Configurable
+
+**Cambios Realizados**:
+1. ✅ Variable agregada a `.env.example`
+2. ✅ Constante creada en `src/config/constants.ts`
+3. ✅ AuthContext actualizado para usar constante
+4. ✅ README documentado
+
+**Valor Configurado**: [3500ms / 4000ms / otro]
+
+**Testing**:
+- ✅ Timeout funciona correctamente en local
+- ✅ Build no muestra warnings
+- ✅ Variable es leída correctamente desde .env
+
+**Commits**:
+- [hash] - `feat: make auth timeout configurable for venezuelan network conditions`
+```
+
+---
+
+#### D. Mejora Adicional: Feedback Visual durante Timeout
+
+**Opcional pero Recomendado**: Mostrar progreso durante la espera.
+
+**Acción**: Agregar indicador de progreso en UI.
+
+**Ejemplo de Implementación**:
+```typescript
+const [timeoutProgress, setTimeoutProgress] = useState(0);
+
+useEffect(() => {
+  if (isLoading) {
+    const interval = setInterval(() => {
+      setTimeoutProgress(prev => Math.min(prev + 100 / (AUTH_CONFIG.TIMEOUT_MS / 100), 100));
+    }, 100);
+    
+    return () => clearInterval(interval);
+  }
+}, [isLoading]);
+
+// En UI:
+{isLoading && (
+  <div className="flex flex-col items-center gap-2">
+    <Spinner />
+    <Progress value={timeoutProgress} className="w-full" />
+    <p className="text-sm text-gray-600">
+      Conectando... {Math.round(timeoutProgress)}%
+    </p>
+  </div>
+)}
+```
+
+**Beneficio**: Usuario entiende que la app está trabajando, no congelada.
+
+**Output esperado**:
+```markdown
+### 2.1D Mejora de UX (Opcional)
+
+**Implementado**: [Sí/No/Parcial]
+
+**Descripción**: [Barra de progreso/Mensaje dinámico/Spinner animado]
+
+**Impact**: [Mejor percepción de performance/Reduce abandono durante carga]
+```
+
+---
+
+## ENTREGABLE FINAL (GOVERNANCE REPORT)
+
+```markdown
+## REPORTE STEP 8: LIMPIEZA Y OPTIMIZACIÓN
+
+**Fecha de Ejecución**: [fecha actual]
+**Ejecutor**: [Claude Sonnet 4.5 / Equipo Dev]
+
+***
+
+### 1. RESUMEN EJECUTIVO
+
+**Estado General**: [COMPLETADO / PARCIAL / BLOQUEADO]
+
+**Cambios Realizados**:
+- Código legacy eliminado: [Sí/No]
+- Timeout optimizado: [Sí/No]
+- Configuración mejorada: [Sí/No]
+
+**Impacto**:
+- Líneas de código removidas: [número]
+- Deuda técnica reducida: [Low/Medium/High]
+- UX mejorada para red venezolana: [Sí/No]
+
+***
+
+### 2. TAREA 1: LIMPIEZA DE CÓDIGO LEGACY
+
+**Método `login` con `mockLoginUser`**:
+- Estado Inicial: [Presente en AuthContext.tsx]
+- Dependencias Encontradas: [número]
+- Acción Tomada: [Eliminado/Migrado/Mantenido]
+- Justificación: [Razón de la decisión]
+
+**Commits Generados**:
+```
+[hash] - chore: remove legacy mock login method
+```
+
+**Tests Validados

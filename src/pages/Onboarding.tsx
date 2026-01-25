@@ -5,14 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
 import { authService } from '../services/authService';
 import { UserRole } from '../types';
-import { useAuth } from '../context/AuthContext';
 
 // Step Enum
 type OnboardingStep = 1 | 2 | 3; // 1: Welcome (Google), 2: Phone Collection, 3: Location
 
 const Onboarding = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
 
     const [step, setStep] = useState<OnboardingStep>(1);
     const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +47,6 @@ const Onboarding = () => {
                 // User has phone, go to Home immediately (or location check)
                 // Assuming Location is just a permission preference, we can skip to home if already done too.
                 // For this flow, let's just go to Home if phone exists.
-                login(UserRole.PASSENGER, profile);
                 navigate('/passenger');
             } else {
                 // User needs to input phone
