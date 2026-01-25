@@ -247,8 +247,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const effectiveRole = viewAsRole || user?.role;
   const isSuperAdmin = user?.adminRole === 'SUPER_ADMIN';
 
+  /* Visual Feedback State */
+  const [timeoutProgress, setTimeoutProgress] = useState(0);
+
+  useEffect(() => {
+    if (isLoading) {
+      const startTime = Date.now();
+      // Update progress every 100ms
+      const interval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        // Calculate percentage based on Configured Timeout
+        // Cap at 98% so it doesn't look "finished" while still waiting
+        const progress = Math.min((elapsed / AUTH_CONFIG.TIMEOUT_MS) * 100, 98);
+        setTimeoutProgress(progress);
+      }, 100);
+
+      return () => clearInterval(interval);
+    }
+  }, [isLoading]);
+
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-mipana-darkBlue"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white"></div></div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-mipana-darkBlue gap-6">
+        {/* Logo or Spinner */}
+        <div className="relative">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500"></div>
+          <div className="absolute top-0 left-0 h-12 w-12 rounded-full border-4 border-white opacity-10"></div>
+        </div>
+
+        {/* Progress Bar Container */}
+        <div className="w-64 flex flex-col gap-2">
+          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-300 ease-out"
+              style={{ width: `${timeoutProgress}%` }}
+            />
+          </div>
+
+          <div className="flex justify-between text-xs text-gray-400 font-medium">
+            <span className="animate-pulse">Verificando credenciales...</span>
+            <span>{Math.round(timeoutProgress)}%</span>
+          </div>
+        </div>
+
+        {/* Slow connection hint if taking too long */}
+        {timeoutProgress > 70 && (
+          <p className="text-xs text-yellow-500/80 animate-fade-in mt-2 px-6 text-center max-w-xs">
+            Detectando conexión lenta, ajustando parámetros...
+          </p>
+        )}
+      </div>
+    );
   }
 
   return (
