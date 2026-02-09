@@ -7,6 +7,7 @@ MI PANA APP 3.0 es una plataforma integral de servicios de transporte y logísti
 - **Node.js**: v18.x o superior
 - **npm**: v9.x o superior
 - **Supabase CLI**: (Opcional, para gestión local de base de datos)
+- **Docker**: Requerido para operaciones de base de datos locales con Supabase CLI.
 
 ## Instalación
 

@@ -6,35 +6,18 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
+  AreaChart,
+  Area,
+  ResponsiveContainer,
   Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
+  XAxis
+} from 'recharts';
 import TransactionDetailModal from './TransactionDetailModal';
 import { WalletQRCode } from './WalletQRCode';
 import { WalletQRScanner } from './WalletQRScanner';
 import { WalletP2PPayment } from './WalletP2PPayment';
 import { toast } from 'sonner';
 import { walletService } from '../services/walletService';
-
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
 
 interface WalletDashboardProps {
   userId: string;
@@ -130,43 +113,14 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
     }
   };
 
-  // Chart Data Preparation
-  const chartData = {
-    labels: transactions.slice(0, 7).reverse().map(tx => new Date(tx.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })),
-    datasets: [
-      {
-        fill: true,
-        label: 'Historial USD',
-        data: transactions.slice(0, 7).reverse().map(tx => tx.amount_usd),
-        borderColor: '#fb923c',
-        backgroundColor: 'rgba(251, 146, 60, 0.1)',
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: '#fb923c',
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        mode: 'index' as const,
-        intersect: false,
-        backgroundColor: '#011e45',
-        titleFont: { size: 10 },
-        bodyFont: { size: 12, weight: 'bold' as const },
-        padding: 10,
-        cornerRadius: 8,
-      },
-    },
-    scales: {
-      x: { display: false },
-      y: { display: false },
-    },
-  };
+  // Chart Data Preparation for Recharts
+  const chartData = transactions
+    .slice(0, 7)
+    .reverse()
+    .map(tx => ({
+      date: new Date(tx.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' }),
+      amount: tx.amount_usd
+    }));
 
   const formatCurrency = (amount: number, currency: 'VES' | 'USD'): string => {
     return new Intl.NumberFormat('es-VE', {
@@ -269,7 +223,31 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
             </div>
 
             <div className="h-32 w-full relative">
-              <Line data={chartData} options={chartOptions} />
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#fb923c" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#fb923c" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#011e45', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}
+                    itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                    labelStyle={{ color: '#9ca3af', fontSize: '10px', marginBottom: '4px' }}
+                    formatter={(value: number) => [`$${value.toFixed(2)}`, '']}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#fb923c"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorAmount)"
+                    isAnimationActive={true}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
               <div className="absolute top-0 right-0 flex items-center gap-1 bg-white/5 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
                 <Activity size={12} className="text-green-400" />
                 <span className="text-[10px] font-bold uppercase">Tendencia</span>

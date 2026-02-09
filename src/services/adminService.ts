@@ -1,6 +1,9 @@
 import { supabase } from './supabaseClient';
 import logger from '../utils/logger';
 
+// Type definition for JSON compatible values
+export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+
 export interface AdminStats {
   totalUsers: number;
   activeDrivers: number;
@@ -64,7 +67,7 @@ export interface SystemSettings {
   id: string;
   category: string;
   key: string;
-  value: any;
+  value: Json;
   updated_at: string;
 }
 
@@ -75,10 +78,60 @@ export interface AdminAuditLog {
   action_type: string;
   resource_type: string;
   resource_id: string;
-  details: any;
+  details: Record<string, unknown>;
   ip_address: string;
   user_agent: string;
   created_at: string;
+}
+
+// Helper interfaces for Supabase joins
+interface ProfileJoin {
+  name: string | null;
+}
+
+interface TripWithProfiles {
+  id: string;
+  status: string;
+  origin: string;
+  destination: string;
+  priceUsd: number;
+  created_at: string;
+  matching_attempt: number;
+  passenger: ProfileJoin | null;
+  driver: ProfileJoin | null;
+}
+
+interface DriverLocationWithProfile {
+  driver_id: string;
+  lat: number;
+  lng: number;
+  is_available: boolean;
+  last_updated: string;
+  profile: ProfileJoin | null;
+}
+
+interface OfflineDriverData {
+  driver_id: string;
+  last_updated: string;
+  profiles: { name: string } | null;
+}
+
+interface LowRatingDriverData {
+  user_id: string;
+  average_rating: number;
+  profile: { name: string } | null;
+}
+
+interface RechargeRequestWithProfile {
+  id: string;
+  user_id: string;
+  amount_usd: number;
+  amount_ves: number;
+  status: string;
+  created_at: string;
+  payment_reference?: string;
+  payment_method?: string;
+  profile: { name: string } | null;
 }
 
 export const adminService = {
@@ -146,7 +199,11 @@ export const adminService = {
 
       if (error) throw error;
 
-      const grouped = (data || []).reduce((acc: any, trip) => {
+      interface RevenueAccumulator {
+        [key: string]: RevenueData;
+      }
+
+      const grouped = (data || []).reduce<RevenueAccumulator>((acc, trip) => {
         const serviceId = trip.serviceId || 'unknown';
         if (!acc[serviceId]) {
           acc[serviceId] = { name: serviceId, pago: 0, neto: 0, seniat: 0 };
@@ -183,11 +240,14 @@ export const adminService = {
 
       if (error) throw error;
 
-      return (data || []).map(trip => ({
+      // Cast to intermediate type to handle joins safely
+      const rawTrips = data as unknown as TripWithProfiles[];
+
+      return rawTrips.map(trip => ({
         id: trip.id,
         status: trip.status,
-        passenger_name: (trip.passenger as any)?.name || 'Anónimo',
-        driver_name: (trip.driver as any)?.name || null,
+        passenger_name: trip.passenger?.name || 'Anónimo',
+        driver_name: trip.driver?.name || null,
         origin: trip.origin,
         destination: trip.destination,
         price_usd: trip.priceUsd,
@@ -229,9 +289,11 @@ export const adminService = {
 
       if (error) throw error;
 
-      return (data || []).map(d => ({
+      const rawDrivers = data as unknown as DriverLocationWithProfile[];
+
+      return rawDrivers.map(d => ({
         id: d.driver_id,
-        name: (d.profile as any)?.name || 'Conductor',
+        name: d.profile?.name || 'Conductor',
         lat: d.lat,
         lng: d.lng,
         is_available: d.is_available,
@@ -291,15 +353,17 @@ export const adminService = {
 
     try {
       // Drivers offline for more than 24h who were previously active
-      const { data: offlineDrivers } = await supabase
+      const { data: offlineDriversData } = await supabase
         .from('driver_locations')
         .select('driver_id, last_updated, profiles!driver_id(name)')
         .lt('last_updated', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
+      const offlineDrivers = offlineDriversData as unknown as OfflineDriverData[];
+
       offlineDrivers?.forEach(d => {
         alerts.push({
           driver_id: d.driver_id,
-          driver_name: (d as any).profiles?.name || 'Conductor',
+          driver_name: d.profiles?.name || 'Conductor',
           alert_type: 'offline_long',
           details: `Sin actividad desde ${new Date(d.last_updated).toLocaleDateString()}`,
           severity: 'warning',
@@ -307,16 +371,18 @@ export const adminService = {
       });
 
       // Drivers with low rating (below 4.0)
-      const { data: lowRatingDrivers } = await supabase
+      const { data: lowRatingDriversData } = await supabase
         .from('driver_profiles')
         .select('user_id, average_rating, profile:profiles!user_id(name)')
         .lt('average_rating', 4.0)
         .gt('average_rating', 0);
 
+      const lowRatingDrivers = lowRatingDriversData as unknown as LowRatingDriverData[];
+
       lowRatingDrivers?.forEach(d => {
         alerts.push({
           driver_id: d.user_id,
-          driver_name: (d as any).profile?.name || 'Conductor',
+          driver_name: d.profile?.name || 'Conductor',
           alert_type: 'low_rating',
           details: `Rating: ${d.average_rating?.toFixed(2)}/5.0`,
           severity: d.average_rating < 3.5 ? 'critical' : 'warning',
@@ -334,7 +400,9 @@ export const adminService = {
   // RECONCILIATION
   // ========================================
 
-  async getUnmatchedTransactions(): Promise<any[]> {
+  // Using Unknown for now as BankTransaction generic type is not available in snippet, 
+  // but better than any.
+  async getUnmatchedTransactions(): Promise<Record<string, unknown>[]> {
     try {
       const { data, error } = await supabase
         .from('bank_transactions')
@@ -351,7 +419,7 @@ export const adminService = {
     }
   },
 
-  async getPendingRecharges(): Promise<any[]> {
+  async getPendingRecharges(): Promise<RechargeRequestWithProfile[]> {
     try {
       const { data, error } = await supabase
         .from('recharge_requests')
@@ -363,10 +431,9 @@ export const adminService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []).map(r => ({
-        ...r,
-        user_name: (r.profile as any)?.name || 'Usuario'
-      }));
+
+      const rawRecharges = data as unknown as RechargeRequestWithProfile[];
+      return rawRecharges || [];
     } catch (error) {
       logger.error("Error fetching pending recharges", error);
       return [];
@@ -429,7 +496,7 @@ export const adminService = {
     }
   },
 
-  async updateSystemSetting(id: string, value: any): Promise<boolean> {
+  async updateSystemSetting(id: string, value: Json): Promise<boolean> {
     try {
       const { error } = await supabase
         .from('system_settings')
@@ -468,9 +535,12 @@ export const adminService = {
         throw error;
       }
 
-      return (data || []).map(log => ({
+      // Use a typed fetch result
+      const logs = data as unknown as (AdminAuditLog & { admin: { name: string } | null })[];
+
+      return (logs || []).map(log => ({
         ...log,
-        admin_name: (log.admin as any)?.name || 'Sistema'
+        admin_name: log.admin?.name || 'Sistema'
       }));
     } catch (error) {
       logger.error("Error fetching audit logs", error);
@@ -482,7 +552,7 @@ export const adminService = {
     actionType: string,
     resourceType: string,
     resourceId: string,
-    details: any = {}
+    details: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -582,3 +652,4 @@ export const userManagementService = {
     }
   }
 };
+

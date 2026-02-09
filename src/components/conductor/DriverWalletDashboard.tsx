@@ -6,13 +6,14 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler,
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
+    Wallet, DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
+    RefreshCw, History, Filter, ChevronLeft, ChevronRight, QrCode,
+    ArrowRight, CreditCard, Activity, PieChart, Landmark, Percent
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import TransactionDetailModal from '../TransactionDetailModal';
 import { WalletQRCode } from '../WalletQRCode';
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 interface DriverWalletDashboardProps {
     userId: string;
@@ -70,17 +71,15 @@ export const DriverWalletDashboard: React.FC<DriverWalletDashboardProps> = ({ us
         }
     };
 
-    const chartData = {
-        labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
-        datasets: [{
-            fill: true,
-            label: 'Ingresos Diarios',
-            data: [12, 19, 15, 25, 32, 45, 38], // Mock data for demo
-            borderColor: '#fb923c',
-            backgroundColor: 'rgba(251, 146, 60, 0.1)',
-            tension: 0.4,
-        }],
-    };
+    const chartData = [
+        { day: 'Lun', value: 12 },
+        { day: 'Mar', value: 19 },
+        { day: 'Mie', value: 15 },
+        { day: 'Jue', value: 25 },
+        { day: 'Vie', value: 32 },
+        { day: 'Sab', value: 45 },
+        { day: 'Dom', value: 38 },
+    ];
 
     return (
         <div className="max-w-4xl mx-auto p-4 md:p-6 pb-24 space-y-8">
@@ -134,7 +133,30 @@ export const DriverWalletDashboard: React.FC<DriverWalletDashboardProps> = ({ us
                     </div>
 
                     <div className="h-40 w-full relative bg-black/20 rounded-3xl p-4">
-                        <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }} />
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData}>
+                                <defs>
+                                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#fb923c" stopOpacity={0.4} />
+                                        <stop offset="95%" stopColor="#fb923c" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#011e45', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}
+                                    itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                                    labelStyle={{ color: '#9ca3af', fontSize: '10px', marginBottom: '4px' }}
+                                    formatter={(value: number) => [`$${value}`, 'Ingreso']}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="value"
+                                    stroke="#fb923c"
+                                    strokeWidth={2}
+                                    fillOpacity={1}
+                                    fill="url(#colorValue)"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
                         <p className="text-[10px] text-center mt-2 font-bold text-gray-500 uppercase tracking-widest">Ingresos última semana</p>
                     </div>
                 </div>

@@ -1,39 +1,25 @@
-# Manual de Emergencia: Rollback Vercel
+# Manual de Emergencia: Rollback en Vercel
 
 **Cuándo usar**: 
-- Errores críticos en producción justo después de un deploy.
-- "Pantalla blanca" o loops de redirección infinitos.
-- Regresiones bloqueantes.
+- Error crítico en producción (Pantalla blanca, bucle infinito).
+- Fallo masivo en funcionalidad core (Login, Solicitar Viaje).
 
-## 1. Instant Rollback (Recomendado)
+## Opción 1: Instant Rollback (Recomendado)
+*Tiempo estimado: < 1 minuto*
 
-Vercel permite reversiones instantáneas a cualquier deployment anterior que haya sido exitoso.
+1. Ir al **Dashboard de Vercel** > Proyecto `mi-pana-app`.
+2. Ir a la pestaña **Deployments**.
+3. Identificar el último deploy "Verde" (Exitoso) conocido.
+4. Clic en el menú (tres puntos) > **Instant Rollback**.
+5. Confirmar.
+   - *Esto revierte el frontend y las Edge Functions a la versión anterior inmediatamente.*
 
-1.  Ir al Dashboard de Vercel del proyecto.
-2.  Navegar a la pestaña **Deployments**.
-3.  Identificar el último deployment estable (conocido como "Last Good State").
-4.  Hacer clic en el menú de tres puntos (•••) del deployment.
-5.  Seleccionar **Rollback**.
-6.  Confirmar la acción.
-
-**Efecto**: Vercel actualizará inmediatamente los dominios de producción para apuntar a ese build antiguo.
-
-## 2. Rollback vía CLI
-
-Si no tienes acceso al Dashboard, pero sí al CLI:
-
+## Opción 2: CLI
+Si no tienes acceso al dashboard pero sí a la terminal:
 ```bash
-vercel rollback [deployment-url]
-```
-o para usar el anterior inmediato:
-```bash
-vercel rollback
+vercel rollback [deployment-url-id]
 ```
 
 ## Consideraciones
-
-> [!WARNING]
-> **Variables de Entorno**: Un rollback de código NO revierte cambios en las variables de entorno. Si cambiaste una variable `VITE_` que rompió el site, debes corregirla manualmente en Settings > Environment Variables antes o después del rollback.
-
-> [!CAUTION]
-> **Base de Datos**: El rollback de Vercel NO afecta a Supabase. Si el nuevo código hizo migraciones de DB destructivas, revertir el frontend podría causar inconsistencias. Verifica la compatibilidad DB <-> Frontend.
+- **Variables de Entorno**: Un rollback *puede* no revertir cambios recientes en las variables de entorno si se hicieron manualmente en el dashboard. **Verificar Env Vars**.
+- **Base de Datos**: El rollback de Vercel NO revierte la base de datos. Si el error fue por una migración SQL, ver `supabase-rollback.md`.

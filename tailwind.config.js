@@ -28,6 +28,12 @@ export default {
           lightGray: "#F4F7F6",
           darkBlue: "#003366",
           black: "#1A1A1A",
+        },
+        services: {
+          traslados: "#007AFF",
+          billetera: "#10B981",
+          tienda: "#F59E0B",
+          delivery: "#EF4444",
         }
       },
       fontFamily: {

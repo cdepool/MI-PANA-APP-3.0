@@ -36,13 +36,8 @@ export const walletService = {
      */
     getBalance: async (userId: string): Promise<{ wallet: WalletBalance; exchange_rate: number } | null> => {
         try {
-            const { data, error } = await supabase.functions.invoke('wallet-get-balance', {
-                method: 'GET',
-                headers: {
-                    // Pass userId via query param as per function definition, or body if changed
-                    // The function reads from query params: const userId = url.searchParams.get('userId');
-                }
-            });
+            // Fetch via REST API to support query params
+            // supabase.functions.invoke doesn't support query params easily in the URL constructor in current version
 
             // Invoke doesn't support query params easily in the first arg URL construction without raw URL
             // Workaround: We can use the raw URL fetch or modify the function to accept body.

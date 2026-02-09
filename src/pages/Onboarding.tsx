@@ -6,6 +6,9 @@ import { supabase } from '../services/supabaseClient';
 import { authService } from '../services/authService';
 import { UserRole } from '../types';
 
+const welcomeBg = '/welcome_bg.jpg';
+const onboardingSkin = '/onboarding_skin.jpg';
+
 // Step Enum
 type OnboardingStep = 1 | 2 | 3; // 1: Welcome (Google), 2: Phone Collection, 3: Location
 

@@ -1,27 +1,27 @@
-# Actualización Manual de Tasa de Cambio
+# Runbook: Gestión de Tasa de Cambio
 
-**Propósito**: Mantener la paridad cambiaria (BCV) cuando la automatización falla.
+**Propósito**: Mantener la tasa VES/USD actualizada para cálculos de precios.
 
-## Síntomas de Malla
+## 1. Funcionamiento Automático
+- Existe un Cron Job (Edge Function `exchange-rate-sync`) que corre cada X horas.
+- Fuente de datos: BCV (Banco Central de Venezuela) o Monitor (se define en config).
 
-- La tasa en la App no coincide con la tasa oficial del BCV.
-- Errores en los logs del cron job o función `exchange-rate-sync`.
-- Alertas de monitoreo sobre "Tasa desactualizada".
+## 2. Actualización Manual (Fallo de Sync)
+Si el sync automático falla o hay una volatilidad extrema:
 
-## Procedimiento Manual
+### Opción A: Dashboard Admin (Recomendado)
+1. Ir a Configuración del Sistema.
+2. Buscar "Tasa de Cambio".
+3. Editar valor y guardar.
+   - *Efecto inmediato en nuevas estimaciones de viaje.*
 
-1.  **Obtener Tasa Oficial**: Consultar [bcv.org.ve](http://www.bcv.org.ve/) para obtener el valor actual del USD.
+### Opción B: Tasa de Contingencia
+Si no hay acceso al Dashboard:
+- Contactar a equipo de desarrollo para actualizar la variable de entorno o registro en BD directamente.
 
-2.  **Acceder a la Base de Datos**: Entrar al Dashboard de Supabase -> Table Editor -> `config` (o tabla pertinente).
-3.  **Actualizar Valor**:
-    - Localizar la fila correspondiente a `exchange_rate` o `tasa_bcv`.
-    - Editar el valor con la tasa vigente.
-    - Guardar cambios.
-4.  **Verificar**:
-    - Entrar a la App como usuario.
-    - Simular una operación que use la tasa (ej. calculadora de recarga) y verificar que el cálculo sea correcto.
+## 3. Validación
+- Simular un viaje en la App.
+- Verificar que el `priceVes` corresponda a `priceUsd * TasaNueva`.
 
-## Restablecer Automatización
-
-- Una vez resuelta la emergencia manual, notificar al equipo de desarrollo para que revisen el servicio de sincronización automática.
-- No dejar el sistema en modo manual indefinidamente.
+## 4. Alertas
+- El sistema debería alertar si la tasa no se actualiza en >24h.

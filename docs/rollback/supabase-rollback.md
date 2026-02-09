@@ -1,35 +1,34 @@
-# Rollback de Base de Datos (Supabase)
+# Manual de Emergencia: Rollback en Supabase (Base de Datos)
 
-**Realidad**: Supabase (PostgreSQL) no tiene un botón de "Undo" automático para producción. Las reversiones deben ser deliberadas y manuales via migraciones "Down".
+**Advertencia**: Supabase NO tiene un botón de "Deshacer" para migraciones aplicadas.
+**Estrategia**: *Rollback Forward* (Aplicar una nueva migración que invierte los cambios).
 
-## Estrategia de Reversión
+## Procedimiento
 
-La mejor forma de "revertir" es avanzar hacia un estado previo corregido.
+1. **Identificar la migración problemática**
+   Revisar `supabase/migrations/` y localizar el último archivo `.sql` aplicado.
 
-### 1. Identificar el Cambio Problemático
-Revisar el historial de migraciones (`supabase/migrations/`) para saber cuál fue la última aplicada.
+2. **Crear script de reversión (Down Migration)**
+   Crear un nuevo archivo SQL:
+   ```bash
+   supabase migration new revert_feature_x
+   ```
 
-### 2. Crear Migración de Reversión ("Down Migration")
+3. **Escribir SQL Inverso**
+   - Si la migración original hizo `CREATE TABLE x`, el revert hace `DROP TABLE x`.
+   - Si agregó una columna, la elimina.
+   
+   *Ejemplo:*
+   ```sql
+   -- Archivo: supabase/migrations/2024..._revert_feature.sql
+   ALTER TABLE rides DROP COLUMN IF EXISTS new_experimental_column;
+   ```
 
-Si aplicaste una tabla nueva o columna:
-1.  Generar nueva migración:
-    ```bash
-    supabase migration new revert_feature_x
-    ```
-2.  Escribir el SQL inverso.
-    - Si fue `CREATE TABLE x`, el inverso es `DROP TABLE x`.
-    - Si fue `ALTER TABLE add column`, el inverso es `ALTER TABLE drop column`.
+4. **Aplicar a Producción**
+   ```bash
+   supabase db push
+   ```
 
-### 3. Aplicar en Producción
-
-**Opción A: CLI (CI/CD)**
-Push de la nueva migración al repositorio. El pipeline de CI/CD debería aplicarla automáticamente.
-
-**Opción B: Manual (Emergencia)**
-Si el CI/CD está roto, usar SQL Editor en el Dashboard de Supabase con precaución extrema.
-
-## Checklist de Seguridad DB
-
-- [ ] **Backups**: Antes de cualquier operación manual destructiva, verificar el último backup en Supabase Dashboard > Database > Backups.
-- [ ] **Locks**: Evitar operaciones que bloqueen tablas muy usadas (`ALTER TABLE` en horas pico) si es posible.
-- [ ] **Data Loss**: Confirmar que borrar la columna/tabla no elimina datos de usuario irrecuperables (hacer dump previo si es necesario).
+## Checklist de Seguridad
+- [ ] ¿Hay datos nuevos en las columnas/tablas que voy a eliminar? (Hacer backup manual si es necesario: `supabase db dump`).
+- [ ] ¿El rollback romperá el backend actual? (A veces se requiere revertir el código en Vercel *antes* de revertir la DB).

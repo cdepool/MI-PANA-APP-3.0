@@ -1,45 +1,34 @@
-# Gestión de Usuarios y Soporte
+# Runbook: Gestión de Usuarios y Soporte
 
-**Audiencia**: Equipo de Soporte / Admin
+**Audiencia**: Equipo de Soporte Nivel 1 y 2
 
-## Verificación de Usuario
+## 1. Verificación de Usuario
+- **Herramienta**: Dashboard Administrativo (`/admin/users`).
+- **Qué revisar**:
+  - Estado: `Activo` vs `Bloqueado`.
+  - Rol: `Passenger` o `Driver`.
+  - Wallet: ¿Saldo positivo? ¿Transacciones recientes?
 
-Pasos para diagnosticar problemas comunes de cuentas:
+## 2. Casos Comunes
 
-1.  **Buscar Usuario**: Usar email o teléfono en el Panel Administrativo.
-2.  **Verificar Estado**:
-    - ¿Email confirmado?
-    - ¿Cuenta bloqueada?
-    - ¿Rol asignado correcto (Pasajero/Conductor/Admin)?
+### A. "No puedo iniciar sesión"
+1. Verificar que el número de teléfono sea correcto (formato internacional +58...).
+2. ¿Recibe el SMS?
+   - **NO**: Problema de proveedor SMS (Twilio/Supabase). Escalar a Tecnología.
+   - **SÍ, pero da error**: Verificar si el usuario está bloqueado manualmente.
 
-## Casos Comunes
+### B. "Mi recarga no aparece"
+1. Pedir Referencia Bancaria.
+2. Buscar en Dashboard > Transacciones usando la referencia.
+   - **Encontrada (Pending)**: El sistema está esperando confirmación del banco.
+   - **No encontrada**: El usuario quizás no completó el flujo o puso mal la referencia.
+3. Seguir protocolo de "Incidente de Pagos" si el dinero salió de su banco.
 
-### "No puedo iniciar sesión"
-1.  Verificar si el usuario existe.
-2.  Confirmar si ha validado su email (si aplica).
-3.  Sugerir restablecimiento de contraseña.
+### C. "Quiero ser conductor"
+1. El usuario debe registrarse como pasajero primero.
+2. Solicitar documentación (Licencia, Certificado Médico, Datos Vehículo).
+3. Un Admin debe cambiar el rol a `Driver` y registrar el vehículo en el Dashboard.
 
-### "No me aparece mi saldo/wallet"
-1.  Verificar que el usuario tenga una wallet creada en la base de datos.
-2.  Revisar logs de errores recientes asociados al `user_id`.
-3.  Escalar a ingeniería si la wallet no existe.
-
-### "Mi recarga no se reflejó"
-**Datos a solicitar:**
-- Referencia bancaria completa.
-- Fecha y hora exacta del pago.
-- Monto exacto.
-- Banco de origen.
-
-**Datos a NO solicitar:**
-- Contraseñas.
-- Tokens de sesión.
-- Fotos de tarjetas de crédito/débito.
-
-## Desbloqueo de Perfil
-
-Si un perfil está bloqueado por seguridad:
-1.  Validar identidad del usuario (según protocolo de seguridad interno).
-2.  Acceder al panel de administración.
-3.  Cambiar estado de `blocked` a `active`.
-4.  Registrar la razón del desbloqueo en las notas del usuario.
+## 3. Seguridad
+- **NUNCA pedir**: Contraseñas, códigos de verificación SMS (OTP), datos de tarjeta completos.
+- **Validación de Identidad**: Antes de cambios sensibles (email, teléfono), verificar identidad llamando al número registrado.

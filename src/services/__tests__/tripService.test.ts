@@ -2,21 +2,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TripService } from '../tripService';
 import { supabase } from '../supabaseClient';
 
+// Mock chain object to ensure tests affect the same instance
+const mockChain = {
+    insert: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    single: vi.fn(),
+    maybeSingle: vi.fn(),
+};
+
 // Mock Supabase
 vi.mock('../supabaseClient', () => ({
     supabase: {
-        from: vi.fn(() => ({
-            insert: vi.fn().mockReturnThis(),
-            select: vi.fn().mockReturnThis(),
-            update: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            or: vi.fn().mockReturnThis(),
-            in: vi.fn().mockReturnThis(),
-            order: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockReturnThis(),
-            single: vi.fn(),
-            maybeSingle: vi.fn(),
-        })),
+        from: vi.fn(() => mockChain),
         auth: {
             getSession: vi.fn(),
         },
@@ -43,7 +46,7 @@ describe('TripService Tests', () => {
             const destination = { address: 'Calle 2', lat: 10.1, lng: -66.1 };
             const price = { usd: 5, ves: 180 };
 
-            (supabase.from as any)().single.mockResolvedValueOnce({
+            mockChain.single.mockResolvedValueOnce({
                 data: { ...mockTrip, passenger_id: passengerId, origin: origin.address, destination: destination.address },
                 error: null,
             });
