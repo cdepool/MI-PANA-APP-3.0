@@ -57,7 +57,7 @@ export const BancamigaPaymentFlow: React.FC<BancamigaPaymentFlowProps> = ({
   useEffect(() => {
     const hostname = window.location.hostname;
     // Allow localhost for dev, but enforce v1.mipana.app for production
-    const isAllowed = hostname.includes('localhost') || hostname === 'v1.mipana.app';
+    const isAllowed = hostname.includes('localhost') || hostname === 'v1.mipana.app' || hostname.includes('vercel.app');
     setIsDomainAllowed(isAllowed);
 
     if (!isAllowed) {

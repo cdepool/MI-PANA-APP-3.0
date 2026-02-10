@@ -3,10 +3,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Lazy load pages for performance
 const Home = lazy(() => import('./pages/Home'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
 const RequestRide = lazy(() => import('./pages/traslados/RequestRide'));
 const RideEstimation = lazy(() => import('./pages/traslados/RideEstimation'));
 const RideActive = lazy(() => import('./pages/traslados/RideActive'));
 const RideComplete = lazy(() => import('./pages/traslados/RideComplete'));
+const Wallet = lazy(() => import('./pages/Wallet'));
+import { ProtectedRoute } from './components/shared/ProtectedRoute';
 
 // Shared Loading State
 const PageLoader = () => (
@@ -20,19 +23,48 @@ function App() {
     <BrowserRouter>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<Home />} />
+          {/* Public Route */}
+          <Route path="/welcome" element={<Onboarding />} />
 
-          {/* Traslados Flow */}
-          <Route path="/traslados" element={<RequestRide />} />
-          <Route path="/traslados/estimacion" element={<RideEstimation />} />
-          <Route path="/traslados/activo/:rideId" element={<RideActive />} />
-          <Route path="/traslados/completado/:rideId" element={<RideComplete />} />
+          {/* Protected Routes */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } />
 
-          {/* Placeholders for other services */}
-          <Route path="/billetera" element={<div className="p-8 text-center text-gray-500">Próximamente: Billetera</div>} />
+          {/* Traslados Flow (Protected) */}
+          <Route path="/traslados" element={
+            <ProtectedRoute>
+              <RequestRide />
+            </ProtectedRoute>
+          } />
+          <Route path="/traslados/estimacion" element={
+            <ProtectedRoute>
+              <RideEstimation />
+            </ProtectedRoute>
+          } />
+          <Route path="/traslados/activo/:rideId" element={
+            <ProtectedRoute>
+              <RideActive />
+            </ProtectedRoute>
+          } />
+          <Route path="/traslados/completado/:rideId" element={
+            <ProtectedRoute>
+              <RideComplete />
+            </ProtectedRoute>
+          } />
+
+          {/* Placeholders */}
+          <Route path="/billetera" element={
+            <ProtectedRoute>
+              <Wallet />
+            </ProtectedRoute>
+          } />
           <Route path="/tienda" element={<div className="p-8 text-center text-gray-500">Próximamente: Tienda</div>} />
           <Route path="/delivery" element={<div className="p-8 text-center text-gray-500">Próximamente: Delivery</div>} />
 
+          {/* Catch all - Redirect to Home (which redirects to Welcome if needed) */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
