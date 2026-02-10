@@ -30,11 +30,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
     }
   }, [isAuthenticated, navigate]);
 
-  // ⚡ OPTIMIZATION: Show security modal after 2 seconds (non-blocking)
-  useEffect(() => {
-    const timer = setTimeout(() => setShowSecurityModal(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
+
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-mipana-darkBlue"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white"></div></div>;
 
@@ -69,36 +65,7 @@ const Login: React.FC<LoginProps> = ({ onNavigateRegister }) => {
       <div className="h-4"></div>
 
       {/* Security Modal */}
-      {showSecurityModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center transform transition-all scale-100 border-t-4 border-[#FF6B00]">
-            <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
-              <AlertCircle className="text-red-600 dark:text-red-500" size={32} />
-            </div>
 
-            <h3 className="text-xl font-black text-[#1A2E56] dark:text-white mb-2 uppercase tracking-tight">
-              No caigas en trampas
-            </h3>
-
-            <p className="text-slate-600 dark:text-slate-300 text-sm mb-4 leading-relaxed">
-              Revisa desde la barra de tu navegador que esta página sea:
-            </p>
-
-            <div className="bg-slate-100 dark:bg-slate-900 rounded-lg p-3 mb-6 border border-slate-200 dark:border-slate-700">
-              <p className="font-mono text-sm text-[#FF6B00] font-bold break-all">
-                {currentDomain}/?p=1
-              </p>
-            </div>
-
-            <button
-              onClick={() => setShowSecurityModal(false)}
-              className="w-full bg-[#1A2E56] hover:bg-[#2a4580] text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-[#1A2E56]/20"
-            >
-              OK, Entendido
-            </button>
-          </div>
-        </div>
-      )}
 
       <main className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full animate-fade-in">
         {/* Logo Section */}
