@@ -28,11 +28,14 @@ test('wallet recharge happy path', async ({ page }) => {
         });
     });
 
-    await page.goto('/wallet');
+    await page.goto('/billetera');
 
     // Wait for balance and click Recharge
     await expect(page.locator('button:has-text("Recargar")')).toBeVisible();
     await page.click('button:has-text("Recargar")');
+
+    // Wait for modal
+    await expect(page.locator('text=Monto a Recargar')).toBeVisible();
 
     // Fill amount
     await page.getByPlaceholder('0.00').fill('100');
@@ -43,5 +46,5 @@ test('wallet recharge happy path', async ({ page }) => {
     await page.click('button:has-text("Verificar Pago")');
 
     // Verify success toast/message
-    await expect(page.locator('text=Recarga exitosa')).toBeVisible();
+    await expect(page.locator('text=¡Listo, Mi Pana!')).toBeVisible();
 });
