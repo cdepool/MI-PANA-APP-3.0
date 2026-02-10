@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { ArrowLeft } from 'lucide-react';
 import { VehicleTypeSelector } from '../../components/traslados/VehicleTypeSelector';
 import { PriceEstimationCard } from '../../components/traslados/PriceEstimationCard';
@@ -7,6 +8,7 @@ import { ConnectionStatusChip } from '../../components/shared/ConnectionStatusCh
 import { invokeEdgeFunction } from '../../lib/supabase/client';
 
 export default function RideEstimation() {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [vehicleType, setVehicleType] = useState<'car' | 'moto'>('car');
@@ -29,13 +31,17 @@ export default function RideEstimation() {
     }, [vehicleType]);
 
     const handleConfirm = async () => {
+        if (!user) {
+            alert('Debes iniciar sesión para pedir un viaje');
+            return;
+        }
         setIsRequesting(true);
         try {
             const destination = location.state?.destination;
 
             // Call Edge Function
             const response = await invokeEdgeFunction('request-ride', {
-                user_id: 'current-user-id', // Replace with real auth user id
+                user_id: user.id, // Real auth user id
                 origin: 'current-location',
                 destination: destination,
                 vehicle_type: vehicleType

@@ -125,10 +125,16 @@ export const walletService = {
      * Recarga de Billetera
      * Invoca Edge Function 'wallet-recharge'
      */
-    rechargeWallet: async (amount: number, paymentMethod: string, reference: string): Promise<any> => {
+    rechargeWallet: async (userId: string, userPhone: string, amount: number, bancoOrig: string, lastFourDigits: string): Promise<any> => {
         try {
             const { data, error } = await supabase.functions.invoke('wallet-recharge', {
-                body: { amount, payment_method: paymentMethod, reference }
+                body: {
+                    userId,
+                    userPhone,
+                    amount,
+                    bancoOrig,
+                    lastFourDigits
+                }
             });
 
             if (error) throw error;

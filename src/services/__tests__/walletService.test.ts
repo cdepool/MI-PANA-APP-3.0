@@ -50,18 +50,20 @@ describe('WalletService Tests', () => {
 
     describe('rechargeWallet', () => {
         it('should call wallet-recharge Edge Function', async () => {
-            const mockResponse = { success: true, message: 'Recarga exitosa' };
+            const mockResponse = { data: { success: true, message: 'Recharge initiated' }, error: null };
+            (supabase.functions.invoke as any).mockResolvedValue(mockResponse);
 
-            (supabase.functions.invoke as any).mockResolvedValueOnce({
-                data: mockResponse,
-                error: null,
-            });
-
-            const result = await walletService.rechargeWallet(100, 'bancamiga', 'ref123');
+            const result = await walletService.rechargeWallet('user123', '584141234567', 100, '0172', '1234');
 
             expect(result.success).toBe(true);
             expect(supabase.functions.invoke).toHaveBeenCalledWith('wallet-recharge', {
-                body: { amount: 100, payment_method: 'bancamiga', reference: 'ref123' }
+                body: {
+                    userId: 'user123',
+                    userPhone: '584141234567',
+                    amount: 100,
+                    bancoOrig: '0172',
+                    lastFourDigits: '1234'
+                }
             });
         });
 

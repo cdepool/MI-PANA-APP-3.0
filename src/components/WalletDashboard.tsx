@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import {
   Wallet, DollarSign, TrendingUp, Plus, ArrowUpRight, ArrowDownRight,
-  RefreshCw, History, Filter, ChevronLeft, ChevronRight, QrCode, Camera,
+  RefreshCw, History, Filter, ChevronLeft, ChevronRight,
   ArrowRight, CreditCard, Activity, PieChart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,10 +12,8 @@ import {
   Tooltip,
   XAxis
 } from 'recharts';
-import TransactionDetailModal from './TransactionDetailModal';
-import { WalletQRCode } from './WalletQRCode';
-import { WalletQRScanner } from './WalletQRScanner';
-import { WalletP2PPayment } from './WalletP2PPayment';
+// Lazy load modal
+const TransactionDetailModal = lazy(() => import('./TransactionDetailModal'));
 import { toast } from 'sonner';
 import { walletService } from '../services/walletService';
 
@@ -49,9 +47,6 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
-  const [showQR, setShowQR] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
-  const [recipientId, setRecipientId] = useState<string | null>(null);
 
   // Pagination & Filter state
   const [currentPage, setCurrentPage] = useState(1);
@@ -97,21 +92,6 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
     if (showHistory) fetchTransactions();
   }, [currentPage, filterType, showHistory]);
 
-  const handleScanResult = (result: string) => {
-    setShowScanner(false);
-    if (result.startsWith('mipana://pay/')) {
-      const scannedUserId = result.replace('mipana://pay/', '');
-      if (scannedUserId === userId) {
-        toast.error('No puedes enviarte dinero a ti mismo');
-        return;
-      }
-      setRecipientId(scannedUserId);
-      // Here we would open the P2P payment flow
-      toast.info('Usuario detectado. Preparando envío...');
-    } else {
-      toast.error('Código QR no válido');
-    }
-  };
 
   // Chart Data Preparation for Recharts
   const chartData = transactions
@@ -159,23 +139,6 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{userName}</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowScanner(true)}
-            className="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 hover:text-mipana-orange transition-colors"
-          >
-            <Camera size={20} />
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowQR(true)}
-            className="p-3 bg-mipana-orange text-white rounded-xl shadow-lg shadow-orange-500/30 flex items-center gap-2 font-bold"
-          >
-            <QrCode size={20} />
-            <span className="hidden sm:inline">Mi QR</span>
-          </motion.button>
-        </div>
       </motion.div>
 
       {/* Main Balance Card (Glassmorphism) */}
@@ -208,16 +171,9 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onRecharge}
-                  className="flex-1 bg-white text-mipana-darkBlue py-4 rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-2"
+                  className="w-full bg-white text-mipana-darkBlue py-4 rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-2"
                 >
-                  <Plus size={18} strokeWidth={3} /> Recargar
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex-1 bg-white/10 backdrop-blur-md border border-white/20 text-white py-4 rounded-2xl font-black text-sm shadow-xl flex items-center justify-center gap-2"
-                >
-                  <ArrowUpRight size={18} strokeWidth={3} /> Retirar
+                  <Plus size={18} strokeWidth={3} /> Recargar Saldo
                 </motion.button>
               </div>
             </div>
@@ -347,54 +303,13 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
 
       {/* Modals & Overlays */}
       <AnimatePresence>
-        {showQR && (
-          <WalletQRCode
-            userId={userId}
-            userName={userName}
-            onClose={() => setShowQR(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showScanner && (
-          <WalletQRScanner
-            onScan={handleScanResult}
-            onClose={() => setShowScanner(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {recipientId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="w-full max-w-sm"
-            >
-              <WalletP2PPayment
-                senderId={userId}
-                recipientId={recipientId}
-                onSuccess={() => {
-                  setRecipientId(null);
-                  fetchWalletBalance();
-                  fetchTransactions();
-                }}
-                onCancel={() => setRecipientId(null)}
-              />
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
         {selectedTransaction && (
-          <TransactionDetailModal
-            transaction={selectedTransaction}
-            onClose={() => setSelectedTransaction(null)}
-          />
+          <Suspense fallback={null}>
+            <TransactionDetailModal
+              transaction={selectedTransaction}
+              onClose={() => setSelectedTransaction(null)}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </div>

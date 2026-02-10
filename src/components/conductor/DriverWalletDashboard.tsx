@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Wallet, DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
-    RefreshCw, History, Filter, ChevronLeft, ChevronRight, QrCode,
-    ArrowRight, CreditCard, Activity, PieChart, Landmark, Percent
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    Wallet, DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
-    RefreshCw, History, Filter, ChevronLeft, ChevronRight, QrCode,
-    ArrowRight, CreditCard, Activity, PieChart, Landmark, Percent
+    Wallet as WalletIcon, DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
+    RefreshCw, History, Filter, ChevronLeft, ChevronRight,
+    ArrowRight, CreditCard, Activity, PieChart as PieChartIcon, Landmark, Percent
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
+import { walletService } from '../../services/walletService';
 import TransactionDetailModal from '../TransactionDetailModal';
-import { WalletQRCode } from '../WalletQRCode';
 
 interface DriverWalletDashboardProps {
     userId: string;
@@ -25,7 +19,6 @@ export const DriverWalletDashboard: React.FC<DriverWalletDashboardProps> = ({ us
     const [exchangeRate, setExchangeRate] = useState<number>(0);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [showQR, setShowQR] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
 
     useEffect(() => {
@@ -36,12 +29,8 @@ export const DriverWalletDashboard: React.FC<DriverWalletDashboardProps> = ({ us
     const fetchWalletBalance = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wallet-get-balance?userId=${userId}`,
-                { headers: { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` } }
-            );
-            const data = await response.json();
-            if (data.success) {
+            const data = await walletService.getBalance(userId);
+            if (data) {
                 setWallet(data.wallet);
                 setExchangeRate(data.exchange_rate);
             }
@@ -54,32 +43,29 @@ export const DriverWalletDashboard: React.FC<DriverWalletDashboardProps> = ({ us
 
     const fetchTransactions = async () => {
         try {
-            const query = `user_id=eq.${userId}&order=created_at.desc&limit=10`;
-            const response = await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/wallet_transactions?${query}`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-                    },
-                }
-            );
-            const data = await response.json();
-            setTransactions(data || []);
+            // Using a default filter 'all' and pagination parameters
+            const response = await walletService.getTransactions(userId, 'all', 1, 10);
+            setTransactions(response.transactions || []);
         } catch (error) {
             console.error('Error fetching transactions:', error);
         }
     };
 
-    const chartData = [
-        { day: 'Lun', value: 12 },
-        { day: 'Mar', value: 19 },
-        { day: 'Mie', value: 15 },
-        { day: 'Jue', value: 25 },
-        { day: 'Vie', value: 32 },
-        { day: 'Sab', value: 45 },
-        { day: 'Dom', value: 38 },
-    ];
+    // Prepare chart data from transactions (or empty state if none)
+    const chartData = transactions.length > 0
+        ? transactions.slice(0, 7).reverse().map(tx => ({
+            day: new Date(tx.created_at).toLocaleDateString('es-VE', { weekday: 'short' }),
+            value: tx.amount_usd
+        }))
+        : [
+            { day: 'Lun', value: 0 },
+            { day: 'Mar', value: 0 },
+            { day: 'Mie', value: 0 },
+            { day: 'Jue', value: 0 },
+            { day: 'Vie', value: 0 },
+            { day: 'Sab', value: 0 },
+            { day: 'Dom', value: 0 },
+        ];
 
     return (
         <div className="max-w-4xl mx-auto p-4 md:p-6 pb-24 space-y-8">
@@ -94,10 +80,6 @@ export const DriverWalletDashboard: React.FC<DriverWalletDashboardProps> = ({ us
                         <p className="text-[10px] font-bold text-mipana-orange uppercase tracking-widest">Panel de Conductor: {userName}</p>
                     </div>
                 </div>
-                <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowQR(true)}
-                    className="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-mipana-orange font-bold flex items-center gap-2">
-                    <QrCode size={20} /> <span className="hidden sm:inline">Cobrar con QR</span>
-                </motion.button>
             </motion.div>
 
             {/* Liquidation Card */}
@@ -209,7 +191,6 @@ export const DriverWalletDashboard: React.FC<DriverWalletDashboardProps> = ({ us
             </div>
 
             <AnimatePresence>
-                {showQR && <WalletQRCode userId={userId} userName={userName} onClose={() => setShowQR(false)} />}
                 {selectedTransaction && <TransactionDetailModal transaction={selectedTransaction} onClose={() => setSelectedTransaction(null)} />}
             </AnimatePresence>
         </div>

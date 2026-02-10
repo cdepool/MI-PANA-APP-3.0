@@ -56,7 +56,7 @@ export const authService = {
     await supabase.auth.signOut();
   },
 
-  // --- Legacy / Helper Methods required by UI types (Mocked/Simplified) ---
+  // --- Helper Methods ---
 
   // Minimal Profile Fetch
   getProfile: async (userId: string) => {

@@ -63,10 +63,33 @@ El despliegue se gestiona a través de **Vercel**.
 1.  **Preview**: Cada Push a una rama (excepto `main`) genera un deploy de previsualización.
 2.  **Producción**: Un Merge a `main` dispara el despliegue a producción.
 
-**Checklist Pre-Deploy:**
-- [ ] Tests automáticos (si aplican) pasados.
 - [ ] Build exitoso localmente.
 - [ ] Verificación de variables de entorno en Vercel.
+
+### Despliegue de Edge Functions (Supabase)
+
+Las funciones críticas de negocio (Pagos, Billetera) residen en Supabase Edge Functions. Para desplegarlas o actualizarlas:
+
+1.  Asegúrate de tener la CLI de Supabase instalada y logueada (`supabase login`).
+2.  Despliega las funciones individuales:
+    ```bash
+    supabase functions deploy wallet-get-balance --no-verify-jwt
+    supabase functions deploy wallet-recharge --no-verify-jwt
+    supabase functions deploy exchange-rate-sync --no-verify-jwt
+    ```
+    *(Nota: `--no-verify-jwt` se usa si la función maneja su propia validación o es pública/webhook. Revisa `config.toml` para detalles específicos de cada función).*
+
+3.  Configura las variables de entorno (secrets) en Supabase:
+    ```bash
+    supabase secrets set --env-file .env.local
+    ```
+
+## Documentación Adicional
+
+*   **[Guía de Usuario: Billetera](./USER_GUIDE_WALLET.md)**: Manual para el usuario final.
+*   **[Arquitectura de Pagos](./PAYMENT_ARCHITECTURE.md)**: Detalles técnicos sobre el flujo de dinero y base de datos.
+*   **[Reporte de Testing (Step 4)](./TESTING_REPORT_STEP4.md)**: Resultados de auditoría de calidad.
+*   **[Reporte de Optimización (Step 5)](./OPTIMIZATION_REPORT_STEP5.md)**: Mejoras de rendimiento implementadas.
 
 ## Arquitectura
 

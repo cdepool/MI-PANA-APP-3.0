@@ -50,7 +50,7 @@ const Onboarding = () => {
                 // User has phone, go to Home immediately (or location check)
                 // Assuming Location is just a permission preference, we can skip to home if already done too.
                 // For this flow, let's just go to Home if phone exists.
-                navigate('/passenger');
+                navigate('/');
             } else {
                 // User needs to input phone
                 setStep(2);
@@ -97,7 +97,7 @@ const Onboarding = () => {
 
     const handleLocationPermission = (type: 'always' | 'once' | 'never') => {
         if (type === 'never') {
-            navigate('/passenger');
+            navigate('/');
             return;
         }
 
@@ -108,11 +108,11 @@ const Onboarding = () => {
             {
                 loading: 'Solicitando...',
                 success: () => {
-                    navigate('/passenger');
+                    navigate('/');
                     return "¡Listo!";
                 },
                 error: () => {
-                    navigate('/passenger'); // Proceed anyway
+                    navigate('/'); // Proceed anyway
                     return "Continuando...";
                 }
             }

@@ -9,7 +9,9 @@ const RideEstimation = lazy(() => import('./pages/traslados/RideEstimation'));
 const RideActive = lazy(() => import('./pages/traslados/RideActive'));
 const RideComplete = lazy(() => import('./pages/traslados/RideComplete'));
 const Wallet = lazy(() => import('./pages/Wallet'));
+const Login = lazy(() => import('./pages/Login'));
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import { UserRole } from './types';
 
 // Shared Loading State
 const PageLoader = () => (
@@ -25,6 +27,7 @@ function App() {
         <Routes>
           {/* Public Route */}
           <Route path="/welcome" element={<Onboarding />} />
+          <Route path="/login" element={<Login onNavigateRegister={() => { }} />} />
 
           {/* Protected Routes */}
           <Route path="/" element={
@@ -33,14 +36,14 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Traslados Flow (Protected) */}
+          {/* Traslados Flow (Passenger Only) */}
           <Route path="/traslados" element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={[UserRole.PASSENGER]}>
               <RequestRide />
             </ProtectedRoute>
           } />
           <Route path="/traslados/estimacion" element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={[UserRole.PASSENGER]}>
               <RideEstimation />
             </ProtectedRoute>
           } />
@@ -57,7 +60,7 @@ function App() {
 
           {/* Placeholders */}
           <Route path="/billetera" element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={[UserRole.PASSENGER, UserRole.DRIVER]}>
               <Wallet />
             </ProtectedRoute>
           } />

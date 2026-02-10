@@ -1,16 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { WalletDashboard } from '../components/WalletDashboard';
 import { DriverWalletDashboard } from '../components/conductor/DriverWalletDashboard';
-import { WalletRecharge } from '../components/WalletRecharge';
+// Lazy load heavy interaction component
+const WalletRecharge = lazy(() => import('../components/WalletRecharge'));
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
 
 const WalletPage: React.FC = () => {
-   const { user, refreshBalance } = useAuth();
+   const { user, loading } = useAuth();
    const [showRecharge, setShowRecharge] = useState(false);
+   const [refreshKey, setRefreshKey] = useState(0);
 
-   if (!user) return null;
+   if (loading) {
+      return (
+         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mipana-orange"></div>
+         </div>
+      );
+   }
+
+   if (!user) {
+      // Should ideally redirect or show login prompt, but handling gracefully here
+      return <div className="p-8 text-center">Inicia sesión para ver tu billetera.</div>;
+   }
+
+   const handleRefresh = () => {
+      setRefreshKey(prev => prev + 1);
+   };
 
    return (
       <motion.div
@@ -18,11 +35,20 @@ const WalletPage: React.FC = () => {
          animate={{ opacity: 1 }}
          className="min-h-screen bg-gray-50 dark:bg-gray-950"
       >
-         <WalletDashboard
-            userId={user.id}
-            userName={user.name}
-            onRecharge={() => setShowRecharge(true)}
-         />
+         {user.role === 'conductor' ? (
+            <DriverWalletDashboard
+               key={refreshKey}
+               userId={user.id}
+               userName={user.nombre || user.email?.split('@')[0]}
+            />
+         ) : (
+            <WalletDashboard
+               key={refreshKey}
+               userId={user.id}
+               userName={user.nombre || user.email?.split('@')[0]}
+               onRecharge={() => setShowRecharge(true)}
+            />
+         )}
 
          <AnimatePresence>
             {showRecharge && (
@@ -33,15 +59,17 @@ const WalletPage: React.FC = () => {
                      exit={{ scale: 0.9, opacity: 0, y: 20 }}
                      className="w-full max-w-md"
                   >
-                     <WalletRecharge
-                        userId={user.id}
-                        userPhone={user.phone || ''}
-                        onSuccess={() => {
-                           refreshBalance();
-                           setShowRecharge(false);
-                        }}
-                        onCancel={() => setShowRecharge(false)}
-                     />
+                     <Suspense fallback={<div className="p-8 bg-white rounded-2xl flex justify-center"><div className="animate-spin h-8 w-8 border-2 border-mipana-orange rounded-full border-t-transparent"></div></div>}>
+                        <WalletRecharge
+                           userId={user.id}
+                           userPhone={user.telefono || ''}
+                           onSuccess={() => {
+                              handleRefresh();
+                              setShowRecharge(false);
+                           }}
+                           onCancel={() => setShowRecharge(false)}
+                        />
+                     </Suspense>
                   </motion.div>
                </div>
             )}

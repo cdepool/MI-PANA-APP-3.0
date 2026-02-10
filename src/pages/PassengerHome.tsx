@@ -83,7 +83,7 @@ interface PassengerHomeProps {
 
 const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   const { user, addSavedPlace, toggleFavoriteDriver, refreshBalance } = useAuth();
-  const [step, setStep] = useState<RideStep>('SEARCH');
+  const [step, setStep] = useState<RideStep>('HOME_MENU');
   const [selectedServiceId, setSelectedServiceId] = useState<ServiceId>('el_pana');
   const [price, setPrice] = useState<{ usd: number, ves: number } | null>(null);
   const [driver, setDriver] = useState<MatchedDriver | null>(null);
@@ -210,7 +210,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
   // ... (Map Handlers unchanged) ...
 
   const resetFlow = () => {
-    setStep('SEARCH');
+    setStep('HOME_MENU');
     setDriver(null);
     setCurrentTripId(null);
     setPreselectedDriver(null);
@@ -302,7 +302,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
 
     } catch (err) {
       console.error("Error requesting ride:", err);
-      setStep('SEARCH'); // Go back
+      setStep('HOME_MENU'); // Go back
       alert("Error al solicitar viaje. Intenta de nuevo.");
     }
   };
@@ -380,40 +380,104 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
         />
       </div>
 
-      {/* SEARCH STEP UI: Redesigned with Wallet & Inputs */}
-      {step === 'SEARCH' && (
-        <>
-          <div className="absolute top-0 left-0 right-0 z-20 p-2 md:p-4 space-y-2 md:space-y-3 bg-gradient-to-b from-black/20 to-transparent pb-8 pointer-events-none">
-            {/* Pointer events handled by children */}
+    </div>
 
-            {/* HEADER: LOGO & GREETING & RATE & WALLET (Mobile Compact) */}
-            <div className="flex justify-between items-start pointer-events-auto">
-              <div className="flex items-center gap-2">
-                <img src="/logo-app.png" alt="Logo" className="h-10 w-auto drop-shadow-lg" />
-                <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md p-1.5 pr-3 rounded-full shadow-lg border border-white/50">
-                  <div className="w-8 h-8 rounded-full bg-mipana-mediumBlue/10 flex items-center justify-center border border-mipana-mediumBlue/20 overflow-hidden">
-                    {user?.avatarUrl ? <img src={user.avatarUrl} alt="User" className="w-full h-full object-cover" /> : <User className="text-mipana-mediumBlue" size={16} />}
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-gray-500 font-bold flex items-center gap-1">
-                      Hola, {user?.name?.split(' ')[0]}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[9px] font-bold text-mipana-darkBlue bg-gray-100 px-1.5 rounded-full">$1 ≈ Bs {currentRate.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
+      {/* HOME MENU (4 PILLARS) */ }
+  {
+    step === 'HOME_MENU' && (
+      <div className="absolute inset-0 z-20 flex flex-col pointer-events-none">
+        {/* Header */}
+        <div className="p-4 pt-4 flex justify-between items-start pointer-events-auto bg-gradient-to-b from-black/40 to-transparent">
+          <div className="flex items-center gap-2">
+            <img src="/logo-app.png" alt="Logo" className="h-10 w-auto drop-shadow-lg" />
+            <div className="bg-white/90 backdrop-blur-md p-1 px-3 rounded-full shadow-lg border border-white/50 flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
+                {user?.avatarUrl ? <img src={user.avatarUrl} className="w-full h-full object-cover" /> : <User size={16} className="text-gray-500 m-1" />}
               </div>
-
-              {/* Mobile Wallet Pill */}
-              <div
-                className="md:hidden bg-white/95 backdrop-blur-md p-1.5 px-3 rounded-full shadow-lg border border-white/50 flex flex-col items-end cursor-pointer active:scale-95 transition-transform"
-                onClick={onNavigateWallet}
-              >
-                <p className="text-[9px] font-bold text-gray-400 uppercase">Saldo</p>
-                <span className="text-xs font-extrabold text-mipana-darkBlue">${walletBalance.toFixed(2)}</span>
-              </div>
+              <span className="text-xs font-bold text-mipana-darkBlue">Hola, {user?.name?.split(' ')[0]}</span>
             </div>
+          </div>
+          <div
+            onClick={onNavigateWallet}
+            className="bg-white/90 backdrop-blur-md p-1 px-3 rounded-full shadow-lg border border-white/50 flex flex-col items-end cursor-pointer active:scale-95 transition-transform"
+          >
+            <span className="text-[9px] font-bold text-gray-500 uppercase">Saldo</span>
+            <span className="text-xs font-black text-mipana-darkBlue">${walletBalance.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div className="mt-auto p-6 md:p-8 w-full pointer-events-auto pb-10 md:pb-8">
+          <div className="grid grid-cols-2 gap-4 md:max-w-md mx-auto">
+            {/* 1. VIAJE - Mobility */}
+            <button
+              onClick={() => setStep('SEARCH')}
+              className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-all border border-gray-100 hover:border-mipana-blue/50 aspect-square group"
+            >
+              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                <span className="text-3xl">🚓</span>
+              </div>
+              <span className="font-black text-mipana-darkBlue dark:text-white text-lg tracking-tight">VIAJE</span>
+              <span className="text-[10px] uppercase font-bold text-gray-400">Mobility</span>
+            </button>
+
+            {/* 2. BILLETERA - Fintech */}
+            <button
+              onClick={onNavigateWallet}
+              className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-all border border-gray-100 hover:border-mipana-orange/50 aspect-square group"
+            >
+              <div className="w-14 h-14 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                <span className="text-3xl">💳</span>
+              </div>
+              <span className="font-black text-mipana-darkBlue dark:text-white text-lg tracking-tight">BILLETERA</span>
+              <span className="text-[10px] uppercase font-bold text-gray-400">Fintech</span>
+            </button>
+
+            {/* 3. TIENDA - E-commerce (Coming Soon) */}
+            <button
+              onClick={() => toast.info('¡Próximamente! Tu tienda Mi Pana.')}
+              className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-all border border-gray-100 opacity-90 hover:opacity-100 aspect-square group relative overflow-hidden"
+            >
+              <div className="absolute top-2 right-2 bg-gray-100 text-[8px] font-bold px-2 py-0.5 rounded-full text-gray-500">PRONTO</div>
+              <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                <span className="text-3xl">🛍️</span>
+              </div>
+              <span className="font-black text-mipana-darkBlue dark:text-white text-lg tracking-tight">TIENDA</span>
+              <span className="text-[10px] uppercase font-bold text-gray-400">E-commerce</span>
+            </button>
+
+            {/* 4. DELIVERY - Logistics (Coming Soon) */}
+            <button
+              onClick={() => toast.info('¡Próximamente! Envíos rápidos.')}
+              className="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-all border border-gray-100 opacity-90 hover:opacity-100 aspect-square group relative overflow-hidden"
+            >
+              <div className="absolute top-2 right-2 bg-gray-100 text-[8px] font-bold px-2 py-0.5 rounded-full text-gray-500">PRONTO</div>
+              <div className="w-14 h-14 bg-green-50 text-green-600 rounded-full flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-colors">
+                <span className="text-3xl">🛵</span>
+              </div>
+              <span className="font-black text-mipana-darkBlue dark:text-white text-lg tracking-tight">DELIVERY</span>
+              <span className="text-[10px] uppercase font-bold text-gray-400">Logistics</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  {/* SEARCH STEP UI: Redesigned with Wallet & Inputs */ }
+  {
+    step === 'SEARCH' && (
+      <>
+        <div className="absolute top-0 left-0 right-0 z-20 p-2 md:p-4 space-y-2 md:space-y-3 bg-gradient-to-b from-black/20 to-transparent pb-8 pointer-events-none">
+          {/* Pointer events handled by children */}
+
+          {/* HEADER: BACK BUTTON & WALLET */}
+          <div className="flex justify-between items-start pointer-events-auto">
+            <button
+              onClick={() => setStep('HOME_MENU')}
+              className="bg-white/95 backdrop-blur-md p-2 rounded-full shadow-lg border border-white/50 active:scale-95 transition-transform"
+            >
+              <ArrowLeft size={20} className="text-mipana-darkBlue" />
+            </button>
 
             {/* SEARCH INPUTS CARD */}
             <div className="bg-white rounded-2xl shadow-xl p-3 md:p-4 animate-slide-up border border-gray-100 pointer-events-auto">
@@ -484,330 +548,330 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
       )}
 
 
-      {/* TOP BAR FOR PICKING/CONFIRMING (Overrides Search Step UI) */}
-      {step === 'PICK_ON_MAP' ? (
-        <div className="absolute top-4 left-4 right-4 z-20 animate-slide-up">
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg flex items-center gap-3 border border-gray-100 dark:border-gray-700">
-            <button onClick={() => { setStep('SEARCH'); setPickingType(null); setPreselectedDriver(null); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-              <ArrowLeft size={20} />
-            </button>
-            <div className="flex-1">
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                {pickingType === 'ORIGIN' ? 'Fijar Punto de Partida' : 'Fijar Destino'}
-              </p>
-              {isMapMoving ? (
-                <div className="h-5 w-40 bg-gray-100 dark:bg-gray-700 rounded animate-pulse mt-1"></div>
-              ) : (
-                <p className="font-bold text-mipana-darkBlue dark:text-white truncate text-sm">{mapCenterAddress}</p>
-              )}
-            </div>
-            {preselectedDriver && (
-              <div className="flex items-center gap-2 bg-green-50 px-2 py-1 rounded-lg border border-green-100">
-                <img src={preselectedDriver.avatarUrl} className="w-6 h-6 rounded-full" />
-                <span className="text-xs font-bold text-green-800 hidden sm:block">{preselectedDriver.name}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        // CONFIRM SERVICE HEADER
-        step === 'CONFIRM_SERVICE' && (
-          <div className="absolute top-4 left-4 right-4 z-20">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-0 overflow-hidden border border-gray-100 dark:border-gray-700 animate-slide-up">
-              <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3" onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); }}>
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Desde</p>
-                  <p className="text-sm font-medium truncate dark:text-white">{origin.address}</p>
-                </div>
-              </div>
-              <div className="p-3 flex items-center gap-3" onClick={() => { setStep('SEARCH'); }}>
-                <div className="w-2 h-2 bg-mipana-orange rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Hasta</p>
-                  <p className="text-sm font-medium truncate dark:text-white">{destination?.address}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      )}
-
-      {/* CHAT INTERFACE OVERLAY */}
-      {driver && (
-        <ChatInterface
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          messages={chatMessages}
-          onSendMessage={handleSendMessage}
-          currentUserRole={UserRole.PASSENGER}
-          title={`Chat con ${driver.name}`}
-        />
-      )}
-
-      {/* BOTTOM SHEET / CONTEXT MENU */}
-      <div className="z-10 mt-auto md:mb-4 md:ml-4 md:max-w-sm w-full">
-
-        {/* PICK ON MAP FLOATING ACTION */}
-        {step === 'PICK_ON_MAP' && (
-          <div className="p-4 w-full flex justify-center pb-8">
-            <Button
-              onClick={confirmMapSelection}
-              disabled={isMapMoving}
-              className="shadow-2xl w-full max-w-xs animate-bounce-in"
-            >
-              {isMapMoving ? 'Ubicando...' : 'Confirmar Ubicación'}
-            </Button>
-          </div>
-        )}
-
-        {/* CONFIRMATION SHEET */}
-        {step === 'CONFIRM_SERVICE' && price && (
-          <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-[0_-5px_20px_rgba(0,0,0,0.1)] p-6 animate-slide-up max-h-[80vh] overflow-y-auto border-t border-gray-100">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg dark:text-white">Confirmar Viaje</h3>
-              {destination && !favorites.some(f => f.address === destination.address) && (
-                <button onClick={saveCurrentAsFavorite} className="text-xs text-mipana-mediumBlue font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg">
-                  <Heart size={12} /> Guardar
-                </button>
-              )}
-            </div>
-
-            {/* Preselected Driver Alert */}
-            {preselectedDriver && (
-              <div className="bg-green-50 border border-green-200 p-3 rounded-xl mb-4 flex items-center gap-3">
-                <img src={preselectedDriver.avatarUrl} className="w-10 h-10 rounded-full border border-green-300" />
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-green-800 uppercase">Solicitud Directa</p>
-                  <p className="text-sm text-green-900">Este viaje será para <b>{preselectedDriver.name}</b></p>
-                </div>
-                <button onClick={() => setPreselectedDriver(null)} className="text-gray-400 hover:text-gray-600"><ArrowLeft size={16} /></button>
-              </div>
-            )}
-
-            {/* BENEFICIARY SELECTION */}
-            <div className="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl mb-4 border border-gray-100 dark:border-gray-600">
-              <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">¿Para quién es el viaje?</p>
-              <div className="flex gap-2 mb-3">
-                <button
-                  onClick={() => setForWhom('ME')}
-                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 ${forWhom === 'ME' ? 'bg-mipana-mediumBlue text-white shadow' : 'bg-white dark:bg-gray-700 text-gray-500'}`}
-                >
-                  <User size={16} /> Para Mí
-                </button>
-                <button
-                  onClick={() => setForWhom('OTHER')}
-                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 ${forWhom === 'OTHER' ? 'bg-mipana-mediumBlue text-white shadow' : 'bg-white dark:bg-gray-700 text-gray-500'}`}
-                >
-                  <Users size={16} /> Para Otro
-                </button>
-              </div>
-
-              {forWhom === 'OTHER' && (
-                <div className="space-y-2 animate-fade-in">
-                  <Input
-                    placeholder="Nombre del Pasajero (Ej: Mamá)"
-                    value={beneficiary.name}
-                    onChange={(e) => setBeneficiary({ ...beneficiary, name: e.target.value })}
-                    className="bg-white"
-                    icon={<User size={14} />}
-                  />
-                  <Input
-                    placeholder="Teléfono (Opcional)"
-                    value={beneficiary.phone}
-                    onChange={(e) => setBeneficiary({ ...beneficiary, phone: e.target.value })}
-                    className="bg-white"
-                    icon={<Smartphone size={14} />}
-                  />
-                </div>
-              )}
-            </div>
-
-            <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Selecciona Vehículo</p>
-            <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto mb-4">
-              {SERVICE_CATALOG.map(service => {
-                const sPrice = calculatePrice(4.2, service.id);
-                return (
-                  <ServiceOption
-                    key={service.id}
-                    id={service.id}
-                    nombre={service.nombre}
-                    icono={service.icono}
-                    price={sPrice}
-                    isSelected={selectedServiceId === service.id}
-                    onClick={() => setSelectedServiceId(service.id)}
-                  />
-                )
-              })}
-            </div>
-
-            <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mb-4">
-              <div className="flex items-center gap-2">
-                <div className="bg-green-100 p-1 rounded text-green-700 font-bold text-xs">EFECTIVO</div>
-                <span className="text-xs text-gray-500">o Pago Móvil</span>
-              </div>
-              <span className="font-bold text-lg dark:text-white">${price.usd.toFixed(2)}</span>
-            </div>
-
-            <Button variant="action" fullWidth onClick={handleConfirmRide}>
-              {preselectedDriver ? `Solicitar a ${preselectedDriver.name.split(' ')[0]}` : (forWhom === 'OTHER' ? `Solicitar para ${beneficiary.name || 'otro'}` : 'Solicitar Ahora')}
-            </Button>
-          </div>
-        )}
-
-        {/* SEARCHING & ACTIVE RIDE UI */}
-        {step === 'SEARCHING_DRIVER' && (
-          <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-2xl p-8 text-center animate-slide-up">
-            <div className="mx-auto w-16 h-16 border-4 border-mipana-orange border-t-transparent rounded-full animate-spin mb-4"></div>
-            <h3 className="font-bold text-lg mb-2 dark:text-white">
-              {preselectedDriver ? `Esperando confirmación de ${preselectedDriver.name}...` : 'Contactando Panas cercanos...'}
-            </h3>
-            <Button variant="outline" onClick={() => setStep('CONFIRM_SERVICE')}>Cancelar</Button>
-          </div>
-        )}
-
-        {(step === 'ACCEPTED' || step === 'IN_PROGRESS') && driver && (
-          <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-2xl p-6 animate-slide-up">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-mipana-darkBlue dark:text-white">
-                {step === 'IN_PROGRESS' ? 'Viaje en Curso' : '¡Pana en camino!'}
-              </h3>
-              {step === 'IN_PROGRESS' ? (
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                  <Clock size={12} /> ETA: {eta} min
-                </span>
-              ) : (
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">{driver.timeAway}</span>
-              )}
-            </div>
-
-            {/* GPS Progress Bar */}
-            {step === 'IN_PROGRESS' && (
-              <div className="w-full h-1.5 bg-gray-200 rounded-full mb-4 overflow-hidden">
-                <div className="h-full bg-mipana-mediumBlue transition-all duration-500" style={{ width: `${rideProgress}%` }}></div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between space-x-4 mb-4">
-              <div className="flex items-center gap-4">
-                <img src={driver.avatarUrl} alt="Driver" className="w-14 h-14 rounded-full border-2 border-mipana-orange" />
-                <div>
-                  <h4 className="font-bold dark:text-white text-lg">{driver.name}</h4>
-                  <p className="text-xs text-gray-500">{driver.vehicleModel} • {driver.plate}</p>
-                </div>
-              </div>
-
-              {/* FAVORITE TOGGLE */}
-              <button
-                onClick={() => toggleFavoriteDriver(driver.id)}
-                className={`p-2 rounded-full border transition-colors ${isDriverFavorite ? 'bg-red-50 border-red-200 text-red-500' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
-              >
-                <Heart size={20} fill={isDriverFavorite ? "currentColor" : "none"} />
-              </button>
-            </div>
-
-            {/* COMMUNICATION ACTIONS */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              <button
-                onClick={handleWhatsApp}
-                className="flex flex-col items-center justify-center p-2 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 transition-colors"
-              >
-                <MessageCircle size={24} className="text-green-600 mb-1" />
-                <span className="text-[10px] font-bold text-green-800">WhatsApp</span>
-              </button>
-              <button
-                onClick={() => setIsChatOpen(true)}
-                className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 transition-colors"
-              >
-                <div className="relative">
-                  <MessageSquare size={24} className="text-blue-600 mb-1" />
-                  {chatMessages.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></span>
-                  )}
-                </div>
-                <span className="text-[10px] font-bold text-blue-800">Chat App</span>
-              </button>
-              <button
-                onClick={handleCall}
-                className="flex flex-col items-center justify-center p-2 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors"
-              >
-                <Phone size={24} className="text-gray-600 mb-1" />
-                <span className="text-[10px] font-bold text-gray-800">Llamar</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 'COMPLETED' && driver && (
-          <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-2xl p-6 animate-slide-up text-center">
-            <div className="mb-4 inline-block p-4 rounded-full bg-green-100 text-green-600">
-              <Star size={32} fill="currentColor" />
-            </div>
-            <h3 className="text-2xl font-bold text-mipana-darkBlue dark:text-white mb-2">¡Llegaste Pana!</h3>
-            <Button fullWidth variant="action" onClick={resetFlow}>
-              Finalizar
-            </Button>
-          </div>
-        )}
-
-      </div>
-
-      {/* PLACES SEARCH MODAL */}
-      {showPlacesSearch && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 animate-slide-up">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-mipana-darkBlue">
-                {searchingFor === 'ORIGIN' ? 'Punto de Partida' : 'Destino'}
-              </h3>
-              <button
-                onClick={() => { setShowPlacesSearch(false); setSearchingFor(null); }}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
+        {/* TOP BAR FOR PICKING/CONFIRMING (Overrides Search Step UI) */}
+        {step === 'PICK_ON_MAP' ? (
+          <div className="absolute top-4 left-4 right-4 z-20 animate-slide-up">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg flex items-center gap-3 border border-gray-100 dark:border-gray-700">
+              <button onClick={() => { setStep('SEARCH'); setPickingType(null); setPreselectedDriver(null); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                 <ArrowLeft size={20} />
               </button>
+              <div className="flex-1">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                  {pickingType === 'ORIGIN' ? 'Fijar Punto de Partida' : 'Fijar Destino'}
+                </p>
+                {isMapMoving ? (
+                  <div className="h-5 w-40 bg-gray-100 dark:bg-gray-700 rounded animate-pulse mt-1"></div>
+                ) : (
+                  <p className="font-bold text-mipana-darkBlue dark:text-white truncate text-sm">{mapCenterAddress}</p>
+                )}
+              </div>
+              {preselectedDriver && (
+                <div className="flex items-center gap-2 bg-green-50 px-2 py-1 rounded-lg border border-green-100">
+                  <img src={preselectedDriver.avatarUrl} className="w-6 h-6 rounded-full" />
+                  <span className="text-xs font-bold text-green-800 hidden sm:block">{preselectedDriver.name}</span>
+                </div>
+              )}
             </div>
-            <PlacesAutocomplete
-              placeholder={searchingFor === 'ORIGIN' ? 'Buscar punto de partida...' : 'Buscar destino...'}
-              defaultValue={searchingFor === 'ORIGIN' ? origin.address : destination?.address || ''}
-              onPlaceSelected={(place) => {
-                if (searchingFor === 'ORIGIN') {
-                  setOrigin({ address: place.address, lat: place.lat, lng: place.lng });
-                } else if (searchingFor === 'DESTINATION') {
-                  setDestination({ address: place.address, lat: place.lat, lng: place.lng });
-                  // Price will be calculated automatically by onRouteCalculated callback
-                  setStep('CONFIRM_SERVICE');
-                }
-                setShowPlacesSearch(false);
-                setSearchingFor(null);
-              }}
-              icon={<Search size={16} />}
-            />
           </div>
-        </div>
-      )}
+        ) : (
+          // CONFIRM SERVICE HEADER
+          step === 'CONFIRM_SERVICE' && (
+            <div className="absolute top-4 left-4 right-4 z-20">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-0 overflow-hidden border border-gray-100 dark:border-gray-700 animate-slide-up">
+                <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3" onClick={() => { setPickingType('ORIGIN'); setStep('PICK_ON_MAP'); }}>
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">Desde</p>
+                    <p className="text-sm font-medium truncate dark:text-white">{origin.address}</p>
+                  </div>
+                </div>
+                <div className="p-3 flex items-center gap-3" onClick={() => { setStep('SEARCH'); }}>
+                  <div className="w-2 h-2 bg-mipana-orange rounded-full"></div>
+                  <div className="flex-1">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">Hasta</p>
+                    <p className="text-sm font-medium truncate dark:text-white">{destination?.address}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        )}
 
-      {/* RECHARGE MODAL FOR INSUFFICIENT BALANCE */}
-      {showRechargeModal && user && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-          <div className="w-full max-w-md">
-            <WalletRecharge
-              userId={user.id}
-              userPhone={user.phone || ''}
-              prefilledAmount={rechargeAmountVes}
-              onSuccess={() => {
-                refreshBalance();
-                setShowRechargeModal(false);
-                toast.success("¡Pago verificado! Procesando tu viaje...");
-                // Re-trigger ride confirmation after successful recharge
-                setTimeout(() => handleConfirmRide(), 1500);
-              }}
-              onCancel={() => setShowRechargeModal(false)}
-            />
-          </div>
+        {/* CHAT INTERFACE OVERLAY */}
+        {driver && (
+          <ChatInterface
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+            messages={chatMessages}
+            onSendMessage={handleSendMessage}
+            currentUserRole={UserRole.PASSENGER}
+            title={`Chat con ${driver.name}`}
+          />
+        )}
+
+        {/* BOTTOM SHEET / CONTEXT MENU */}
+        <div className="z-10 mt-auto md:mb-4 md:ml-4 md:max-w-sm w-full">
+
+          {/* PICK ON MAP FLOATING ACTION */}
+          {step === 'PICK_ON_MAP' && (
+            <div className="p-4 w-full flex justify-center pb-8">
+              <Button
+                onClick={confirmMapSelection}
+                disabled={isMapMoving}
+                className="shadow-2xl w-full max-w-xs animate-bounce-in"
+              >
+                {isMapMoving ? 'Ubicando...' : 'Confirmar Ubicación'}
+              </Button>
+            </div>
+          )}
+
+          {/* CONFIRMATION SHEET */}
+          {step === 'CONFIRM_SERVICE' && price && (
+            <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-[0_-5px_20px_rgba(0,0,0,0.1)] p-6 animate-slide-up max-h-[80vh] overflow-y-auto border-t border-gray-100">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-lg dark:text-white">Confirmar Viaje</h3>
+                {destination && !favorites.some(f => f.address === destination.address) && (
+                  <button onClick={saveCurrentAsFavorite} className="text-xs text-mipana-mediumBlue font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg">
+                    <Heart size={12} /> Guardar
+                  </button>
+                )}
+              </div>
+
+              {/* Preselected Driver Alert */}
+              {preselectedDriver && (
+                <div className="bg-green-50 border border-green-200 p-3 rounded-xl mb-4 flex items-center gap-3">
+                  <img src={preselectedDriver.avatarUrl} className="w-10 h-10 rounded-full border border-green-300" />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-green-800 uppercase">Solicitud Directa</p>
+                    <p className="text-sm text-green-900">Este viaje será para <b>{preselectedDriver.name}</b></p>
+                  </div>
+                  <button onClick={() => setPreselectedDriver(null)} className="text-gray-400 hover:text-gray-600"><ArrowLeft size={16} /></button>
+                </div>
+              )}
+
+              {/* BENEFICIARY SELECTION */}
+              <div className="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl mb-4 border border-gray-100 dark:border-gray-600">
+                <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">¿Para quién es el viaje?</p>
+                <div className="flex gap-2 mb-3">
+                  <button
+                    onClick={() => setForWhom('ME')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 ${forWhom === 'ME' ? 'bg-mipana-mediumBlue text-white shadow' : 'bg-white dark:bg-gray-700 text-gray-500'}`}
+                  >
+                    <User size={16} /> Para Mí
+                  </button>
+                  <button
+                    onClick={() => setForWhom('OTHER')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 ${forWhom === 'OTHER' ? 'bg-mipana-mediumBlue text-white shadow' : 'bg-white dark:bg-gray-700 text-gray-500'}`}
+                  >
+                    <Users size={16} /> Para Otro
+                  </button>
+                </div>
+
+                {forWhom === 'OTHER' && (
+                  <div className="space-y-2 animate-fade-in">
+                    <Input
+                      placeholder="Nombre del Pasajero (Ej: Mamá)"
+                      value={beneficiary.name}
+                      onChange={(e) => setBeneficiary({ ...beneficiary, name: e.target.value })}
+                      className="bg-white"
+                      icon={<User size={14} />}
+                    />
+                    <Input
+                      placeholder="Teléfono (Opcional)"
+                      value={beneficiary.phone}
+                      onChange={(e) => setBeneficiary({ ...beneficiary, phone: e.target.value })}
+                      className="bg-white"
+                      icon={<Smartphone size={14} />}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <p className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Selecciona Vehículo</p>
+              <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto mb-4">
+                {SERVICE_CATALOG.map(service => {
+                  const sPrice = calculatePrice(4.2, service.id);
+                  return (
+                    <ServiceOption
+                      key={service.id}
+                      id={service.id}
+                      nombre={service.nombre}
+                      icono={service.icono}
+                      price={sPrice}
+                      isSelected={selectedServiceId === service.id}
+                      onClick={() => setSelectedServiceId(service.id)}
+                    />
+                  )
+                })}
+              </div>
+
+              <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="bg-green-100 p-1 rounded text-green-700 font-bold text-xs">EFECTIVO</div>
+                  <span className="text-xs text-gray-500">o Pago Móvil</span>
+                </div>
+                <span className="font-bold text-lg dark:text-white">${price.usd.toFixed(2)}</span>
+              </div>
+
+              <Button variant="action" fullWidth onClick={handleConfirmRide}>
+                {preselectedDriver ? `Solicitar a ${preselectedDriver.name.split(' ')[0]}` : (forWhom === 'OTHER' ? `Solicitar para ${beneficiary.name || 'otro'}` : 'Solicitar Ahora')}
+              </Button>
+            </div>
+          )}
+
+          {/* SEARCHING & ACTIVE RIDE UI */}
+          {step === 'SEARCHING_DRIVER' && (
+            <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-2xl p-8 text-center animate-slide-up">
+              <div className="mx-auto w-16 h-16 border-4 border-mipana-orange border-t-transparent rounded-full animate-spin mb-4"></div>
+              <h3 className="font-bold text-lg mb-2 dark:text-white">
+                {preselectedDriver ? `Esperando confirmación de ${preselectedDriver.name}...` : 'Contactando Panas cercanos...'}
+              </h3>
+              <Button variant="outline" onClick={() => setStep('CONFIRM_SERVICE')}>Cancelar</Button>
+            </div>
+          )}
+
+          {(step === 'ACCEPTED' || step === 'IN_PROGRESS') && driver && (
+            <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-2xl p-6 animate-slide-up">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-mipana-darkBlue dark:text-white">
+                  {step === 'IN_PROGRESS' ? 'Viaje en Curso' : '¡Pana en camino!'}
+                </h3>
+                {step === 'IN_PROGRESS' ? (
+                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                    <Clock size={12} /> ETA: {eta} min
+                  </span>
+                ) : (
+                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">{driver.timeAway}</span>
+                )}
+              </div>
+
+              {/* GPS Progress Bar */}
+              {step === 'IN_PROGRESS' && (
+                <div className="w-full h-1.5 bg-gray-200 rounded-full mb-4 overflow-hidden">
+                  <div className="h-full bg-mipana-mediumBlue transition-all duration-500" style={{ width: `${rideProgress}%` }}></div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between space-x-4 mb-4">
+                <div className="flex items-center gap-4">
+                  <img src={driver.avatarUrl} alt="Driver" className="w-14 h-14 rounded-full border-2 border-mipana-orange" />
+                  <div>
+                    <h4 className="font-bold dark:text-white text-lg">{driver.name}</h4>
+                    <p className="text-xs text-gray-500">{driver.vehicleModel} • {driver.plate}</p>
+                  </div>
+                </div>
+
+                {/* FAVORITE TOGGLE */}
+                <button
+                  onClick={() => toggleFavoriteDriver(driver.id)}
+                  className={`p-2 rounded-full border transition-colors ${isDriverFavorite ? 'bg-red-50 border-red-200 text-red-500' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
+                >
+                  <Heart size={20} fill={isDriverFavorite ? "currentColor" : "none"} />
+                </button>
+              </div>
+
+              {/* COMMUNICATION ACTIONS */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <button
+                  onClick={handleWhatsApp}
+                  className="flex flex-col items-center justify-center p-2 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 transition-colors"
+                >
+                  <MessageCircle size={24} className="text-green-600 mb-1" />
+                  <span className="text-[10px] font-bold text-green-800">WhatsApp</span>
+                </button>
+                <button
+                  onClick={() => setIsChatOpen(true)}
+                  className="flex flex-col items-center justify-center p-2 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 transition-colors"
+                >
+                  <div className="relative">
+                    <MessageSquare size={24} className="text-blue-600 mb-1" />
+                    {chatMessages.length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></span>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-bold text-blue-800">Chat App</span>
+                </button>
+                <button
+                  onClick={handleCall}
+                  className="flex flex-col items-center justify-center p-2 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors"
+                >
+                  <Phone size={24} className="text-gray-600 mb-1" />
+                  <span className="text-[10px] font-bold text-gray-800">Llamar</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 'COMPLETED' && driver && (
+            <div className="bg-white dark:bg-gray-800 rounded-t-3xl md:rounded-xl shadow-2xl p-6 animate-slide-up text-center">
+              <div className="mb-4 inline-block p-4 rounded-full bg-green-100 text-green-600">
+                <Star size={32} fill="currentColor" />
+              </div>
+              <h3 className="text-2xl font-bold text-mipana-darkBlue dark:text-white mb-2">¡Llegaste Pana!</h3>
+              <Button fullWidth variant="action" onClick={resetFlow}>
+                Finalizar
+              </Button>
+            </div>
+          )}
+
         </div>
-      )}
-    </main>
+
+        {/* PLACES SEARCH MODAL */}
+        {showPlacesSearch && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 animate-slide-up">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-mipana-darkBlue">
+                  {searchingFor === 'ORIGIN' ? 'Punto de Partida' : 'Destino'}
+                </h3>
+                <button
+                  onClick={() => { setShowPlacesSearch(false); setSearchingFor(null); }}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+              </div>
+              <PlacesAutocomplete
+                placeholder={searchingFor === 'ORIGIN' ? 'Buscar punto de partida...' : 'Buscar destino...'}
+                defaultValue={searchingFor === 'ORIGIN' ? origin.address : destination?.address || ''}
+                onPlaceSelected={(place) => {
+                  if (searchingFor === 'ORIGIN') {
+                    setOrigin({ address: place.address, lat: place.lat, lng: place.lng });
+                  } else if (searchingFor === 'DESTINATION') {
+                    setDestination({ address: place.address, lat: place.lat, lng: place.lng });
+                    // Price will be calculated automatically by onRouteCalculated callback
+                    setStep('CONFIRM_SERVICE');
+                  }
+                  setShowPlacesSearch(false);
+                  setSearchingFor(null);
+                }}
+                icon={<Search size={16} />}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* RECHARGE MODAL FOR INSUFFICIENT BALANCE */}
+        {showRechargeModal && user && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+            <div className="w-full max-w-md">
+              <WalletRecharge
+                userId={user.id}
+                userPhone={user.phone || ''}
+                prefilledAmount={rechargeAmountVes}
+                onSuccess={() => {
+                  refreshBalance();
+                  setShowRechargeModal(false);
+                  toast.success("¡Pago verificado! Procesando tu viaje...");
+                  // Re-trigger ride confirmation after successful recharge
+                  setTimeout(() => handleConfirmRide(), 1500);
+                }}
+                onCancel={() => setShowRechargeModal(false)}
+              />
+            </div>
+          </div>
+        )}
+      </main >
   );
 };
 

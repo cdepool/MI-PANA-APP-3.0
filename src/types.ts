@@ -11,7 +11,7 @@ export type ServiceId = 'mototaxi' | 'el_pana' | 'el_amigo' | 'full_pana';
 
 export type AppView = 'HOME' | 'PROFILE' | 'HISTORY' | 'SETTINGS' | 'SCHEDULE' | 'REGISTER' | 'WALLET' | 'APPROVALS';
 
-export type RideStep = 'SEARCH' | 'PICK_ON_MAP' | 'CONFIRM_SERVICE' | 'SEARCHING_DRIVER' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED';
+export type RideStep = 'HOME_MENU' | 'SEARCH' | 'PICK_ON_MAP' | 'CONFIRM_SERVICE' | 'SEARCHING_DRIVER' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED';
 
 export interface SavedPlace {
   id: string;
