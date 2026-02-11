@@ -504,7 +504,7 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
                   ? "Error del Servicio"
                   : "Error de Verificación"}
             </h3>
-            <p className="text-xs text-gray-500 font-bold leading-relaxed px-2">
+            <p className="text-[13px] text-gray-500 font-bold leading-relaxed px-2">
               {!isDomainAllowed
                 ? "Por motivos de seguridad bancaria (Whitelist), los pagos solo pueden procesarse desde el dominio autorizado."
                 : error}

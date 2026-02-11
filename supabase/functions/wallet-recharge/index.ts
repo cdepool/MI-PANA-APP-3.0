@@ -482,13 +482,13 @@ serve(async (req) => {
       throw apiError;
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Wallet Recharge] Error:', error);
 
     return new Response(
       JSON.stringify({
         success: false,
-        error: 'Error interno del servidor.',
+        error: error.message || 'Error interno del servidor.',
         details: error.message,
         stack: error.stack
       }),
