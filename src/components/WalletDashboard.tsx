@@ -2,8 +2,9 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import {
   Wallet, DollarSign, TrendingUp, Plus, ArrowUpRight, ArrowDownRight,
   RefreshCw, History, Filter, ChevronLeft, ChevronRight,
-  ArrowRight, CreditCard, Activity, PieChart
+  ArrowRight, CreditCard, Activity, PieChart, Banknote, Check, AlertCircle
 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart,
@@ -43,19 +44,24 @@ interface Transaction {
 
 export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userName = 'Usuario', onRecharge }) => {
   const [wallet, setWallet] = useState<WalletBalance | null>(null);
-  const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [exchangeRate, setExchangeRate] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
-
-  // Pagination & Filter state
+  const [filterType, setFilterType] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const transactionsPerPage = 10;
-  const [filterType, setFilterType] = useState<string>('all');
 
   // Selected transaction for detail modal
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+
+  // trip payment state
+  const location = useLocation();
+  const navigate = useNavigate();
+  const paymentContext = location.state as { type: string, amount: number, serviceName: string, destination: string } | null;
+  const [isPayingTrip, setIsPayingTrip] = useState(!!paymentContext);
+  const [paymentMode, setPaymentMode] = useState<'FULL_WALLET' | 'MIXED'>('FULL_WALLET');
 
   useEffect(() => {
     fetchWalletBalance();
@@ -80,7 +86,6 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
   const fetchTransactions = async () => {
     try {
       const response = await walletService.getTransactions(userId, filterType, currentPage, transactionsPerPage);
-
       setTotalTransactions(response.total);
       setTransactions(response.transactions || []);
     } catch (error) {
@@ -91,7 +96,6 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
   useEffect(() => {
     if (showHistory) fetchTransactions();
   }, [currentPage, filterType, showHistory]);
-
 
   // Chart Data Preparation for Recharts
   const chartData = transactions
@@ -131,15 +135,107 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ userId, userNa
         className="flex items-center justify-between"
       >
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-mipana-darkBlue rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/20">
-            <Wallet size={24} className="text-white" />
-          </div>
+          <button
+            onClick={() => isPayingTrip ? setIsPayingTrip(false) : navigate('/')}
+            className="w-10 h-10 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-gray-700 active:scale-95 transition-all"
+          >
+            <ChevronLeft size={20} className="text-mipana-darkBlue dark:text-white" />
+          </button>
           <div>
-            <h1 className="text-2xl font-black text-mipana-darkBlue dark:text-white tracking-tight">Mi Billetera</h1>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{userName}</p>
+            <h1 className="text-xl font-black text-mipana-darkBlue dark:text-white tracking-tight">
+              {isPayingTrip ? 'Pagar Viaje' : 'Mi Billetera'}
+            </h1>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userName}</p>
           </div>
         </div>
       </motion.div>
+
+      {/* TRIP PAYMENT MODAL/VIEW INSIDE DASHBOARD */}
+      <AnimatePresence>
+        {isPayingTrip && paymentContext && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-gradient-to-br from-mipana-darkBlue to-blue-900 rounded-[2rem] p-6 text-white shadow-2xl space-y-6 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-mipana-orange/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+
+            <div className="flex justify-between items-start relative z-10">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest">Resumen del Viaje</p>
+                <h2 className="text-xl font-black tracking-tight">{paymentContext.serviceName}</h2>
+                <p className="text-xs text-blue-200">{paymentContext.destination}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-black">${paymentContext.amount.toFixed(2)}</p>
+                <p className="text-[10px] text-blue-300 font-bold uppercase">Monto Total</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 relative z-10">
+              <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest">Método de Pago</p>
+
+              <button
+                onClick={() => setPaymentMode('FULL_WALLET')}
+                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${paymentMode === 'FULL_WALLET' ? 'border-mipana-orange bg-white/10' : 'border-white/5 bg-black/20'
+                  }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Wallet size={20} className={paymentMode === 'FULL_WALLET' ? 'text-mipana-orange' : 'text-blue-300'} />
+                  <div className="text-left">
+                    <p className="text-sm font-bold">Saldo Full Billetera</p>
+                    <p className="text-[10px] text-blue-200">Disponible: ${(wallet?.balance_usd || 0).toFixed(2)}</p>
+                  </div>
+                </div>
+                {paymentMode === 'FULL_WALLET' && <Check size={18} className="text-mipana-orange" />}
+              </button>
+
+              <button
+                onClick={() => setPaymentMode('MIXED')}
+                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${paymentMode === 'MIXED' ? 'border-mipana-orange bg-white/10' : 'border-white/5 bg-black/20'
+                  }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Banknote size={20} className={paymentMode === 'MIXED' ? 'text-mipana-orange' : 'text-blue-300'} />
+                  <div className="text-left">
+                    <p className="text-sm font-bold">Pago Mixto</p>
+                    <p className="text-[10px] text-blue-200">Saldo + Efectivo ($ USD)</p>
+                  </div>
+                </div>
+                {paymentMode === 'MIXED' && <Check size={18} className="text-mipana-orange" />}
+              </button>
+            </div>
+
+            {(wallet?.balance_usd || 0) < paymentContext.amount && paymentMode === 'FULL_WALLET' && (
+              <div className="bg-orange-500/20 p-4 rounded-2xl border border-orange-500/30 flex items-start gap-3">
+                <AlertCircle size={18} className="text-mipana-orange shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-white">Saldo Insuficiente</p>
+                  <p className="text-[11px] text-orange-200">Te faltan ${(paymentContext.amount - (wallet?.balance_usd || 0)).toFixed(2)} USD. Recarga ahora para continuar.</p>
+                  <button
+                    onClick={onRecharge}
+                    className="mt-2 text-xs font-black bg-mipana-orange text-white px-3 py-1.5 rounded-lg shadow-lg active:scale-95 transition-all"
+                  >
+                    Recargar Saldo
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button
+              disabled={(wallet?.balance_usd || 0) < paymentContext.amount && paymentMode === 'FULL_WALLET'}
+              onClick={() => {
+                toast.success('¡Viaje confirmado! Buscando conductor...');
+                navigate(`/traslados/activo/${crypto.randomUUID()}`);
+              }}
+              className="w-full py-4 bg-white text-mipana-darkBlue rounded-2xl font-black text-lg shadow-xl shadow-black/20 active:scale-[0.98] transition-all disabled:opacity-50"
+            >
+              {paymentMode === 'MIXED' ? 'Pagar y Continuar' : 'Confirmar con Saldo'}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Balance Card (Glassmorphism) */}
       <div className="relative group">

@@ -2,6 +2,7 @@ import React, { useState, Suspense, lazy } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { WalletDashboard } from '../components/WalletDashboard';
 import { DriverWalletDashboard } from '../components/conductor/DriverWalletDashboard';
+import { BilleteraRestringida } from '../components/BilleteraRestringida';
 // Lazy load heavy interaction component
 const WalletRecharge = lazy(() => import('../components/WalletRecharge'));
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +12,15 @@ const WalletPage: React.FC = () => {
    const { user, loading } = useAuth();
    const [showRecharge, setShowRecharge] = useState(false);
    const [refreshKey, setRefreshKey] = useState(0);
+
+   // DOMAIN SECURITY CHECK
+   const isAuthorizedDomain = window.location.hostname.includes('v1.mipana.app') ||
+      window.location.hostname.includes('localhost') ||
+      window.location.hostname.includes('127.0.0.1');
+
+   if (!isAuthorizedDomain) {
+      return <BilleteraRestringida />;
+   }
 
    if (loading) {
       return (
