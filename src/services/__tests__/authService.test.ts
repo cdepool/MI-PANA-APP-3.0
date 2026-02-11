@@ -81,6 +81,30 @@ describe('AuthService Tests', () => {
             expect(result.email).toBe('new@mipana.app');
             expect(supabase.auth.signUp).toHaveBeenCalled();
         });
+
+        it('should use VITE_APP_URL for redirect if present', async () => {
+            vi.stubEnv('VITE_APP_URL', 'https://custom-domain.com');
+            const data = {
+                email: 'test@example.com',
+                password: 'password',
+                name: 'Test',
+                phone: '123',
+                role: 'passenger' as const
+            };
+            (supabase.auth.signUp as any).mockResolvedValueOnce({
+                data: { user: { id: 'new-user-id' } },
+                error: null,
+            });
+
+            await authService.registerUser(data);
+
+            expect(supabase.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({
+                options: expect.objectContaining({
+                    emailRedirectTo: 'https://custom-domain.com'
+                })
+            }));
+            vi.unstubAllEnvs();
+        });
     });
 
     describe('logout', () => {

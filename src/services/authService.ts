@@ -11,7 +11,7 @@ export const authService = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/onboarding', // Callback handling
+        redirectTo: (import.meta.env.VITE_APP_URL || window.location.origin) + '/onboarding', // Callback handling
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -166,7 +166,7 @@ export const authService = {
           phone
         },
         // Auto-confirm for faster UX (configure in Supabase settings)
-        emailRedirectTo: window.location.origin
+        emailRedirectTo: import.meta.env.VITE_APP_URL || window.location.origin
       }
     });
 
@@ -219,7 +219,7 @@ export const authService = {
    */
   requestPasswordReset: async (email: string) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/reset-password`,
     });
 
     if (error) {

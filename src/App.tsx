@@ -10,6 +10,7 @@ const RideActive = lazy(() => import('./pages/traslados/RideActive'));
 const RideComplete = lazy(() => import('./pages/traslados/RideComplete'));
 const Wallet = lazy(() => import('./pages/Wallet'));
 const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import { UserRole } from './types';
 
@@ -27,7 +28,8 @@ function App() {
         <Routes>
           {/* Public Route */}
           <Route path="/welcome" element={<Onboarding />} />
-          <Route path="/login" element={<Login onNavigateRegister={() => { }} />} />
+          <Route path="/login" element={<Login onNavigateRegister={() => window.location.href = '/register'} />} />
+          <Route path="/register" element={<Register onNavigateLogin={() => window.location.href = '/login'} onNavigateHome={() => window.location.href = '/'} />} />
 
           {/* Protected Routes */}
           <Route path="/" element={

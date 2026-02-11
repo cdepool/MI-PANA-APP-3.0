@@ -82,7 +82,7 @@ const AdminLogin: React.FC = () => {
                         if (window.location.hostname === 'localhost') {
                             navigate('/login');
                         } else {
-                            window.location.href = 'https://v1.mipana.app';
+                            window.location.href = import.meta.env.VITE_APP_URL || 'https://v1.mipana.app';
                         }
                     }}
                     className="flex items-center gap-2 text-white/50 hover:text-white mb-8 transition-colors text-sm font-medium"
