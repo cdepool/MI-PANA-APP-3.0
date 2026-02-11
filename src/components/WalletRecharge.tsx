@@ -177,6 +177,12 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
     setError(null);
 
     try {
+      console.log('Iniciando recarga con walletService:', walletService);
+
+      if (!walletService) {
+        throw new Error('El servicio de billetera no está inicializado. Recarga la página.');
+      }
+
       // Usar walletService que maneja la autenticación y headers correctamente
       const result = await walletService.rechargeWallet(
         userId,
