@@ -2,6 +2,15 @@ import { User, UserRole, RegistrationData, TransactionType } from '../types';
 import { supabase } from './supabaseClient';
 import logger from '../utils/logger';
 
+// Helper robusto para determinar la URL base (prioriza env, luego detecta entorno)
+const getAppUrl = () => {
+  if (import.meta.env.VITE_APP_URL) return import.meta.env.VITE_APP_URL;
+
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  return isLocal ? window.location.origin : 'https://v1.mipana.app';
+};
+
+
 
 
 export const authService = {
@@ -11,7 +20,7 @@ export const authService = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: (import.meta.env.VITE_APP_URL || window.location.origin) + '/onboarding', // Callback handling
+        redirectTo: `${getAppUrl()}/onboarding`, // Callback handling
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -166,7 +175,7 @@ export const authService = {
           phone
         },
         // Auto-confirm for faster UX (configure in Supabase settings)
-        emailRedirectTo: import.meta.env.VITE_APP_URL || window.location.origin
+        emailRedirectTo: getAppUrl()
       }
     });
 
@@ -219,7 +228,7 @@ export const authService = {
    */
   requestPasswordReset: async (email: string) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/reset-password`,
+      redirectTo: `${getAppUrl()}/reset-password`,
     });
 
     if (error) {
