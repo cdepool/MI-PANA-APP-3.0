@@ -125,7 +125,7 @@ export const walletService = {
      * Recarga de Billetera
      * Invoca Edge Function 'wallet-recharge'
      */
-    rechargeWallet: async (userId: string, userPhone: string, amount: number, bancoOrig: string, lastFourDigits: string): Promise<any> => {
+    rechargeWallet: async (userId: string, userPhone: string, amount: number, bancoOrig: string, lastFourDigits: string, originPhone: string): Promise<any> => {
         try {
             // Obtenemos la sesión actual para el token de autorización
             const { data: { session } } = await supabase.auth.getSession();
@@ -145,7 +145,8 @@ export const walletService = {
                         userPhone,
                         amount,
                         bancoOrig,
-                        lastFourDigits
+                        lastFourDigits,
+                        originPhone
                     })
                 }
             );

@@ -11,6 +11,7 @@ interface RechargeRequest {
   amount: number;
   bancoOrig: string;
   lastFourDigits: string;
+  originPhone?: string; // Optional: Phone number that actually made the payment
 }
 
 serve(async (req) => {
@@ -109,10 +110,13 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    let cleanPhone = body.userPhone.replace(/\D/g, '');
+    const phoneToValidate = body.originPhone || body.userPhone;
+    let cleanPhone = phoneToValidate.replace(/\D/g, '');
     if (cleanPhone.startsWith('0')) {
       cleanPhone = '58' + cleanPhone.substring(1);
     }
+
+    console.log(`[Wallet Recharge] Using phone for validation: ${cleanPhone} (User profile: ${body.userPhone})`);
 
     console.log('[Wallet Recharge] Step 1: Get or create wallet');
     let { data: wallet, error: walletError } = await supabase
