@@ -137,11 +137,26 @@ export const walletService = {
                 }
             });
 
-            if (error) throw error;
+            if (error) {
+                // Intentar extraer el mensaje de error del cuerpo si es una instancia de Error con contexto
+                const details = (error as any).details;
+                if (details && typeof details === 'object' && details.error) {
+                    throw new Error(details.error);
+                }
+
+                // Si es un FunctionsHttpError, el mensaje suele ser genérico,
+                // pero a veces el error contiene información adicional.
+                throw error;
+            }
+
             return data;
-        } catch (error) {
+        } catch (error: any) {
             logger.error('Wallet recharge error:', error);
-            throw error;
+            // Si el error ya tiene un mensaje descriptivo (no el genérico), lo re-lanzamos
+            if (error.message && !error.message.includes('non-2xx')) {
+                throw error;
+            }
+            throw new Error('El servidor de recarga reportó un problema. Verifica los datos e intenta nuevamente.');
         }
     }
 };
