@@ -227,8 +227,6 @@ serve(async (req) => {
       .insert({
         wallet_id: wallet!.id,
         user_id: body.userId,
-        amount: body.amount, // Required by DB schema
-        currency: 'VES',
         amount_ves: body.amount,
         bank_orig: body.bancoOrig,
         last_four_digits: body.lastFourDigits,
@@ -282,6 +280,23 @@ serve(async (req) => {
 
         if (!payment) {
           console.log('[Wallet Recharge] Payment not found via API');
+
+          // Debug info: Check if ANY payments were returned for today
+          const bancamigaClientTemp = createBancamigaClient();
+          const todayStr = new Date().toISOString().split('T')[0];
+          const allPaymentsToday = await bancamigaClientTemp.searchPayments({
+            phoneOrig: cleanPhone,
+            bancoOrig: body.bancoOrig,
+            fechaMovimiento: todayStr
+          });
+
+          let debugMsg = '';
+          if (allPaymentsToday.length > 0) {
+            debugMsg = `\n\nEl banco encontró ${allPaymentsToday.length} pagos hoy, pero ninguno coincide con la referencia '${body.lastFourDigits}' y el monto Bs. ${body.amount.toFixed(2)}.`;
+          } else {
+            debugMsg = `\n\nEl banco no devolvió ningún pago para el teléfono ${cleanPhone} en la fecha de hoy.`;
+          }
+
           await supabase
             .from('recharge_requests')
             .update({ status: 'failed' })
@@ -290,7 +305,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({
               success: false,
-              error: 'No se encontró el pago en Bancamiga. Verifica que:\n1. Los últimos 4 dígitos sean correctos\n2. El pago se haya realizado en las últimas 72 horas\n3. El monto sea exactamente Bs. ' + body.amount.toFixed(2),
+              error: 'No se encontró el pago en Bancamiga. Verifica que:\n1. Los últimos 4 dígitos sean correctos\n2. El pago se haya realizado en las últimas 72 horas\n3. El monto sea exactamente Bs. ' + body.amount.toFixed(2) + debugMsg,
             }),
             { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );

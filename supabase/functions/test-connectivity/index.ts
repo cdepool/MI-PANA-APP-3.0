@@ -20,9 +20,11 @@ serve(async (req) => {
         console.log(`Using Proxy URL: ${PROXY_URL}`);
 
         const endpoints = [
-            `${PROXY_URL}/`,
+            'https://api.ipify.org?format=json',
+            'http://35.202.142.88:3000/api/payments/health',
+            'http://35.202.142.88/healthcheck',
             `${PROXY_URL}/healthcheck`,
-            `${PROXY_URL}/public/auth/security/users/token`
+            'https://adminp2p.sitca-ve.com/healthcheck'
         ];
 
         const results = [];

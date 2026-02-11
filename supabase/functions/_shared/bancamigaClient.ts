@@ -203,7 +203,9 @@ export class BancamigaClient {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.config.accessToken}`,
-        'User-Agent': 'Mozilla/5.0 (Supabase Edge Function)',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Accept-Language': 'es-VE,es;q=0.9,en-US;q=0.8,en;q=0.7',
       },
       body: JSON.stringify({
         Phone: cleanPhone,
@@ -219,10 +221,15 @@ export class BancamigaClient {
     }
 
     const data: BancamigaResponse = await response.json();
+    console.log(`[Bancamiga] API Response: code=${data.code}, items=${data.lista?.length || 0}`);
 
     if (data.code !== 200) {
       console.warn(`[Bancamiga] searchPayments returned code ${data.code}: ${data.mensaje}`);
       return [];
+    }
+
+    if (data.lista && data.lista.length > 0) {
+      console.log(`[Bancamiga] Found ${data.lista.length} payments:`, data.lista.map(p => ({ ref: p.NroReferencia, amount: p.Amount, status: p.Status })));
     }
 
     return data.lista || [];
@@ -242,7 +249,8 @@ export class BancamigaClient {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.config.accessToken}`,
-        'User-Agent': 'Mozilla/5.0 (Supabase Edge Function)',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
         Date: params.date,
@@ -291,17 +299,25 @@ export class BancamigaClient {
         });
 
         // Filter by reference digits
+        console.log(`[Bancamiga] Filtering ${payments.length} payments for digits: ${params.referenceDigits} and amount: ${params.expectedAmount}`);
         const matchingPayments = payments.filter((payment) => {
-          const refMatch = payment.NroReferencia.endsWith(params.referenceDigits) ||
-            payment.NroReferenciaCorto.endsWith(params.referenceDigits);
+          const refFull = String(payment.NroReferencia);
+          const refShort = String(payment.NroReferenciaCorto);
+
+          const refMatch = refFull.endsWith(params.referenceDigits) ||
+            refShort.endsWith(params.referenceDigits);
+
+          console.log(`[Bancamiga] Checking payment: ref=${refFull}, short=${refShort}, match=${refMatch}`);
 
           if (!refMatch) return false;
 
           // If expected amount is provided, validate it
           if (params.expectedAmount) {
-            const paymentAmount = parseFloat(payment.Amount);
+            const paymentAmount = parseFloat(String(payment.Amount).replace(',', '.'));
             const tolerance = 0.01; // Allow 1 cent difference
-            return Math.abs(paymentAmount - params.expectedAmount) <= tolerance;
+            const amountMatch = Math.abs(paymentAmount - params.expectedAmount) <= tolerance;
+            console.log(`[Bancamiga] Amount check: payment=${paymentAmount}, expected=${params.expectedAmount}, match=${amountMatch}`);
+            return amountMatch;
           }
 
           return true;
