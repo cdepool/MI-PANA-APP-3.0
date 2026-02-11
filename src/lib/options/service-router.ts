@@ -12,17 +12,18 @@ export const SERVICE_ROUTES = {
 export type ServiceKey = keyof typeof SERVICE_ROUTES;
 
 export function navigateToService(
-    navigate: (path: string) => void,
+    navigate: (path: string, options?: any) => void,
     service: ServiceKey,
     options?: { state?: any }
 ) {
     const route = SERVICE_ROUTES[service];
 
-    // Use React 18 startTransition to keep UI responsive during navigation
-    startTransition(() => {
-        navigate(route); // In React Router v6, navigate accepts state in options, but here we just pass path for now.
-        // If passing state: navigate(route, { state: options?.state })
-    });
+    // Navegación directa para máxima respuesta y robustez
+    if (options?.state) {
+        navigate(route, { state: options.state });
+    } else {
+        navigate(route);
+    }
 }
 
 export function preloadService(service: ServiceKey) {

@@ -39,19 +39,19 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Viajes Dashboard & Flow (Passenger Only) */}
+          {/* Viajes Dashboard & Flow (Passenger & Admin) */}
           <Route path="/viajes" element={
-            <ProtectedRoute allowedRoles={[UserRole.PASSENGER]}>
+            <ProtectedRoute allowedRoles={[UserRole.PASSENGER, UserRole.ADMIN]}>
               <Viajes />
             </ProtectedRoute>
           } />
           <Route path="/traslados" element={
-            <ProtectedRoute allowedRoles={[UserRole.PASSENGER]}>
+            <ProtectedRoute allowedRoles={[UserRole.PASSENGER, UserRole.ADMIN]}>
               <RequestRide />
             </ProtectedRoute>
           } />
           <Route path="/traslados/estimacion" element={
-            <ProtectedRoute allowedRoles={[UserRole.PASSENGER]}>
+            <ProtectedRoute allowedRoles={[UserRole.PASSENGER, UserRole.ADMIN]}>
               <RideEstimation />
             </ProtectedRoute>
           } />
@@ -68,7 +68,7 @@ function App() {
 
           {/* Placeholders */}
           <Route path="/billetera" element={
-            <ProtectedRoute allowedRoles={[UserRole.PASSENGER, UserRole.DRIVER]}>
+            <ProtectedRoute allowedRoles={[UserRole.PASSENGER, UserRole.DRIVER, UserRole.ADMIN]}>
               <Wallet />
             </ProtectedRoute>
           } />

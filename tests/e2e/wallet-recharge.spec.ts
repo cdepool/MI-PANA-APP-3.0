@@ -41,8 +41,16 @@ test('wallet recharge happy path', async ({ page }) => {
     await page.getByPlaceholder('0.00').fill('100');
     await page.click('button:has-text("Siguiente")');
 
-    // Submit payment (mocked)
+    // Submit payment (mocked) - first select bank and enter reference
     await page.click('button:has-text("Continuar")');
+
+    // Select bank from dropdown
+    await page.selectOption('select', { label: 'Banco de Venezuela' });
+
+    // Fill in reference digits
+    await page.getByPlaceholder('Últimos 4 dígitos de Referencia').fill('2672');
+
+    // Now the button should be enabled
     await page.click('button:has-text("Verificar Pago")');
 
     // Verify success toast/message

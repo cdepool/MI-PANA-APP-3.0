@@ -1,0 +1,109 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - img [ref=e8]
+      - generic [ref=e11]:
+        - heading "Mi Billetera" [level=1] [ref=e12]
+        - paragraph [ref=e13]: test-passenger
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - paragraph [ref=e22]: Saldo Disponible
+          - generic [ref=e23]:
+            - heading "$10.00" [level=2] [ref=e24]
+            - generic [ref=e25]: USD
+          - paragraph [ref=e26]: ≈ Bs.S 365,00
+        - button "Recargar Saldo" [ref=e28] [cursor=pointer]:
+          - img [ref=e29]
+          - text: Recargar Saldo
+      - generic [ref=e30]:
+        - application [ref=e33]
+        - generic [ref=e34]:
+          - img [ref=e35]
+          - generic [ref=e37]: Tendencia
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - img [ref=e41]
+        - generic [ref=e44]:
+          - paragraph [ref=e45]: Tasa Oficial BCV
+          - paragraph [ref=e46]: Bs. 36.50 / $
+      - generic [ref=e47]:
+        - img [ref=e49]
+        - generic [ref=e52]:
+          - paragraph [ref=e53]: Saldo en Bolívares
+          - paragraph [ref=e54]: Bs.S 100,00
+    - generic [ref=e55]:
+      - generic [ref=e56]:
+        - heading "Actividad Reciente" [level=3] [ref=e57]:
+          - img [ref=e58]
+          - text: Actividad Reciente
+        - button "Ver Todas" [ref=e62] [cursor=pointer]:
+          - text: Ver Todas
+          - img [ref=e63]
+      - generic [ref=e66]:
+        - img [ref=e67]
+        - paragraph [ref=e69]: Sin movimientos
+  - generic [ref=e72]:
+    - generic [ref=e73]:
+      - button [ref=e75] [cursor=pointer]:
+        - img [ref=e76]
+      - generic [ref=e79]:
+        - img [ref=e81]
+        - generic [ref=e84]:
+          - heading "Recargar Saldo" [level=2] [ref=e85]
+          - paragraph [ref=e86]: Pago Móvil Bancamiga
+    - generic [ref=e91]:
+      - generic [ref=e92]:
+        - paragraph [ref=e93]: Monto a Pagar
+        - heading "Bs.S 100,00" [level=3] [ref=e94]
+      - generic [ref=e95]:
+        - generic [ref=e97]:
+          - paragraph [ref=e98]: Banco
+          - paragraph [ref=e99]:
+            - text: Bancamiga
+            - generic [ref=e100]: (0172)
+        - generic [ref=e101]:
+          - generic [ref=e102]:
+            - paragraph [ref=e103]: Teléfono
+            - paragraph [ref=e104]: 0414-5274111
+          - button [ref=e105] [cursor=pointer]:
+            - img [ref=e106]
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - paragraph [ref=e111]: RIF
+            - paragraph [ref=e112]: J-40724274-1
+          - button [ref=e113] [cursor=pointer]:
+            - img [ref=e114]
+        - generic [ref=e118]:
+          - paragraph [ref=e119]: Titular
+          - paragraph [ref=e120]: NEXT TV, C.A.
+      - generic [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - combobox [ref=e124]:
+              - option "Banco desde el que pagaste" [selected]
+              - option "Banco de Venezuela"
+              - option "Mercantil"
+              - option "BBVA Provincial"
+              - option "Bancaribe"
+              - option "Banesco"
+              - option "BFC Banco Fondo Común"
+              - option "Banco del Tesoro"
+              - option "Bancamiga"
+              - option "Banplus"
+              - option "Bicentenario"
+              - option "BNC"
+            - generic:
+              - img
+          - generic [ref=e125]:
+            - textbox "Últimos 4 dígitos de Referencia" [ref=e126]
+            - generic:
+              - img
+        - generic [ref=e127]:
+          - button "Atrás" [ref=e128] [cursor=pointer]
+          - button "Verificar Pago" [disabled] [ref=e129]
+    - paragraph [ref=e131]: Tecnología Bancamiga Verificada by SITCA
+```
