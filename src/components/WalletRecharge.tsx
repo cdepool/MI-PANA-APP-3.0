@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Wallet, CheckCircle, AlertCircle, Loader2, Copy, Hash, Building2, DollarSign, ArrowRight, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { walletService } from '../services/walletService';
 
 interface WalletRechargeProps {
   userId: string;
