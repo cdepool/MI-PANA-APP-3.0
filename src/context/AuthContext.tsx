@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthContextType, User, UserRole, SavedPlace, TransactionType } from '../types';
 import { authService } from '../services/authService';
 import { walletService } from '../services/walletService';
@@ -23,56 +23,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [viewAsRole, setViewAsRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Guard against double-processing of initial session
-  const initialSessionHandled = useRef(false);
-
+  // Listen for Supabase Auth State Changes
   useEffect(() => {
     logger.log("Initializing AuthProvider...");
 
-    // Safety fallback: Unblock the UI after timeout if auth doesn't resolve
+    const checkInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        logger.log("Initial session found", { userId: session.user.id });
+        await fetchAndSetUser(session.user);
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    checkInitialSession();
+
+    // Safety fallback: Unblock the UI after 5 seconds if auth doesn't resolve
     const safetyTimeout = setTimeout(() => {
-      setIsLoading(prev => {
-        if (prev) {
-          logger.warn("Auth initialization timed out. Unblocking UI.");
-          return false;
-        }
-        return prev;
-      });
+      if (isLoading) {
+        logger.warn("Auth initialization timed out. Unblocking UI.");
+        setIsLoading(false);
+      }
     }, AUTH_CONFIG.TIMEOUT_MS);
 
-    // Use ONLY onAuthStateChange — it fires INITIAL_SESSION automatically
-    // This eliminates the race condition with separate getSession() calls
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.log(`Auth event: ${event}`, { userId: session?.user?.id });
 
-      if (event === 'INITIAL_SESSION') {
-        // This is the first event — handle it and mark as done
-        if (session?.user) {
-          await fetchAndSetUser(session.user);
-        } else {
-          // No session at all — user is not logged in
-          setIsLoading(false);
-        }
-        initialSessionHandled.current = true;
-        clearTimeout(safetyTimeout);
-        return;
-      }
-
-      // For subsequent events (SIGNED_IN, TOKEN_REFRESHED, etc.)
       if (session?.user) {
         await fetchAndSetUser(session.user);
       } else if (event === 'SIGNED_OUT') {
-        logger.log("User signed out");
         setUser(null);
         setIsLoading(false);
       }
-      // IMPORTANT: Ignore events with null session that are NOT SIGNED_OUT
-      // (e.g., TOKEN_REFRESHED failure should not immediately log out the user)
+
+      if (event === 'PASSWORD_RECOVERY') {
+        logger.log("Password recovery event detected");
+      }
     });
 
     async function fetchAndSetUser(supabaseUser: any) {
       try {
         // ⚡ OPTIMIZATION: Try to use metadata first to avoid a database round-trip
+        // This is much faster than fetching from the profiles table
         const metadata = supabaseUser.user_metadata || {};
 
         // Check if we already have the basic data we need
@@ -86,23 +79,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             adminRole: metadata.admin_role || (metadata.role === 'ADMIN' ? 'ADMIN' : undefined),
           } as User);
 
-          // Show UI immediately
+          // Background sync to ensure we have the latest profile data (non-blocking)
+          // This keeps the UI responsive while we verify details
           setIsLoading(false);
+          clearTimeout(safetyTimeout);
 
-          // Non-blocking background fetch to sync latest profile data
+          // Non-blocking background fetch
           supabase.from('profiles').select('*').eq('id', supabaseUser.id).single()
-            .then(({ data: profile, error }) => {
-              if (profile && !error) {
-                setUser(prev => prev ? ({
+            .then(({ data: profile }) => {
+              if (profile) {
+                setUser(prev => ({
                   ...prev,
                   ...profile,
                   adminRole: profile.admin_role
-                } as User) : prev);
+                } as User));
               }
-              // If error, keep the metadata-based user — don't break the session
-            })
-            .catch(err => {
-              logger.warn("Background profile sync failed (non-critical)", err);
             });
           return;
         }
@@ -114,35 +105,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('id', supabaseUser.id)
           .single();
 
-        if (profile && !error) {
+        if (profile) {
           setUser({
             ...profile,
             adminRole: profile.admin_role
           } as User);
         } else {
-          // Last resort: create minimal user from Supabase auth data
           setUser({
             id: supabaseUser.id,
             email: supabaseUser.email || '',
             role: UserRole.PASSENGER,
-            name: metadata.name || supabaseUser.email?.split('@')[0] || 'Usuario',
+            name: metadata.name || supabaseUser.email?.split('@')[0],
           } as User);
         }
       } catch (e) {
         logger.error("Critical error fetching user profile", e);
-        // Even on error, set a minimal user so the session isn't lost
-        try {
-          setUser({
-            id: supabaseUser.id,
-            email: supabaseUser.email || '',
-            role: UserRole.PASSENGER,
-            name: supabaseUser.email?.split('@')[0] || 'Usuario',
-          } as User);
-        } catch (_) {
-          // Absolute last resort
-        }
       } finally {
         setIsLoading(false);
+        clearTimeout(safetyTimeout);
       }
     }
 
@@ -223,6 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     try {
       await authService.loginWithGoogle();
+      // The user will be redirected to Google login
     } catch (error) {
       logger.error("Error connecting google", error);
     }
@@ -245,6 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
       if (profile) {
+        // Merge newest profile with existing local user state (to keep temporary UI states if any)
         const updatedProfile = {
           ...profile,
           adminRole: profile.admin_role
@@ -257,7 +239,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw e;
     }
   };
-
   const switchView = (role: UserRole | null) => {
     setViewAsRole(role);
     logger.log(`Switching view to: ${role || 'DEFAULT'}`);
@@ -272,8 +253,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (isLoading) {
       const startTime = Date.now();
+      // Update progress every 100ms
       const interval = setInterval(() => {
         const elapsed = Date.now() - startTime;
+        // Calculate percentage based on Configured Timeout
+        // Cap at 98% so it doesn't look "finished" while still waiting
         const progress = Math.min((elapsed / AUTH_CONFIG.TIMEOUT_MS) * 100, 98);
         setTimeoutProgress(progress);
       }, 100);

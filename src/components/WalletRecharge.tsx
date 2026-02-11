@@ -1,456 +1,556 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { walletService } from '../services/walletService';
-import { Loader2, Smartphone, ArrowRight, ChevronDown, Copy, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Wallet, CheckCircle, AlertCircle, Loader2, Copy, Hash, Building2, DollarSign, ArrowRight, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { walletService } from '../services/walletService';
 
 interface WalletRechargeProps {
-  onBack: () => void;
-  onSuccess: () => void;
+  userId: string;
+  userPhone: string;
+  prefilledAmount?: number;
+  onSuccess: (newBalance: { ves: number; usd: number }) => void;
+  onCancel?: () => void;
+  walletStatus?: string; // Add wallet status prop
 }
 
-// Bancos soportados
-const BANKS = [
-  "Bancamiga",
-  "Banco de Venezuela",
-  "Banesco",
-  "BBVA Provincial",
-  "Mercantil",
-  "BNC",
-  "Bicentenaria",
-  "Tesoro",
-  "Banplus",
-  "Plaza",
-  "Caroni",
-  "Dyceven",
-  "100% Banco",
-  "Del Sur",
-  "Exterior",
-  "Venezolano de Crédito",
-  "Bancaribe",
-  "Mi Banco",
-  "Bangente",
-  "Bancrecer"
-].sort();
+// Lista de bancos principales de Venezuela
+const venezuelanBanks = [
+  { code: '0102', name: 'Banco de Venezuela' },
+  { code: '0105', name: 'Mercantil' },
+  { code: '0108', name: 'BBVA Provincial' },
+  { code: '0114', name: 'Bancaribe' },
+  { code: '0134', name: 'Banesco' },
+  { code: '0151', name: 'BFC Banco Fondo Común' },
+  { code: '0163', name: 'Banco del Tesoro' },
+  { code: '0172', name: 'Bancamiga' },
+  { code: '0174', name: 'Banplus' },
+  { code: '0175', name: 'Bicentenario' },
+  { code: '0191', name: 'BNC' },
+];
 
-export default function WalletRecharge({ onBack, onSuccess }: WalletRechargeProps) {
-  const { user } = useAuth();
-
-  // Estados del Wizard
-  const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Método, 2: Monto, 3: Validación
-
-  // Datos Financieros (Fetch local para evitar problemas con User Context incompleto)
-  const [balanceUSD, setBalanceUSD] = useState<number>(0);
-  const [exchangeRate, setExchangeRate] = useState<number>(64.00); // Valor inicial seguro
-  const [isLoadingBalance, setIsLoadingBalance] = useState(true);
-
-  // Datos del Formulario
-  const [amountUSD, setAmountUSD] = useState<string>('');
-  const [amountBS, setAmountBS] = useState<string>('');
-  const [reference, setReference] = useState('');
+export const WalletRecharge: React.FC<WalletRechargeProps> = ({
+  userId,
+  userPhone,
+  prefilledAmount,
+  onSuccess,
+  onCancel,
+  walletStatus = 'active'
+}) => {
+  const [step, setStep] = useState<'amount' | 'confirm' | 'payment' | 'verification' | 'success' | 'error'>('amount');
+  const [amount, setAmount] = useState(prefilledAmount ? prefilledAmount.toFixed(2) : '');
   const [originBank, setOriginBank] = useState('');
-  const [originPhone, setOriginPhone] = useState(''); // Se inicializa luego con useEffect
-  const [showOriginPhoneInput, setShowOriginPhoneInput] = useState(false);
-
-  // Estados de UI
-  const [isValidating, setIsValidating] = useState(false);
+  const [lastFourDigits, setLastFourDigits] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [amountError, setAmountError] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [newBalance, setNewBalance] = useState<{ ves: number; usd: number } | null>(null);
 
-  // Cargar saldo y tasa al montar
+  const [isDomainAllowed, setIsDomainAllowed] = useState(true);
+
+  // Datos de pago de MI PANA APP
+  const paymentData = {
+    bank: 'Bancamiga',
+    bankCode: '0172',
+    phone: '0414-5274111',
+    rif: 'J-40724274-1',
+    holder: 'NEXT TV, C.A.',
+  };
+
   useEffect(() => {
-    let mounted = true;
-    const loadData = async () => {
-      if (!user?.id) return;
-      try {
-        const data = await walletService.getBalance(user.id);
-        if (mounted && data) {
-          setBalanceUSD(data.wallet.balance_usd);
-          setExchangeRate(data.exchange_rate);
-        }
-      } catch (err) {
-        console.error('Error cargando saldo:', err);
-      } finally {
-        if (mounted) setIsLoadingBalance(false);
+    const hostname = window.location.hostname;
+    // Allow localhost for dev, but enforce v1.mipana.app for production
+    const isAllowed = hostname.includes('localhost') || hostname === 'v1.mipana.app';
+    setIsDomainAllowed(isAllowed);
+
+    if (!isAllowed) {
+      setError('Por seguridad bancaria, esta función solo está disponible en v1.mipana.app');
+      setStep('error');
+    }
+
+    // Check user phone
+    if (!userPhone) {
+      setError('No tienes un número de teléfono configurado en tu perfil. Es necesario para verificar pagos móviles.');
+      setStep('error');
+    }
+
+    // Check wallet status
+    if (walletStatus !== 'active') {
+      setError(`Tu billetera está ${walletStatus}. Contacta a soporte para activarla.`);
+      setStep('error');
+    }
+  }, [walletStatus]);
+
+  useEffect(() => {
+    if (prefilledAmount) {
+      setStep('confirm');
+    }
+  }, [prefilledAmount]);
+
+  // Real-time amount validation
+  useEffect(() => {
+    if (amount) {
+      const num = parseFloat(amount);
+      if (isNaN(num)) {
+        setAmountError('Formato inválido');
+      } else if (num < 1) {
+        setAmountError('Mínimo Bs. 1.00');
+      } else if (num > 100000) {
+        setAmountError('Máximo Bs. 100,000.00');
+      } else {
+        setAmountError(null);
       }
-    };
-
-    // Inicializar teléfono con el del usuario
-    if (user?.phone) {
-      setOriginPhone(user.phone);
+    } else {
+      setAmountError(null);
     }
+  }, [amount]);
 
-    loadData();
-    return () => { mounted = false; };
-  }, [user]);
-
-  // Sincronizar montos
-  const handleUSDChange = (val: string) => {
-    setAmountUSD(val);
-    if (!val) {
-      setAmountBS('');
-      return;
-    }
-    const num = parseFloat(val);
-    if (!isNaN(num)) {
-      setAmountBS((num * exchangeRate).toFixed(2));
-    }
-  };
-
-  const handleBSChange = (val: string) => {
-    setAmountBS(val);
-    if (!val) {
-      setAmountUSD('');
-      return;
-    }
-    const num = parseFloat(val);
-    if (!isNaN(num)) {
-      setAmountUSD((num / exchangeRate).toFixed(2));
-    }
-  };
-
-  const handleCopy = (text: string, label: string) => {
+  const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
-    toast.success(`${label} copiado`);
+    setCopiedField(field);
+    toast.success('Copiado al portapapeles');
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const validatePayment = async () => {
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/[^\d.,]/g, '');
+
+    // Replace comma with period
+    value = value.replace(',', '.');
+
+    // Limit to 2 decimals
+    const parts = value.split('.');
+    if (parts.length > 2) {
+      value = parts[0] + '.' + parts[1];
+    }
+    if (parts[1] && parts[1].length > 2) {
+      value = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+
+    setAmount(value);
+  };
+
+  const formatAmountDisplay = (amt: string): string => {
+    const num = parseFloat(amt);
+    if (isNaN(num)) return '0.00';
+    return num.toFixed(2);
+  };
+
+  const handleDigitsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const cleaned = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setLastFourDigits(cleaned);
+  };
+
+  const handleContinueToConfirm = () => {
+    const numAmount = parseFloat(amount);
+
+    if (!numAmount || numAmount <= 0) {
+      setError('Por favor ingresa un monto válido');
+      return;
+    }
+
+    if (numAmount < 1) {
+      setError('El monto mínimo de recarga es Bs. 1.00');
+      return;
+    }
+
+    if (numAmount > 100000) {
+      setError('El monto máximo de recarga es Bs. 100,000.00');
+      return;
+    }
+
+    setError(null);
+    setStep('confirm');
+  };
+
+  const handleProcessRecharge = async () => {
+    if (!originBank) {
+      setError('Selecciona el banco de origen');
+      return;
+    }
+
+    if (lastFourDigits.length !== 4) {
+      setError('Ingresa los 4 dígitos finales');
+      return;
+    }
+
+    setIsProcessing(true);
     setError(null);
 
-    // Validaciones Locales
-    if (!reference || reference.length !== 4) {
-      toast.error('La referencia debe ser los últimos 4 dígitos');
-      return;
-    }
-    if (!originBank) {
-      toast.error('Selecciona el banco de origen');
-      return;
-    }
-
-    // Validar teléfono telefonico
-    const phoneToSend = showOriginPhoneInput ? originPhone : (user?.phone || '');
-    if (!phoneToSend) {
-      if (!showOriginPhoneInput) {
-        setShowOriginPhoneInput(true);
-        toast.error('Por favor verifica el teléfono de origen');
-        return;
-      }
-      toast.error('El teléfono es requerido');
-      return;
-    }
-
-    setIsValidating(true);
-
     try {
-      if (!user?.id) throw new Error('Usuario no identificado');
+      console.log('Iniciando recarga con walletService:', walletService);
 
-      const amountNum = parseFloat(amountBS);
-      if (isNaN(amountNum) || amountNum < 1) {
-        throw new Error('El monto mínimo es 1 Bs');
+      if (!walletService) {
+        throw new Error('El servicio de billetera no está inicializado. Recarga la página.');
       }
 
+      // Usar walletService que maneja la autenticación y headers correctamente
       const result = await walletService.rechargeWallet(
-        user.id,
-        user.phone || '',
-        amountNum,
+        userId,
+        userPhone,
+        parseFloat(amount),
         originBank,
-        reference,
-        phoneToSend
+        lastFourDigits
       );
 
       if (result.success) {
-        toast.success('¡Recarga exitosa!');
-        onSuccess();
+        const mappedWallet = {
+          ves: result.wallet.balance_ves,
+          usd: result.wallet.balance_usd
+        };
+        setNewBalance(mappedWallet);
+        setStep('success');
+        setTimeout(() => {
+          onSuccess(mappedWallet);
+        }, 2000);
       } else {
-        setError(result.error || 'No se pudo verificar el pago. Verifica los datos.');
+        const errorMsg = result.error || 'No se pudo verificar el pago.';
+        const suggestions = [
+          'Verifica que los últimos 4 dígitos sean correctos',
+          'Confirma que seleccionaste el banco correcto',
+          'Asegúrate de que el pago se realizó en las últimas 24 horas',
+          `Verifica que el monto sea exactamente Bs. ${amount}`
+        ];
+        setError(`${errorMsg}\n\nSugerencias:\n${suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}`);
+        setStep('error');
       }
-
     } catch (err: any) {
-      console.error('Error en recarga:', err);
-      setError(err.message || 'Error de conexión');
+      console.error('Error processing recharge:', err);
+      // Extraer mensaje de error más amigable si es posible
+      const message = err.message || 'Error de conexión. Verifica tu internet e intenta nuevamente.';
+      setError(message);
+      setStep('error');
     } finally {
-      setIsValidating(false);
+      setIsProcessing(false);
     }
   };
 
-  // HEADER COMPONENT
-  const Header = ({ title, showBack = true }: { title: string, showBack?: boolean }) => (
-    <div className="flex items-center gap-4 mb-6">
-      {showBack && (
-        <button
-          onClick={() => step === 1 ? onBack() : setStep(prev => (prev - 1) as any)}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
-        >
-          {/* Usamos ArrowLeft para atrás, es más estándar que Chevron rotado */}
-          <ArrowLeft className="w-6 h-6 text-gray-700" />
-        </button>
-      )}
-      <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-    </div>
-  );
+  const handleRetry = () => {
+    setStep('payment');
+    setError(null);
+  };
 
-  // --- RENDERS POR PASO ---
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('es-VE', {
+      style: 'currency',
+      currency: 'VES',
+    }).format(value);
+  };
 
-  // 1. SELECCIÓN DE MÉTODO
-  if (step === 1) {
-    return (
-      <div className="p-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <Header title="Recargar billetera" />
-
-        {/* Tarjeta de Saldo */}
-        <div className="relative overflow-hidden mb-6 shadow-xl rounded-3xl">
-          <div className="bg-black text-white p-6 rounded-3xl relative z-10">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-gray-400 text-sm mb-1 font-medium">Saldo disponible</p>
-                {isLoadingBalance ? (
-                  <div className="h-10 w-32 bg-gray-800 rounded animate-pulse" />
-                ) : (
-                  <h3 className="text-4xl font-black tracking-tight">
-                    $ {balanceUSD.toFixed(2)}
-                  </h3>
-                )}
-              </div>
-              <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center text-2xl shadow-lg text-black font-bold">
-                $
-              </div>
-            </div>
-            <div className="text-xs text-gray-500 font-mono">
-              Tasa: {exchangeRate.toFixed(2)} Bs/$
-            </div>
-          </div>
-        </div>
-
-        <h3 className="text-lg font-bold mb-4 text-gray-800">Métodos disponibles</h3>
-
-        <button
-          onClick={() => setStep(2)}
-          className="w-full bg-white border border-gray-100 shadow-lg shadow-gray-200/50 p-4 rounded-2xl flex items-center gap-4 hover:shadow-xl hover:scale-[1.02] transition-all group duration-300"
-        >
-          <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-3xl group-hover:bg-gray-100 transition-colors">
-            📱
-          </div>
-          <div className="flex-1 text-left">
-            <h4 className="font-bold text-gray-900 text-lg">Pago Móvil</h4>
-            <p className="text-sm text-gray-500 font-medium">Acreditación inmediata (Automático)</p>
-          </div>
-          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center shadow-sm">
-            {/* Usamos CheckCircle normal */}
-            <CheckCircle className="w-5 h-5 text-green-600" />
-          </div>
-        </button>
-      </div>
-    );
-  }
-
-  // 2. DEFINICIÓN DE MONTO
-  if (step === 2) {
-    return (
-      <div className="p-4 h-full flex flex-col animate-in slide-in-from-right duration-300">
-        <Header title="Pago Móvil 📱" />
-
-        <div className="bg-lime-100 border border-lime-200 p-4 rounded-2xl mb-6 flex flex-col items-center justify-center">
-          <span className="text-lime-700 text-xs font-bold uppercase tracking-wider mb-1">Monto a Pagar</span>
-          <span className="font-black text-3xl text-lime-900 tracking-tight">
-            {amountBS ? `${amountBS} Bs` : '0,00 Bs'}
-          </span>
-        </div>
-
-        <div className="bg-white rounded-3xl shadow-xl shadow-gray-100 border border-gray-50 p-6 mb-6 flex-1">
-          <h3 className="text-center font-bold text-gray-800 mb-8 px-2 leading-snug">
-            ¿Cuánto quieres recargar?
-          </h3>
-
-          <div className="space-y-6">
-            <div className="relative group">
-              <label className="text-xs font-bold text-gray-400 absolute -top-2 left-4 bg-white px-2">USD</label>
-              <input
-                type="number"
-                value={amountUSD}
-                onChange={(e) => handleUSDChange(e.target.value)}
-                placeholder="0.00"
-                className="w-full text-center text-3xl font-black p-4 border-2 border-gray-100 rounded-2xl focus:ring-4 focus:ring-gray-100 focus:border-black outline-none transition-all placeholder:text-gray-200"
-              />
-              <span className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 font-black text-xl">$</span>
-            </div>
-
-            <div className="relative group grayscale opacity-90 focus-within:grayscale-0 focus-within:opacity-100 transition-all">
-              <label className="text-xs font-bold text-gray-400 absolute -top-2 left-4 bg-white px-2 z-10">BOLÍVARES</label>
-              <input
-                type="number"
-                value={amountBS}
-                onChange={(e) => handleBSChange(e.target.value)}
-                placeholder="0.00"
-                className="w-full text-center text-3xl font-black p-4 border-2 border-gray-100 bg-gray-50 rounded-2xl focus:ring-4 focus:ring-gray-100 focus:border-black outline-none transition-all placeholder:text-gray-300"
-              />
-              <span className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 font-black text-xl">Bs</span>
-            </div>
-          </div>
-
-          <div className="mt-8">
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-sm mx-auto overflow-hidden animate-in fade-in zoom-in duration-300">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-mipana-darkBlue to-mipana-mediumBlue p-6 text-white relative h-32 flex flex-col justify-end">
+        <div className="absolute top-4 right-4 group">
+          {onCancel && (
             <button
-              onClick={() => {
-                if (!amountBS || parseFloat(amountBS) <= 0) {
-                  toast.error('Ingrese un monto válido');
-                  return;
-                }
-                setStep(3);
-              }}
-              className="w-full bg-black text-white py-4 rounded-2xl font-bold text-lg hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-black/20"
+              onClick={onCancel}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors active:scale-95"
             >
-              Continuar
+              <X size={20} />
             </button>
+          )}
+        </div>
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl">
+            <Wallet size={28} className="text-mipana-orange" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">Recargar Saldo</h2>
+            <p className="text-xs text-white/70 font-medium">Pago Móvil Bancamiga</p>
           </div>
         </div>
 
-        {/* Info de Pago Minimized */}
-        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500 font-medium">Tasa de cambio</span>
-            <span className="font-bold text-gray-900">{exchangeRate.toFixed(2)} Bs/$</span>
-          </div>
-        </div>
+        {/* Glow Effect */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-mipana-orange/20 rounded-full blur-[40px] -mr-10 -mt-10"></div>
       </div>
-    );
-  }
 
-  // 3. VALIDACIÓN
-  if (step === 3) {
-    return (
-      <div className="p-4 h-full flex flex-col animate-in slide-in-from-right duration-300">
-        <Header title="Validar Pago" />
+      {/* Progress Bar */}
+      <div className="flex w-full h-1 bg-gray-100 dark:bg-800">
+        <div
+          className="h-full bg-mipana-orange transition-all duration-500"
+          style={{ width: step === 'amount' ? '25%' : step === 'payment' ? '50%' : step === 'verification' ? '75%' : '100%' }}
+        ></div>
+      </div>
 
-        <div className="bg-lime-400 p-6 rounded-[2rem] mb-6 flex flex-col items-center justify-center shadow-lg shadow-lime-200">
-          <span className="text-lime-900/60 font-bold text-xs uppercase tracking-widest mb-1">Total a Transferir</span>
-          <span className="font-black text-4xl text-black tracking-tighter">
-            {amountBS} Bs
-          </span>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 mb-6 shadow-xl shadow-gray-100 border border-gray-50">
-          <div className="space-y-5">
-            <div>
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-wider mb-2 ml-1">Referencia (Últimos 4)</label>
-              <input
-                type="text"
-                maxLength={4}
-                value={reference}
-                onChange={(e) => setReference(e.target.value.replace(/\D/g, ''))}
-                placeholder="0000"
-                className="w-full text-center text-2xl font-mono p-3 rounded-xl border-2 border-gray-100 focus:border-black focus:ring-4 focus:ring-gray-50 outline-none transition-all tracking-widest placeholder:text-gray-200"
-              />
+      {/* Content */}
+      <div className="p-6">
+        {step === 'amount' && (
+          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
+            <div className="bg-mipana-mediumBlue/10 p-4 rounded-2xl flex items-start gap-3 border border-mipana-mediumBlue/10">
+              <DollarSign className="text-mipana-mediumBlue mt-0.5" size={18} />
+              <p className="text-sm text-mipana-darkBlue dark:text-gray-300 font-medium leading-tight">
+                Ingresa el monto en Bolívares que deseas añadir a tu billetera.
+              </p>
             </div>
 
-            <div>
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-wider mb-2 ml-1">Banco de Origen</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Monto a Recargar</label>
               <div className="relative">
-                <select
-                  value={originBank}
-                  onChange={(e) => setOriginBank(e.target.value)}
-                  className="w-full text-lg font-medium p-4 rounded-xl border-2 border-gray-100 focus:border-black outline-none bg-white text-gray-800 appearance-none pl-4 pr-10"
-                >
-                  <option value="">Selecciona tu banco...</option>
-                  {BANKS.map(bank => (
-                    <option key={bank} value={bank}>{bank}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-5 h-5" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <span className="text-2xl font-bold text-gray-400">Bs.</span>
+                </div>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={handleAmountChange}
+                  placeholder="0.00"
+                  className="w-full pl-16 pr-4 py-6 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-mipana-orange dark:focus:border-mipana-orange outline-none rounded-2xl text-4xl font-black text-mipana-darkBlue dark:text-white transition-all shadow-inner"
+                />
               </div>
-            </div>
 
-            {/* Toggle Inteligente */}
-            <div className="pt-2">
-              {!showOriginPhoneInput ? (
-                <button
-                  onClick={() => {
-                    setShowOriginPhoneInput(true);
-                    if (!originPhone && user?.phone) setOriginPhone(user.phone);
-                  }}
-                  className="w-full py-3 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
-                >
-                  <Smartphone className="w-4 h-4" />
-                  ¿Pagaste desde otro número?
-                </button>
-              ) : (
-                <div className="p-4 bg-gray-50 rounded-2xl animate-in fade-in zoom-in duration-200">
-                  <label className="block text-xs font-black text-gray-400 uppercase tracking-wider mb-2 ml-1">Teléfono de Origen</label>
-                  <input
-                    type="tel"
-                    value={originPhone}
-                    onChange={(e) => setOriginPhone(e.target.value)}
-                    placeholder="0414..."
-                    className="w-full text-lg p-3 rounded-xl border border-gray-200 focus:border-black outline-none bg-white mb-2"
-                  />
-                  <button
-                    onClick={() => {
-                      setShowOriginPhoneInput(false);
-                      if (user?.phone) setOriginPhone(user.phone);
-                    }}
-                    className="text-red-500 text-xs font-bold hover:underline w-full text-right"
-                  >
-                    Cancelar (Usar mi número)
-                  </button>
+              {/* Real-time validation feedback */}
+              {amountError && (
+                <p className="text-sm text-red-600 flex items-center gap-2">
+                  <AlertCircle size={16} />
+                  {amountError}
+                </p>
+              )}
+
+              {/* Amount preview */}
+              {amount && !amountError && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-3 rounded-r-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    <strong>Vista previa:</strong> Bs. {formatAmountDisplay(amount)}
+                  </p>
                 </div>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Footer Datos de Pago */}
-        <div className="mb-6 bg-gray-900 rounded-2xl p-5 text-gray-300">
-          <h4 className="font-bold text-white text-xs uppercase mb-4 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            Datos para el Pago Móvil
-          </h4>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between items-center group">
-              <span className="">Teléfono</span>
-              <div className="flex items-center gap-2 font-mono text-white bg-white/10 px-2 py-1 rounded cursor-pointer hover:bg-white/20 transition-colors" onClick={() => handleCopy('04145274111', 'Teléfono')}>
-                0414-527-4111 <Copy className="w-3 h-3 text-gray-400" />
+            {/* Exact amount warning */}
+            {amount && !amountError && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                <div className="flex gap-3">
+                  <AlertCircle className="text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" size={20} />
+                  <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                    <p className="font-bold mb-1">⚠️ Importante</p>
+                    <p>Debes pagar <strong>exactamente Bs. {formatAmountDisplay(amount)}</strong> (incluye los céntimos)</p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="flex justify-between items-center group">
-              <span className="">RIF</span>
-              <div className="flex items-center gap-2 font-mono text-white bg-white/10 px-2 py-1 rounded cursor-pointer hover:bg-white/20 transition-colors" onClick={() => handleCopy('J407242741', 'RIF')}>
-                J-407242741 <Copy className="w-3 h-3 text-gray-400" />
-              </div>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="">Banco</span>
-              <span className="font-bold text-white">Bancamiga (0172)</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-auto">
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm mb-4 flex items-start gap-3 animate-in shake">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <p className="font-medium">{error}</p>
-            </div>
-          )}
-
-          <button
-            onClick={validatePayment}
-            disabled={isValidating}
-            className="w-full bg-black text-white py-4 rounded-2xl font-bold text-lg hover:bg-gray-800 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-xl"
-          >
-            {isValidating ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Verificando...
-              </>
-            ) : (
-              <>
-                Validar Pago
-                <ArrowRight className="w-5 h-5" />
-              </>
             )}
-          </button>
-        </div>
 
+            {error && (
+              <div className="text-red-500 text-xs font-bold flex items-center gap-1 animate-pulse">
+                <AlertCircle size={14} /> {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleContinueToConfirm}
+              disabled={!amount || parseFloat(amount) <= 0 || !!amountError}
+              className="w-full bg-mipana-orange hover:bg-orange-600 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-orange-500/30 transition-all flex items-center justify-center gap-2 group"
+            >
+              Siguiente <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        )}
+
+        {step === 'confirm' && (
+          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+            <div className="text-center">
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Confirma tu Recarga</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Vas a recargar:</p>
+            </div>
+
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-800 rounded-2xl p-8 text-center">
+              <p className="text-sm text-green-700 dark:text-green-400 mb-2 font-medium">Monto Exacto</p>
+              <p className="text-6xl font-black text-green-900 dark:text-green-100 mb-1">
+                Bs. {formatAmountDisplay(amount)}
+              </p>
+              <p className="text-xs text-green-600 dark:text-green-400">Incluye céntimos</p>
+            </div>
+
+            <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-400 p-4 rounded-r-lg">
+              <div className="flex gap-3">
+                <AlertCircle className="text-orange-600 dark:text-orange-400 flex-shrink-0" size={20} />
+                <div className="text-sm text-orange-800 dark:text-orange-200">
+                  <p className="font-bold mb-2">⚠️ Importante</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Debes pagar <strong>exactamente Bs. {formatAmountDisplay(amount)}</strong></li>
+                    <li>Incluye los céntimos (.{formatAmountDisplay(amount).split('.')[1]})</li>
+                    <li>Cualquier diferencia causará rechazo</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep('amount')}
+                className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-bold transition-all active:scale-95"
+              >
+                Cambiar Monto
+              </button>
+              <button
+                onClick={() => setStep('payment')}
+                className="flex-1 bg-mipana-orange hover:bg-orange-600 text-white py-3 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2 group"
+              >
+                Continuar <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 'payment' && (
+          <div className="space-y-5 animate-in slide-in-from-right-4 duration-300">
+            <div className="text-center">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Monto a Pagar</p>
+              <h3 className="text-4xl font-black text-mipana-darkBlue dark:text-white">{formatCurrency(parseFloat(amount))}</h3>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 space-y-3">
+              {[
+                { label: 'Banco', value: paymentData.bank, code: paymentData.bankCode },
+                { label: 'Teléfono', value: paymentData.phone, copy: paymentData.phone.replace(/-/g, '') },
+                { label: 'RIF', value: paymentData.rif, copy: paymentData.rif.replace(/-/g, '') },
+                { label: 'Titular', value: paymentData.holder }
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between pb-2 last:pb-0 last:border-0 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex-1">
+                    <p className="text-[9px] font-bold text-gray-400 uppercase">{item.label}</p>
+                    <p className="text-sm font-bold text-mipana-darkBlue dark:text-white">
+                      {item.value} {item.code && <span className="text-[10px] text-gray-400">({item.code})</span>}
+                    </p>
+                  </div>
+                  {item.copy && (
+                    <button
+                      onClick={() => handleCopy(item.copy!, item.label)}
+                      className="p-2 hover:bg-mipana-mediumBlue/10 rounded-xl transition-colors text-mipana-mediumBlue active:scale-90"
+                    >
+                      {copiedField === item.label ? <CheckCircle size={18} className="text-green-500" /> : <Copy size={18} />}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3">
+                <div className="relative">
+                  <select
+                    value={originBank}
+                    onChange={(e) => setOriginBank(e.target.value)}
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 focus:border-mipana-mediumBlue outline-none rounded-xl text-sm font-bold transition-all appearance-none"
+                  >
+                    <option value="">Banco desde el que pagaste</option>
+                    {venezuelanBanks.map((bank) => (
+                      <option key={bank.code} value={bank.code}>{bank.name}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Building2 size={16} className="text-gray-400" />
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={lastFourDigits}
+                    onChange={handleDigitsChange}
+                    placeholder="Últimos 4 dígitos de Referencia"
+                    maxLength={4}
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 focus:border-mipana-mediumBlue outline-none rounded-xl text-sm font-bold transition-all text-center tracking-[0.5em]"
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Hash size={16} className="text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setStep('amount')}
+                  className="flex-shrink-0 px-6 py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+                >
+                  Atrás
+                </button>
+                <button
+                  onClick={handleProcessRecharge}
+                  disabled={!originBank || lastFourDigits.length !== 4 || isProcessing}
+                  className="flex-1 bg-mipana-darkBlue hover:bg-[#001530] active:scale-[0.98] disabled:opacity-50 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-xl"
+                >
+                  {isProcessing ? <Loader2 size={24} className="animate-spin" /> : 'Verificar Pago'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 'success' && (
+          <div className="text-center py-6 space-y-4 animate-in zoom-in-50 duration-500">
+            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+              <CheckCircle size={48} className="text-green-500 animate-bounce-in" />
+            </div>
+            <h3 className="text-2xl font-black text-mipana-darkBlue dark:text-white">¡Listo, Mi Pana!</h3>
+            <p className="text-sm text-gray-500 font-medium px-4">
+              Hemos acreditado <b>{formatCurrency(parseFloat(amount))}</b> a tu billetera exitosamente.
+            </p>
+            {newBalance && (
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-3xl inline-block border border-gray-100 dark:border-gray-700 shadow-inner">
+                <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Nuevo Saldo Disponible</p>
+                <p className="text-2xl font-black text-mipana-darkBlue dark:text-white">
+                  ${newBalance.usd.toFixed(2)} <span className="text-xs text-gray-400 font-bold ml-1">USD</span>
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 'error' && (
+          <div className="text-center py-6 space-y-4 animate-in shake duration-500">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
+              <AlertCircle size={48} className="text-red-500" />
+            </div>
+            <h3 className="text-xl font-black text-red-600">
+              {!isDomainAllowed
+                ? "Acceso Restringido"
+                : error?.toLowerCase().includes('interno') || error?.toLowerCase().includes('banco')
+                  ? "Error del Servicio"
+                  : "Error de Verificación"}
+            </h3>
+            <p className="text-[13px] text-gray-500 font-bold leading-relaxed px-2">
+              {!isDomainAllowed
+                ? "Por motivos de seguridad bancaria (Whitelist), los pagos solo pueden procesarse desde el dominio autorizado."
+                : error}
+            </p>
+
+            <div className="flex flex-col gap-2 pt-2">
+              {!isDomainAllowed ? (
+                <a
+                  href="https://v1.mipana.app/wallet"
+                  className="w-full bg-mipana-orange text-white py-3.5 rounded-2xl font-bold active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  Ir a v1.mipana.app <ArrowRight size={18} />
+                </a>
+              ) : (
+                <>
+                  <button
+                    onClick={handleRetry}
+                    className="w-full bg-mipana-darkBlue text-white py-3.5 rounded-2xl font-bold active:scale-95 transition-all"
+                  >
+                    Intentar con otra referencia
+                  </button>
+                  <button
+                    onClick={() => setStep('amount')}
+                    className="w-full text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    Cambiar monto
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-    );
-  }
 
-  return null;
-}
+      {/* Footer Info */}
+      <div className="p-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-700 text-center">
+        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Tecnología Bancamiga Verificada by SITCA</p>
+      </div>
+    </div>
+  );
+};
+
+export default WalletRecharge;

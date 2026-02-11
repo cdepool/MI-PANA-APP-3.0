@@ -855,6 +855,9 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
           <div className="w-full max-w-md">
             <WalletRecharge
+              userId={user.id}
+              userPhone={user.phone || ''}
+              prefilledAmount={rechargeAmountVes}
               onSuccess={() => {
                 refreshBalance();
                 setShowRechargeModal(false);
@@ -862,7 +865,7 @@ const PassengerHome: React.FC<PassengerHomeProps> = ({ onNavigateWallet }) => {
                 // Re-trigger ride confirmation after successful recharge
                 setTimeout(() => handleConfirmRide(), 1500);
               }}
-              onBack={() => setShowRechargeModal(false)}
+              onCancel={() => setShowRechargeModal(false)}
             />
           </div>
         </div>
