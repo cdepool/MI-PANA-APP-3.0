@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
 
 const WalletPage: React.FC = () => {
-   const { user, loading } = useAuth();
+   const { user, isLoading } = useAuth();
    const [showRecharge, setShowRecharge] = useState(false);
    const [refreshKey, setRefreshKey] = useState(0);
 
@@ -22,7 +22,7 @@ const WalletPage: React.FC = () => {
       return <BilleteraRestringida />;
    }
 
-   if (loading) {
+   if (isLoading) {
       return (
          <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mipana-orange"></div>
@@ -31,7 +31,6 @@ const WalletPage: React.FC = () => {
    }
 
    if (!user) {
-      // Should ideally redirect or show login prompt, but handling gracefully here
       return <div className="p-8 text-center">Inicia sesión para ver tu billetera.</div>;
    }
 
@@ -49,13 +48,13 @@ const WalletPage: React.FC = () => {
             <DriverWalletDashboard
                key={refreshKey}
                userId={user.id}
-               userName={user.nombre || user.email?.split('@')[0]}
+               userName={user.name || user.email?.split('@')[0]}
             />
          ) : (
             <WalletDashboard
                key={refreshKey}
                userId={user.id}
-               userName={user.nombre || user.email?.split('@')[0]}
+               userName={user.name || user.email?.split('@')[0]}
                onRecharge={() => setShowRecharge(true)}
             />
          )}
@@ -67,7 +66,7 @@ const WalletPage: React.FC = () => {
                      initial={{ scale: 0.9, opacity: 0, y: 20 }}
                      animate={{ scale: 1, opacity: 1, y: 0 }}
                      exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                     className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl"
+                     className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
                   >
                      <Suspense fallback={<div className="p-8 bg-white rounded-2xl flex justify-center"><div className="animate-spin h-8 w-8 border-2 border-mipana-orange rounded-full border-t-transparent"></div></div>}>
                         <WalletRecharge
