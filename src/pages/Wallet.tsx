@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '../types';
 
 const WalletPage: React.FC = () => {
-   const { user, loading } = useAuth();
+   const { user, isLoading } = useAuth();
    const [showRecharge, setShowRecharge] = useState(false);
    const [refreshKey, setRefreshKey] = useState(0);
 
@@ -22,7 +22,7 @@ const WalletPage: React.FC = () => {
       return <BilleteraRestringida />;
    }
 
-   if (loading) {
+   if (isLoading) {
       return (
          <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mipana-orange"></div>
@@ -45,17 +45,17 @@ const WalletPage: React.FC = () => {
          animate={{ opacity: 1 }}
          className="min-h-screen bg-gray-50 dark:bg-gray-950"
       >
-         {user.role === 'conductor' ? (
+         {user.role === UserRole.DRIVER || user.role === 'conductor' ? (
             <DriverWalletDashboard
                key={refreshKey}
                userId={user.id}
-               userName={user.nombre || user.email?.split('@')[0]}
+               userName={user.name || user.email?.split('@')[0]}
             />
          ) : (
             <WalletDashboard
                key={refreshKey}
                userId={user.id}
-               userName={user.nombre || user.email?.split('@')[0]}
+               userName={user.name || user.email?.split('@')[0]}
                onRecharge={() => setShowRecharge(true)}
             />
          )}

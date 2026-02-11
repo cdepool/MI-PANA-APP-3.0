@@ -120,6 +120,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (e) {
         logger.error("Critical error fetching user profile", e);
+        // Fallback: Set minimal user from auth data to prevent white screen/infinite loop
+        if (supabaseUser) {
+          setUser({
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            role: UserRole.PASSENGER, // Default role
+            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'Usuario',
+          } as User);
+        }
       } finally {
         setIsLoading(false);
         clearTimeout(safetyTimeout);

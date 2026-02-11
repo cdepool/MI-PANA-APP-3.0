@@ -67,6 +67,18 @@ export const DriverWalletDashboard: React.FC<DriverWalletDashboardProps> = ({ us
             { day: 'Dom', value: 0 },
         ];
 
+    if (isLoading) {
+        return (
+            <div className="max-w-4xl mx-auto p-6 space-y-8 animate-pulse">
+                <div className="h-12 w-48 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="h-48 bg-gray-200 dark:bg-gray-800 rounded-3xl"></div>
+                    <div className="h-48 bg-gray-200 dark:bg-gray-800 rounded-3xl"></div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-4xl mx-auto p-4 md:p-6 pb-24 space-y-8">
             {/* Driver Header */}
@@ -92,7 +104,7 @@ export const DriverWalletDashboard: React.FC<DriverWalletDashboardProps> = ({ us
                         <div>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Por Liquidar (Neto)</p>
                             <div className="flex items-baseline gap-2">
-                                <h2 className="text-5xl font-black tracking-tighter">${wallet?.balance_usd.toFixed(2)}</h2>
+                                <h2 className="text-5xl font-black tracking-tighter">${(wallet?.balance_usd || 0).toFixed(2)}</h2>
                                 <span className="text-xl font-bold text-mipana-orange">USD</span>
                             </div>
                         </div>
