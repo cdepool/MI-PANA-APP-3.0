@@ -3,7 +3,7 @@ import { startTransition } from 'react';
 // Using a simple object map for now, can be expanded to full React Router types
 export const SERVICE_ROUTES = {
     home: '/',
-    traslados: '/traslados',
+    traslados: '/viajes',
     billetera: '/billetera',
     tienda: '/tienda',
     delivery: '/delivery',

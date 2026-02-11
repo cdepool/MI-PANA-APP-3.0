@@ -9,6 +9,7 @@ const RideEstimation = lazy(() => import('./pages/traslados/RideEstimation'));
 const RideActive = lazy(() => import('./pages/traslados/RideActive'));
 const RideComplete = lazy(() => import('./pages/traslados/RideComplete'));
 const Wallet = lazy(() => import('./pages/Wallet'));
+const Viajes = lazy(() => import('./pages/ViajesDashboard'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
@@ -38,7 +39,12 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Traslados Flow (Passenger Only) */}
+          {/* Viajes Dashboard & Flow (Passenger Only) */}
+          <Route path="/viajes" element={
+            <ProtectedRoute allowedRoles={[UserRole.PASSENGER]}>
+              <Viajes />
+            </ProtectedRoute>
+          } />
           <Route path="/traslados" element={
             <ProtectedRoute allowedRoles={[UserRole.PASSENGER]}>
               <RequestRide />

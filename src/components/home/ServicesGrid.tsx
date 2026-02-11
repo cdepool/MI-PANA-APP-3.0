@@ -11,7 +11,7 @@ export function ServicesGrid() {
     const services = [
         {
             id: 'traslados',
-            name: 'Traslados',
+            name: 'Viajes',
             description: 'Muévete rápido en carro o moto',
             color: '#007AFF', // Blue
             icon: <Car size={24} />,
