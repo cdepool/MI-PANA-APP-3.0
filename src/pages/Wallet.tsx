@@ -67,17 +67,15 @@ const WalletPage: React.FC = () => {
                      initial={{ scale: 0.9, opacity: 0, y: 20 }}
                      animate={{ scale: 1, opacity: 1, y: 0 }}
                      exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                     className="w-full max-w-md"
+                     className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl"
                   >
                      <Suspense fallback={<div className="p-8 bg-white rounded-2xl flex justify-center"><div className="animate-spin h-8 w-8 border-2 border-mipana-orange rounded-full border-t-transparent"></div></div>}>
                         <WalletRecharge
-                           userId={user.id}
-                           userPhone={user.phone || ''}
                            onSuccess={() => {
                               handleRefresh();
                               setShowRecharge(false);
                            }}
-                           onCancel={() => setShowRecharge(false)}
+                           onBack={() => setShowRecharge(false)}
                         />
                      </Suspense>
                   </motion.div>
