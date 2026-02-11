@@ -127,36 +127,43 @@ export const walletService = {
      */
     rechargeWallet: async (userId: string, userPhone: string, amount: number, bancoOrig: string, lastFourDigits: string): Promise<any> => {
         try {
-            const { data, error } = await supabase.functions.invoke('wallet-recharge', {
-                body: {
-                    userId,
-                    userPhone,
-                    amount,
-                    bancoOrig,
-                    lastFourDigits
-                }
-            });
+            // Obtenemos la sesión actual para el token de autorización
+            const { data: { session } } = await supabase.auth.getSession();
+            const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-            if (error) {
-                // Intentar extraer el mensaje de error del cuerpo si es una instancia de Error con contexto
-                const details = (error as any).details;
-                if (details && typeof details === 'object' && details.error) {
-                    throw new Error(details.error);
+            const response = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wallet-recharge`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`,
+                        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                    },
+                    body: JSON.stringify({
+                        userId,
+                        userPhone,
+                        amount,
+                        bancoOrig,
+                        lastFourDigits
+                    })
                 }
+            );
 
-                // Si es un FunctionsHttpError, el mensaje suele ser genérico,
-                // pero a veces el error contiene información adicional.
-                throw error;
+            // Intentar parsear como JSON para extraer el error real
+            const result = await response.json().catch(() => ({ error: 'Error inesperado del servidor (sin JSON)' }));
+
+            if (!response.ok) {
+                // Si el backend devolvió un error detallado (ej: token de banco expirado)
+                const errorMsg = result.error || result.message || `Error del servidor (${response.status})`;
+                throw new Error(errorMsg);
             }
 
-            return data;
+            return result;
         } catch (error: any) {
             logger.error('Wallet recharge error:', error);
-            // Si el error ya tiene un mensaje descriptivo (no el genérico), lo re-lanzamos
-            if (error.message && !error.message.includes('non-2xx')) {
-                throw error;
-            }
-            throw new Error('El servidor de recarga reportó un problema. Verifica los datos e intenta nuevamente.');
+            // Re-lanzamos el error con el mensaje real que vino del backend
+            throw error;
         }
     }
 };
