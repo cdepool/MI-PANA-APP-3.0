@@ -72,7 +72,7 @@ const WalletPage: React.FC = () => {
                      <Suspense fallback={<div className="p-8 bg-white rounded-2xl flex justify-center"><div className="animate-spin h-8 w-8 border-2 border-mipana-orange rounded-full border-t-transparent"></div></div>}>
                         <WalletRecharge
                            userId={user.id}
-                           userPhone={user.telefono || ''}
+                           userPhone={user.phone || ''}
                            onSuccess={() => {
                               handleRefresh();
                               setShowRecharge(false);

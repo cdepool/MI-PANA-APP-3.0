@@ -67,6 +67,12 @@ export const WalletRecharge: React.FC<WalletRechargeProps> = ({
       setStep('error');
     }
 
+    // Check user phone
+    if (!userPhone) {
+      setError('No tienes un número de teléfono configurado en tu perfil. Es necesario para verificar pagos móviles.');
+      setStep('error');
+    }
+
     // Check wallet status
     if (walletStatus !== 'active') {
       setError(`Tu billetera está ${walletStatus}. Contacta a soporte para activarla.`);
